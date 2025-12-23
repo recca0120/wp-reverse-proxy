@@ -241,6 +241,43 @@ Features:
 | No match behavior | Skips to next route | Returns 405 response |
 | Use case | Route to different backends | Restrict methods on a route |
 
+### ErrorHandlingMiddleware (Enabled by Default)
+
+Catches HTTP client exceptions and returns 502 Bad Gateway:
+
+```php
+use ReverseProxy\Middleware\ErrorHandlingMiddleware;
+
+new Route('/api/*', 'https://backend.example.com', [
+    new ErrorHandlingMiddleware(),
+]);
+```
+
+Features:
+- Catches `ClientExceptionInterface` (connection timeout, refused, etc.)
+- Returns 502 status code with JSON error message
+- Other exceptions are re-thrown
+
+### LoggingMiddleware (Enabled by Default)
+
+Logs proxy requests and responses:
+
+```php
+use ReverseProxy\Middleware\LoggingMiddleware;
+use ReverseProxy\WordPress\Logger;
+
+new Route('/api/*', 'https://backend.example.com', [
+    new LoggingMiddleware(new Logger()),
+]);
+```
+
+Logged information:
+- Request: HTTP method, target URL
+- Response: status code
+- Error: exception message (then re-throws)
+
+> **Note**: `ErrorHandlingMiddleware` and `LoggingMiddleware` are automatically added to all routes by default. No manual configuration required.
+
 ## Custom Middleware
 
 ### Using Closures

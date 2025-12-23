@@ -2,15 +2,12 @@
 
 namespace ReverseProxy;
 
-use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 class ReverseProxy
 {
@@ -23,19 +20,14 @@ class ReverseProxy
     /** @var StreamFactoryInterface */
     private $streamFactory;
 
-    /** @var LoggerInterface */
-    private $logger;
-
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory,
-        ?LoggerInterface $logger = null
+        StreamFactoryInterface $streamFactory
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
-        $this->logger = $logger ?? new NullLogger();
     }
 
     /**
@@ -60,8 +52,8 @@ class ReverseProxy
         $request = $this->buildProxyRequest($originalRequest, $route, $targetUrl);
 
         // Create the core handler
-        $handler = function (RequestInterface $request) use ($originalRequest, $targetUrl) {
-            return $this->sendRequest($request, $originalRequest, $targetUrl);
+        $handler = function (RequestInterface $request) {
+            return $this->client->sendRequest($request);
         };
 
         // Wrap with middlewares (in reverse order)
@@ -72,33 +64,6 @@ class ReverseProxy
         }
 
         return $handler($request);
-    }
-
-    private function sendRequest(RequestInterface $request, ServerRequestInterface $originalRequest, string $targetUrl): ResponseInterface
-    {
-        $this->logger->info('Proxying request', [
-            'method' => $request->getMethod(),
-            'source' => $originalRequest->getUri()->getPath(),
-            'target' => $targetUrl,
-        ]);
-
-        try {
-            $response = $this->client->sendRequest($request);
-
-            $this->logger->info('Proxy response received', [
-                'status' => $response->getStatusCode(),
-                'target' => $targetUrl,
-            ]);
-
-            return $response;
-        } catch (ClientExceptionInterface $e) {
-            $this->logger->error('Proxy error: ' . $e->getMessage(), [
-                'target' => $targetUrl,
-                'exception' => get_class($e),
-            ]);
-
-            return $this->createErrorResponse(502, 'Bad Gateway: ' . $e->getMessage());
-        }
     }
 
     private function buildProxyRequest(ServerRequestInterface $originalRequest, Route $route, string $targetUrl): RequestInterface
@@ -123,16 +88,5 @@ class ReverseProxy
         }
 
         return $request;
-    }
-
-    private function createErrorResponse(int $statusCode, string $message): ResponseInterface
-    {
-        $body = json_encode(['error' => $message, 'status' => $statusCode]);
-
-        return new \Nyholm\Psr7\Response(
-            $statusCode,
-            ['Content-Type' => 'application/json'],
-            $body
-        );
     }
 }

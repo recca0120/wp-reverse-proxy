@@ -241,6 +241,43 @@ new Route('/api/*', 'https://backend.example.com', [
 | 不符合時的行為 | 跳至下一個路由 | 回傳 405 回應 |
 | 使用場景 | 導向不同後端 | 限制路由允許的方法 |
 
+### ErrorHandlingMiddleware（預設啟用）
+
+捕獲 HTTP 客戶端異常，回傳 502 Bad Gateway：
+
+```php
+use ReverseProxy\Middleware\ErrorHandlingMiddleware;
+
+new Route('/api/*', 'https://backend.example.com', [
+    new ErrorHandlingMiddleware(),
+]);
+```
+
+功能：
+- 捕獲 `ClientExceptionInterface`（連線逾時、拒絕連線等）
+- 回傳 502 狀態碼與 JSON 錯誤訊息
+- 其他異常會繼續向上拋出
+
+### LoggingMiddleware（預設啟用）
+
+記錄代理請求與回應：
+
+```php
+use ReverseProxy\Middleware\LoggingMiddleware;
+use ReverseProxy\WordPress\Logger;
+
+new Route('/api/*', 'https://backend.example.com', [
+    new LoggingMiddleware(new Logger()),
+]);
+```
+
+記錄內容：
+- 請求：HTTP 方法、目標 URL
+- 回應：狀態碼
+- 錯誤：異常訊息（然後重新拋出）
+
+> **注意**：`ErrorHandlingMiddleware` 和 `LoggingMiddleware` 預設會自動加入所有路由，不需手動設定。
+
 ## 自訂中介層
 
 ### 使用閉包
