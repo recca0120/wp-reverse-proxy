@@ -380,6 +380,31 @@ $route = new Route('/api/*', 'https://backend.example.com', [
 Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Response
 ```
 
+### 中介層優先權
+
+中介層可透過 `$priority` 屬性控制執行順序（數字越小越先執行，即越外層）：
+
+```php
+use ReverseProxy\MiddlewareInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+class AuthMiddleware implements MiddlewareInterface
+{
+    public $priority = -50;  // 比預設 (0) 更早執行
+
+    public function process(RequestInterface $request, callable $next): ResponseInterface
+    {
+        return $next($request->withHeader('Authorization', 'Bearer token'));
+    }
+}
+```
+
+內建優先權：
+- `ErrorHandlingMiddleware`: -100（最外層，捕獲所有錯誤）
+- `LoggingMiddleware`: -90（記錄所有請求）
+- 自訂中介層預設: 0
+
 ## 實際範例
 
 等同於此 nginx 設定：

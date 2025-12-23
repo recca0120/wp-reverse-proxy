@@ -380,6 +380,31 @@ Middlewares execute in onion-style order:
 Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Response
 ```
 
+### Middleware Priority
+
+Middlewares can define a `$priority` property to control execution order (lower numbers execute first, i.e., outermost layer):
+
+```php
+use ReverseProxy\MiddlewareInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+class AuthMiddleware implements MiddlewareInterface
+{
+    public $priority = -50;  // Executes before default (0)
+
+    public function process(RequestInterface $request, callable $next): ResponseInterface
+    {
+        return $next($request->withHeader('Authorization', 'Bearer token'));
+    }
+}
+```
+
+Built-in priorities:
+- `ErrorHandlingMiddleware`: -100 (outermost, catches all errors)
+- `LoggingMiddleware`: -90 (logs all requests)
+- Custom middlewares default: 0
+
 ## Real-World Example
 
 Equivalent to this nginx configuration:
