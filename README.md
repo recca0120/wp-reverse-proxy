@@ -5,14 +5,17 @@ A WordPress plugin that proxies specific URL paths to external backend servers.
 ## Features
 
 - Route matching with wildcard support (`/api/*`)
-- Path rewriting (`/api/v1/*` → `/v1/$1`)
+- HTTP method matching (`POST /api/users`, `GET|POST /api/*`)
+- Path rewriting via middleware
 - Full HTTP method support (GET, POST, PUT, PATCH, DELETE)
 - Request/Response headers forwarding
 - Query string preservation
-- Host header configuration
+- Customizable Host header
+- Standard proxy headers (X-Real-IP, X-Forwarded-For, etc.)
 - Error handling with 502 Bad Gateway
 - Logging integration
 - PSR-18 compliant HTTP client
+- Middleware support for request/response processing
 
 ## Requirements
 
@@ -38,85 +41,184 @@ composer require recca0120/wp-reverse-proxy
 
 ### Basic Configuration
 
-Add proxy rules in your theme's `functions.php` or a custom plugin:
+Add proxy routes in your theme's `functions.php` or a custom plugin:
 
 ```php
-use ReverseProxy\Rule;
+use ReverseProxy\Route;
 
 add_filter('reverse_proxy_rules', function () {
     return [
-        // Proxy /api/* to backend server
-        new Rule('/api/*', 'https://api.example.com'),
+        new Route('/api/*', 'https://api.example.com'),
     ];
 });
 ```
 
-### Path Rewriting
+### Multiple Routes
 
-Rewrite paths when proxying:
+Routes are matched in order (first match wins):
 
 ```php
-use ReverseProxy\Rule;
+use ReverseProxy\Route;
 
 add_filter('reverse_proxy_rules', function () {
     return [
-        // /api/v1/users → https://backend.com/v1/users
-        // $1 = matched wildcard content
-        new Rule('/api/v1/*', 'https://backend.example.com', '/v1/$1'),
-    ];
-});
-```
-
-### Preserve Original Host Header
-
-Keep the original Host header instead of using the target host:
-
-```php
-use ReverseProxy\Rule;
-
-add_filter('reverse_proxy_rules', function () {
-    return [
-        new Rule('/api/*', 'https://backend.example.com', null, true),
-    ];
-});
-```
-
-### Multiple Rules
-
-Rules are matched in order (first match wins):
-
-```php
-use ReverseProxy\Rule;
-
-add_filter('reverse_proxy_rules', function () {
-    return [
-        // More specific rules first
-        new Rule('/api/v2/*', 'https://api-v2.example.com'),
+        // More specific routes first
+        new Route('/api/v2/*', 'https://api-v2.example.com'),
         // Fallback for other API routes
-        new Rule('/api/*', 'https://api.example.com'),
+        new Route('/api/*', 'https://api.example.com'),
     ];
 });
 ```
 
-## Rule Constructor
+### With Middlewares
 
 ```php
-new Rule(
-    string $source,         // URL pattern to match (supports `*` wildcard)
-    string $target,         // Target server URL
-    ?string $rewrite,       // Rewrite path pattern (`$1`, `$2` for wildcards)
-    bool $preserveHost      // Keep original Host header (default: false)
+use ReverseProxy\Route;
+use ReverseProxy\Middleware\ProxyHeadersMiddleware;
+use ReverseProxy\Middleware\SetHostMiddleware;
+use ReverseProxy\Middleware\RewritePathMiddleware;
+
+add_filter('reverse_proxy_rules', function () {
+    return [
+        new Route('/api/*', 'https://backend.example.com', [
+            new ProxyHeadersMiddleware(),
+            new SetHostMiddleware('custom-host.com'),
+        ]),
+    ];
+});
+```
+
+## Route Constructor
+
+```php
+new Route(
+    string $source,       // URL pattern to match (supports `*` wildcard and HTTP methods)
+    string $target,       // Target server URL
+    array $middlewares    // Optional: array of middlewares
 );
 ```
 
-## Middleware
+### Source Pattern Formats
 
-Rules support middleware for request/response processing:
+**Path only** (matches all HTTP methods):
+```php
+new Route('/api/*', 'https://backend.example.com');
+```
+
+**Single HTTP method**:
+```php
+new Route('POST /api/users', 'https://backend.example.com');
+new Route('DELETE /api/users/*', 'https://backend.example.com');
+```
+
+**Multiple HTTP methods** (use `|` separator):
+```php
+new Route('GET|POST /api/users', 'https://backend.example.com');
+new Route('GET|POST|PUT|DELETE /api/*', 'https://backend.example.com');
+```
+
+### Method-Based Routing Example
+
+Route different HTTP methods to different backends:
 
 ```php
-use ReverseProxy\Rule;
+use ReverseProxy\Route;
 
-$rule = (new Rule('/api/*', 'https://backend.example.com'))
+add_filter('reverse_proxy_rules', function () {
+    return [
+        // Read operations → read replica
+        new Route('GET /api/users/*', 'https://read-replica.example.com'),
+        // Write operations → primary server
+        new Route('POST|PUT|DELETE /api/users/*', 'https://primary.example.com'),
+    ];
+});
+```
+
+## Built-in Middlewares
+
+### ProxyHeadersMiddleware
+
+Adds standard proxy headers to forwarded requests:
+
+```php
+use ReverseProxy\Middleware\ProxyHeadersMiddleware;
+
+new Route('/api/*', 'https://backend.example.com', [
+    new ProxyHeadersMiddleware(),
+]);
+```
+
+Headers added:
+- `X-Real-IP` - Client's IP address
+- `X-Forwarded-For` - Chain of proxy IPs
+- `X-Forwarded-Proto` - Original protocol (http/https)
+- `X-Forwarded-Port` - Original port
+
+### SetHostMiddleware
+
+Sets a custom Host header:
+
+```php
+use ReverseProxy\Middleware\SetHostMiddleware;
+
+new Route('/api/*', 'https://127.0.0.1:8080', [
+    new SetHostMiddleware('api.example.com'),
+]);
+```
+
+### RewritePathMiddleware
+
+Rewrites the request path:
+
+```php
+use ReverseProxy\Middleware\RewritePathMiddleware;
+
+// /api/v1/users → /v1/users
+new Route('/api/v1/*', 'https://backend.example.com', [
+    new RewritePathMiddleware('/api/v1/*', '/v1/$1'),
+]);
+
+// /legacy/users → /api/v2/users
+new Route('/legacy/*', 'https://backend.example.com', [
+    new RewritePathMiddleware('/legacy/*', '/api/v2/$1'),
+]);
+
+// Multiple wildcards: /api/users/posts/123 → /v2/users/items/123
+new Route('/api/*/posts/*', 'https://backend.example.com', [
+    new RewritePathMiddleware('/api/*/posts/*', '/v2/$1/items/$2'),
+]);
+```
+
+### AllowMethodsMiddleware
+
+Restricts allowed HTTP methods and returns 405 Method Not Allowed for others:
+
+```php
+use ReverseProxy\Middleware\AllowMethodsMiddleware;
+
+new Route('/api/*', 'https://backend.example.com', [
+    new AllowMethodsMiddleware(['GET', 'POST']),
+]);
+```
+
+Features:
+- Returns 405 with `Allow` header listing permitted methods
+- Always allows OPTIONS for CORS preflight
+- Case-insensitive method matching
+
+**Route method vs AllowMethodsMiddleware:**
+
+| Aspect | Route Method (`POST /api/*`) | AllowMethodsMiddleware |
+|--------|------------------------------|------------------------|
+| No match behavior | Skips to next route | Returns 405 response |
+| Use case | Route to different backends | Restrict methods on a route |
+
+## Custom Middleware
+
+### Using Closures
+
+```php
+$route = (new Route('/api/*', 'https://backend.example.com'))
     ->middleware(function ($request, $next) {
         // Before: modify request
         $request = $request->withHeader('Authorization', 'Bearer token');
@@ -129,14 +231,36 @@ $rule = (new Rule('/api/*', 'https://backend.example.com'))
     });
 ```
 
-### Middleware Examples
+### Using MiddlewareInterface
 
-**Add Authentication Header:**
+For reusable middleware classes:
+
 ```php
-->middleware(function ($request, $next) {
-    return $next($request->withHeader('Authorization', 'Bearer ' . get_api_token()));
-})
+use ReverseProxy\MiddlewareInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+class AddAuthHeader implements MiddlewareInterface
+{
+    private $token;
+
+    public function __construct(string $token)
+    {
+        $this->token = $token;
+    }
+
+    public function process(RequestInterface $request, callable $next): ResponseInterface
+    {
+        return $next($request->withHeader('Authorization', 'Bearer ' . $this->token));
+    }
+}
+
+// Usage
+$route = (new Route('/api/*', 'https://backend.example.com'))
+    ->middleware(new AddAuthHeader('my-secret-token'));
 ```
+
+### Middleware Examples
 
 **Cache Responses:**
 ```php
@@ -165,12 +289,25 @@ $rule = (new Rule('/api/*', 'https://backend.example.com'))
 })
 ```
 
-**Chain Multiple Middlewares:**
+### Chaining Middlewares
+
+Using fluent API:
 ```php
-$rule = (new Rule('/api/*', 'https://backend.example.com'))
+$route = (new Route('/api/*', 'https://backend.example.com'))
+    ->middleware(new ProxyHeadersMiddleware())
+    ->middleware(new SetHostMiddleware('api.example.com'))
     ->middleware($authMiddleware)
-    ->middleware($cacheMiddleware)
     ->middleware($loggingMiddleware);
+```
+
+Or via constructor:
+```php
+$route = new Route('/api/*', 'https://backend.example.com', [
+    new ProxyHeadersMiddleware(),
+    new SetHostMiddleware('api.example.com'),
+    $authMiddleware,
+    $loggingMiddleware,
+]);
 ```
 
 Middlewares execute in onion-style order:
@@ -178,40 +315,37 @@ Middlewares execute in onion-style order:
 Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Response
 ```
 
-### MiddlewareInterface
+## Real-World Example
 
-For reusable middleware classes, implement `MiddlewareInterface`:
+Equivalent to this nginx configuration:
 
-```php
-use ReverseProxy\MiddlewareInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
-
-class AddAuthHeader implements MiddlewareInterface
-{
-    private $token;
-
-    public function __construct(string $token)
-    {
-        $this->token = $token;
-    }
-
-    public function process(RequestInterface $request, callable $next): ResponseInterface
-    {
-        $request = $request->withHeader('Authorization', 'Bearer ' . $this->token);
-
-        return $next($request);
-    }
+```nginx
+location ^~ /api/v1 {
+    proxy_pass https://127.0.0.1:8080;
+    proxy_set_header Host api.example.com;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Port $server_port;
 }
-
-// Usage
-$rule = (new Rule('/api/*', 'https://backend.example.com'))
-    ->middleware(new AddAuthHeader('my-secret-token'));
 ```
 
-`Rule->middleware()` accepts both:
-- `callable` (closures, invokable objects)
-- `MiddlewareInterface` implementations
+WordPress equivalent:
+
+```php
+use ReverseProxy\Route;
+use ReverseProxy\Middleware\ProxyHeadersMiddleware;
+use ReverseProxy\Middleware\SetHostMiddleware;
+
+add_filter('reverse_proxy_rules', function () {
+    return [
+        new Route('/api/v1/*', 'https://127.0.0.1:8080', [
+            new ProxyHeadersMiddleware(),
+            new SetHostMiddleware('api.example.com'),
+        ]),
+    ];
+});
+```
 
 ## Available Hooks
 
@@ -219,7 +353,7 @@ $rule = (new Rule('/api/*', 'https://backend.example.com'))
 
 | Hook | Parameters | Description |
 |------|------------|-------------|
-| `reverse_proxy_rules` | `$rules` | Configure proxy rules |
+| `reverse_proxy_rules` | `$rules` | Configure proxy routes |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
 | `reverse_proxy_request_body` | `$body` | Override request body (for testing) |
 | `reverse_proxy_response` | `$response` | Modify response before sending |
@@ -231,7 +365,7 @@ $rule = (new Rule('/api/*', 'https://backend.example.com'))
 |------|------------|-------------|
 | `reverse_proxy_log` | `$level, $message, $context` | Log proxy events (PSR-3 levels) |
 
-## Examples
+## Hook Examples
 
 ### Logging
 
@@ -251,7 +385,6 @@ add_action('reverse_proxy_log', function ($level, $message, $context) {
 ```php
 add_action('reverse_proxy_log', function ($level, $message, $context) {
     if ($level === 'error') {
-        // Send notification, log to external service, etc.
         wp_mail(
             'admin@example.com',
             'Reverse Proxy Error',
@@ -265,7 +398,6 @@ add_action('reverse_proxy_log', function ($level, $message, $context) {
 
 ```php
 add_filter('reverse_proxy_response', function ($response) {
-    // Add custom header to response
     return $response->withHeader('X-Proxied-By', 'WP-Reverse-Proxy');
 });
 ```
@@ -274,7 +406,6 @@ add_filter('reverse_proxy_response', function ($response) {
 
 ```php
 add_filter('reverse_proxy_http_client', function ($client) {
-    // Use custom PSR-18 client (e.g., Guzzle)
     return new \GuzzleHttp\Client();
 });
 ```
@@ -282,7 +413,7 @@ add_filter('reverse_proxy_http_client', function ($client) {
 ## How It Works
 
 1. Plugin hooks into WordPress `parse_request` action
-2. Checks if request path matches any configured rule
+2. Checks if request path matches any configured route
 3. If matched:
    - Forwards request to target server
    - Returns response to client
@@ -291,7 +422,7 @@ add_filter('reverse_proxy_http_client', function ($client) {
    - WordPress continues normal request handling
 
 ```
-Request → parse_request → Match Rule?
+Request → parse_request → Match Route?
                               ↓
                     Yes ──→ Proxy → Response → Exit
                               ↓

@@ -11,7 +11,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\MiddlewareInterface;
 use ReverseProxy\ReverseProxy;
-use ReverseProxy\Rule;
+use ReverseProxy\Route;
 
 class ReverseProxyTest extends TestCase
 {
@@ -39,7 +39,7 @@ class ReverseProxyTest extends TestCase
     {
         $request = new ServerRequest('GET', '/about');
         $rules = [
-            new Rule('/api/*', 'https://backend.example.com'),
+            new Route('/api/*', 'https://backend.example.com'),
         ];
 
         $response = $this->reverseProxy->handle($request, $rules);
@@ -55,7 +55,7 @@ class ReverseProxyTest extends TestCase
 
         $request = new ServerRequest('GET', '/api/users');
         $rules = [
-            new Rule('/api/*', 'https://backend.example.com'),
+            new Route('/api/*', 'https://backend.example.com'),
         ];
 
         $response = $this->reverseProxy->handle($request, $rules);
@@ -78,7 +78,7 @@ class ReverseProxyTest extends TestCase
             ->withBody($this->psr17Factory->createStream($body));
 
         $rules = [
-            new Rule('/api/*', 'https://backend.example.com'),
+            new Route('/api/*', 'https://backend.example.com'),
         ];
 
         $response = $this->reverseProxy->handle($request, $rules);
@@ -99,7 +99,7 @@ class ReverseProxyTest extends TestCase
             ->withHeader('X-Custom-Header', 'custom-value');
 
         $rules = [
-            new Rule('/api/*', 'https://backend.example.com'),
+            new Route('/api/*', 'https://backend.example.com'),
         ];
 
         $this->reverseProxy->handle($request, $rules);
@@ -115,7 +115,7 @@ class ReverseProxyTest extends TestCase
 
         $request = new ServerRequest('GET', '/api/users?page=2&limit=10');
         $rules = [
-            new Rule('/api/*', 'https://backend.example.com'),
+            new Route('/api/*', 'https://backend.example.com'),
         ];
 
         $this->reverseProxy->handle($request, $rules);
@@ -127,24 +127,6 @@ class ReverseProxyTest extends TestCase
         );
     }
 
-    public function test_it_rewrites_path()
-    {
-        $this->mockClient->addResponse(new Response(200, [], '{}'));
-
-        $request = new ServerRequest('GET', '/api/v1/users/123');
-        $rules = [
-            new Rule('/api/v1/*', 'https://backend.example.com', '/v1/$1'),
-        ];
-
-        $this->reverseProxy->handle($request, $rules);
-
-        $lastRequest = $this->mockClient->getLastRequest();
-        $this->assertEquals(
-            'https://backend.example.com/v1/users/123',
-            (string) $lastRequest->getUri()
-        );
-    }
-
     public function test_it_sets_host_header_to_target_by_default()
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
@@ -152,7 +134,7 @@ class ReverseProxyTest extends TestCase
         $request = (new ServerRequest('GET', '/api/users'))
             ->withHeader('Host', 'original.example.com');
         $rules = [
-            new Rule('/api/*', 'https://backend.example.com'),
+            new Route('/api/*', 'https://backend.example.com'),
         ];
 
         $this->reverseProxy->handle($request, $rules);
@@ -161,30 +143,14 @@ class ReverseProxyTest extends TestCase
         $this->assertEquals('backend.example.com', $lastRequest->getHeaderLine('Host'));
     }
 
-    public function test_it_preserves_original_host_when_configured()
-    {
-        $this->mockClient->addResponse(new Response(200, [], '{}'));
-
-        $request = (new ServerRequest('GET', '/api/users'))
-            ->withHeader('Host', 'original.example.com');
-        $rules = [
-            new Rule('/api/*', 'https://backend.example.com', null, true),
-        ];
-
-        $this->reverseProxy->handle($request, $rules);
-
-        $lastRequest = $this->mockClient->getLastRequest();
-        $this->assertEquals('original.example.com', $lastRequest->getHeaderLine('Host'));
-    }
-
     public function test_it_matches_first_rule()
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
         $request = new ServerRequest('GET', '/api/v2/users');
         $rules = [
-            new Rule('/api/v2/*', 'https://api-v2.example.com'),
-            new Rule('/api/*', 'https://api.example.com'),
+            new Route('/api/v2/*', 'https://api-v2.example.com'),
+            new Route('/api/*', 'https://api.example.com'),
         ];
 
         $this->reverseProxy->handle($request, $rules);
@@ -201,7 +167,7 @@ class ReverseProxyTest extends TestCase
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
         $request = new ServerRequest('GET', '/api/users');
-        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+        $rule = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware(function ($request, $next) {
                 return $next($request->withHeader('X-Added-By-Middleware', 'yes'));
             });
@@ -217,7 +183,7 @@ class ReverseProxyTest extends TestCase
         $this->mockClient->addResponse(new Response(200, [], '{"original":true}'));
 
         $request = new ServerRequest('GET', '/api/users');
-        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+        $rule = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware(function ($request, $next) {
                 $response = $next($request);
                 return $response->withHeader('X-Modified-By-Middleware', 'yes');
@@ -232,7 +198,7 @@ class ReverseProxyTest extends TestCase
     {
         // No response added to mock client - it should not be called
         $request = new ServerRequest('GET', '/api/users');
-        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+        $rule = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware(function ($request, $next) {
                 // Return early without calling $next
                 return new Response(403, [], '{"error":"forbidden"}');
@@ -251,7 +217,7 @@ class ReverseProxyTest extends TestCase
 
         $order = [];
         $request = new ServerRequest('GET', '/api/users');
-        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+        $rule = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware(function ($request, $next) use (&$order) {
                 $order[] = 'middleware1:before';
                 $response = $next($request);
@@ -288,7 +254,7 @@ class ReverseProxyTest extends TestCase
         };
 
         $request = new ServerRequest('GET', '/api/users');
-        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+        $rule = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware($middleware);
 
         $response = $this->reverseProxy->handle($request, [$rule]);

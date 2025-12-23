@@ -40,24 +40,24 @@ class ReverseProxy
 
     /**
      * @param ServerRequestInterface $request
-     * @param Rule[] $rules
+     * @param Route[] $routes
      * @return ResponseInterface|null
      */
-    public function handle(ServerRequestInterface $request, array $rules): ?ResponseInterface
+    public function handle(ServerRequestInterface $request, array $routes): ?ResponseInterface
     {
-        foreach ($rules as $rule) {
-            $targetUrl = $rule->matches($request);
+        foreach ($routes as $route) {
+            $targetUrl = $route->matches($request);
             if ($targetUrl !== null) {
-                return $this->proxy($request, $rule, $targetUrl);
+                return $this->proxy($request, $route, $targetUrl);
             }
         }
 
         return null;
     }
 
-    private function proxy(ServerRequestInterface $originalRequest, Rule $rule, string $targetUrl): ResponseInterface
+    private function proxy(ServerRequestInterface $originalRequest, Route $route, string $targetUrl): ResponseInterface
     {
-        $request = $this->buildProxyRequest($originalRequest, $rule, $targetUrl);
+        $request = $this->buildProxyRequest($originalRequest, $route, $targetUrl);
 
         // Create the core handler
         $handler = function (RequestInterface $request) use ($originalRequest, $targetUrl) {
@@ -65,7 +65,7 @@ class ReverseProxy
         };
 
         // Wrap with middlewares (in reverse order)
-        foreach (array_reverse($rule->getMiddlewares()) as $middleware) {
+        foreach (array_reverse($route->getMiddlewares()) as $middleware) {
             $handler = function (RequestInterface $request) use ($middleware, $handler) {
                 return $middleware($request, $handler);
             };
@@ -101,7 +101,7 @@ class ReverseProxy
         }
     }
 
-    private function buildProxyRequest(ServerRequestInterface $originalRequest, Rule $rule, string $targetUrl): RequestInterface
+    private function buildProxyRequest(ServerRequestInterface $originalRequest, Route $route, string $targetUrl): RequestInterface
     {
         $method = $originalRequest->getMethod();
         $request = $this->requestFactory->createRequest($method, $targetUrl);
@@ -110,11 +110,9 @@ class ReverseProxy
             $request = $request->withHeader($name, $values);
         }
 
-        if (! $rule->shouldPreserveHost()) {
-            $targetHost = $rule->getTargetHost();
-            if ($targetHost !== '') {
-                $request = $request->withHeader('Host', $targetHost);
-            }
+        $targetHost = $route->getTargetHost();
+        if ($targetHost !== '') {
+            $request = $request->withHeader('Host', $targetHost);
         }
 
         if (in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
