@@ -18,12 +18,34 @@ class Rule
     /** @var bool */
     private $preserveHost;
 
+    /** @var callable[] */
+    private $middlewares = [];
+
     public function __construct(string $source, string $target, ?string $rewrite = null, bool $preserveHost = false)
     {
         $this->source = $source;
         $this->target = $target;
         $this->rewrite = $rewrite;
         $this->preserveHost = $preserveHost;
+    }
+
+    /**
+     * @param callable $middleware
+     * @return self
+     */
+    public function middleware(callable $middleware): self
+    {
+        $this->middlewares[] = $middleware;
+
+        return $this;
+    }
+
+    /**
+     * @return callable[]
+     */
+    public function getMiddlewares(): array
+    {
+        return $this->middlewares;
     }
 
     public function matches(ServerRequestInterface $request): ?string

@@ -59,6 +59,23 @@ class ReverseProxy
     {
         $request = $this->buildProxyRequest($originalRequest, $rule, $targetUrl);
 
+        // Create the core handler
+        $handler = function (RequestInterface $request) use ($originalRequest, $targetUrl) {
+            return $this->sendRequest($request, $originalRequest, $targetUrl);
+        };
+
+        // Wrap with middlewares (in reverse order)
+        foreach (array_reverse($rule->getMiddlewares()) as $middleware) {
+            $handler = function (RequestInterface $request) use ($middleware, $handler) {
+                return $middleware($request, $handler);
+            };
+        }
+
+        return $handler($request);
+    }
+
+    private function sendRequest(RequestInterface $request, ServerRequestInterface $originalRequest, string $targetUrl): ResponseInterface
+    {
         $this->logger->info('Proxying request', [
             'method' => $request->getMethod(),
             'source' => $originalRequest->getUri()->getPath(),

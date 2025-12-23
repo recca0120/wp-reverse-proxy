@@ -88,4 +88,39 @@ class RuleTest extends TestCase
 
         $this->assertEquals('backend.example.com', $rule->getTargetHost());
     }
+
+    public function test_it_has_no_middlewares_by_default()
+    {
+        $rule = new Rule('/api/*', 'https://backend.example.com');
+
+        $this->assertEmpty($rule->getMiddlewares());
+    }
+
+    public function test_it_can_add_middleware_closure()
+    {
+        $middleware = function ($request, $next) {
+            return $next($request);
+        };
+
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware($middleware);
+
+        $this->assertCount(1, $rule->getMiddlewares());
+    }
+
+    public function test_it_can_chain_multiple_middlewares()
+    {
+        $middleware1 = function ($request, $next) {
+            return $next($request);
+        };
+        $middleware2 = function ($request, $next) {
+            return $next($request);
+        };
+
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware($middleware1)
+            ->middleware($middleware2);
+
+        $this->assertCount(2, $rule->getMiddlewares());
+    }
 }

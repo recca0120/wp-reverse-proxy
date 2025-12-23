@@ -545,4 +545,61 @@ class ReverseProxyTest extends WP_UnitTestCase
         });
         $this->assertNotEmpty($errorLog);
     }
+
+    public function test_middleware_can_add_header_to_request()
+    {
+        // Given: 註冊代理規則，帶有 middleware
+        add_filter('reverse_proxy_rules', function () {
+            return [
+                (new Rule('/api/*', 'https://backend.example.com'))
+                    ->middleware(function ($request, $next) {
+                        return $next($request->withHeader('X-Added-By-Middleware', 'integration-test'));
+                    }),
+            ];
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        // When: 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        ob_get_clean();
+
+        // Then: 請求應該包含 middleware 添加的 header
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertEquals('integration-test', $lastRequest->getHeaderLine('X-Added-By-Middleware'));
+    }
+
+    public function test_middleware_can_modify_response()
+    {
+        // Given: 註冊代理規則，帶有 middleware
+        add_filter('reverse_proxy_rules', function () {
+            return [
+                (new Rule('/api/*', 'https://backend.example.com'))
+                    ->middleware(function ($request, $next) {
+                        $response = $next($request);
+                        return $response->withHeader('X-Processed', 'true');
+                    }),
+            ];
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(new Response(200, [], '{"data":"test"}'));
+
+        // And: 捕獲 response
+        $capturedResponse = null;
+        add_filter('reverse_proxy_response', function ($response) use (&$capturedResponse) {
+            $capturedResponse = $response;
+            return $response;
+        });
+
+        // When: 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        ob_get_clean();
+
+        // Then: Response 應該包含 middleware 添加的 header
+        $this->assertEquals('true', $capturedResponse->getHeaderLine('X-Processed'));
+    }
 }

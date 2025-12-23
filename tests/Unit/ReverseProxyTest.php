@@ -192,4 +192,83 @@ class ReverseProxyTest extends TestCase
             (string) $lastRequest->getUri()
         );
     }
+
+    public function test_middleware_can_modify_request()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $request = new ServerRequest('GET', '/api/users');
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware(function ($request, $next) {
+                return $next($request->withHeader('X-Added-By-Middleware', 'yes'));
+            });
+
+        $this->reverseProxy->handle($request, [$rule]);
+
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertEquals('yes', $lastRequest->getHeaderLine('X-Added-By-Middleware'));
+    }
+
+    public function test_middleware_can_modify_response()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{"original":true}'));
+
+        $request = new ServerRequest('GET', '/api/users');
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware(function ($request, $next) {
+                $response = $next($request);
+                return $response->withHeader('X-Modified-By-Middleware', 'yes');
+            });
+
+        $response = $this->reverseProxy->handle($request, [$rule]);
+
+        $this->assertEquals('yes', $response->getHeaderLine('X-Modified-By-Middleware'));
+    }
+
+    public function test_middleware_can_short_circuit()
+    {
+        // No response added to mock client - it should not be called
+        $request = new ServerRequest('GET', '/api/users');
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware(function ($request, $next) {
+                // Return early without calling $next
+                return new Response(403, [], '{"error":"forbidden"}');
+            });
+
+        $response = $this->reverseProxy->handle($request, [$rule]);
+
+        $this->assertEquals(403, $response->getStatusCode());
+        $this->assertEquals('{"error":"forbidden"}', (string) $response->getBody());
+        $this->assertFalse($this->mockClient->getLastRequest());
+    }
+
+    public function test_multiple_middlewares_execute_in_order()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $order = [];
+        $request = new ServerRequest('GET', '/api/users');
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware(function ($request, $next) use (&$order) {
+                $order[] = 'middleware1:before';
+                $response = $next($request);
+                $order[] = 'middleware1:after';
+                return $response;
+            })
+            ->middleware(function ($request, $next) use (&$order) {
+                $order[] = 'middleware2:before';
+                $response = $next($request);
+                $order[] = 'middleware2:after';
+                return $response;
+            });
+
+        $this->reverseProxy->handle($request, [$rule]);
+
+        $this->assertEquals([
+            'middleware1:before',
+            'middleware2:before',
+            'middleware2:after',
+            'middleware1:after',
+        ], $order);
+    }
 }
