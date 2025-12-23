@@ -24,3 +24,11 @@ define('REVERSE_PROXY_PLUGIN_URL', plugin_dir_url(__FILE__));
 if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
+
+// Initialize plugin
+add_action('parse_request', function ($wp) {
+    $reverseProxy = new ReverseProxy\ReverseProxy();
+    if ($reverseProxy->handle($wp) && apply_filters('reverse_proxy_should_exit', true)) {
+        exit;
+    }
+});
