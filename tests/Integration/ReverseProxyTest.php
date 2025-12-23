@@ -575,4 +575,71 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertNotFalse($lastRequest);
         $this->assertEquals('original.example.com', $lastRequest->getHeaderLine('Host'));
     }
+
+    public function test_it_logs_proxy_request()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        // And: 捕獲日誌
+        $logEntries = [];
+        add_action('reverse_proxy_log', function ($level, $message, $context) use (&$logEntries) {
+            $logEntries[] = compact('level', 'message', 'context');
+        }, 10, 3);
+
+        // When: 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        ob_get_clean();
+
+        // Then: 應該有日誌記錄
+        $this->assertNotEmpty($logEntries);
+
+        // And: 應該記錄請求資訊
+        $requestLog = array_filter($logEntries, fn($e) => strpos($e['message'], 'Proxying') !== false);
+        $this->assertNotEmpty($requestLog);
+    }
+
+    public function test_it_logs_proxy_error()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 連線錯誤
+        $this->mockClient->addException(
+            new NetworkException('Connection refused', new Request('GET', 'https://backend.example.com/api/users'))
+        );
+
+        // And: 捕獲日誌
+        $logEntries = [];
+        add_action('reverse_proxy_log', function ($level, $message, $context) use (&$logEntries) {
+            $logEntries[] = compact('level', 'message', 'context');
+        }, 10, 3);
+
+        // When: 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        ob_get_clean();
+
+        // Then: 應該有錯誤日誌
+        $errorLog = array_filter($logEntries, fn($e) => $e['level'] === 'error');
+        $this->assertNotEmpty($errorLog);
+    }
 }

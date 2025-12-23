@@ -70,12 +70,28 @@ class ReverseProxy
             }
         }
 
+        $this->log('info', 'Proxying request', [
+            'method' => $method,
+            'source' => $path,
+            'target' => $targetUrl,
+        ]);
+
         try {
             $response = $this->client->sendRequest($request);
             $response = apply_filters('reverse_proxy_response', $response, $request);
 
+            $this->log('info', 'Proxy response received', [
+                'status' => $response->getStatusCode(),
+                'target' => $targetUrl,
+            ]);
+
             $this->sendResponse($response);
         } catch (ClientExceptionInterface $e) {
+            $this->log('error', 'Proxy error: ' . $e->getMessage(), [
+                'target' => $targetUrl,
+                'exception' => get_class($e),
+            ]);
+
             do_action('reverse_proxy_error', $e, $request);
 
             $this->sendErrorResponse(502, 'Bad Gateway: ' . $e->getMessage());
@@ -177,6 +193,11 @@ class ReverseProxy
 
     private function createDefaultClient(): ClientInterface
     {
-        return new \Http\Mock\Client();
+        return new Http\WordPressHttpClient();
+    }
+
+    private function log(string $level, string $message, array $context = []): void
+    {
+        do_action('reverse_proxy_log', $level, $message, $context);
     }
 }

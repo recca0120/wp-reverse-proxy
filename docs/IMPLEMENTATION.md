@@ -18,9 +18,31 @@ add_filter('reverse_proxy_rules', function ($rules) {
     $rules[] = [
         'source' => '/api/*',
         'target' => 'https://backend.example.com',
+        'rewrite' => '/v1/$1',      // Optional: rewrite path
+        'preserve_host' => false,   // Optional: keep original Host header
     ];
     return $rules;
 });
+```
+
+### Available Hooks
+
+| Hook | Type | Description |
+|------|------|-------------|
+| `reverse_proxy_rules` | filter | Configure proxy rules |
+| `reverse_proxy_http_client` | filter | Override HTTP client |
+| `reverse_proxy_request_body` | filter | Override request body |
+| `reverse_proxy_response` | filter | Modify response before sending |
+| `reverse_proxy_error` | action | Handle proxy errors |
+| `reverse_proxy_log` | action | Log proxy events |
+| `reverse_proxy_should_exit` | filter | Control exit behavior (for testing) |
+
+### Logging Example
+
+```php
+add_action('reverse_proxy_log', function ($level, $message, $context) {
+    error_log("[ReverseProxy] [{$level}] {$message} " . json_encode($context));
+}, 10, 3);
 ```
 
 ---
@@ -58,12 +80,12 @@ add_filter('reverse_proxy_rules', function ($rules) {
 - [ ] Timeout configuration
 - [ ] Retry logic
 
-### Phase 5: Production Ready [TODO]
+### Phase 5: Production Ready [COMPLETED]
 
-- [ ] Real HTTP client (Guzzle or wp_remote_request)
-- [ ] Logging integration
+- [x] Real HTTP client (WordPressHttpClient using wp_remote_request)
+- [x] Logging integration (reverse_proxy_log action)
 - [ ] Performance optimization
-- [ ] Documentation
+- [x] Documentation
 
 ---
 
@@ -89,8 +111,18 @@ add_filter('reverse_proxy_rules', function ($rules) {
 | `test_it_rewrites_path_with_static_replacement` | ✅ | Static path rewriting |
 | `test_it_sets_host_header_to_target_by_default` | ✅ | Host header = target |
 | `test_it_preserves_original_host_when_configured` | ✅ | preserve_host option |
+| `test_it_logs_proxy_request` | ✅ | Logging proxy requests |
+| `test_it_logs_proxy_error` | ✅ | Logging proxy errors |
 
-### Planned Tests
+### Unit Tests (WordPressHttpClient)
+
+| Test | Status | Description |
+|------|--------|-------------|
+| `test_it_implements_psr18_client_interface` | ✅ | PSR-18 compliance |
+| `test_it_sends_get_request` | ✅ | GET request handling |
+| `test_it_sends_post_request_with_body` | ✅ | POST with body |
+| `test_it_forwards_request_headers` | ✅ | Headers forwarding |
+| `test_it_throws_exception_on_wp_error` | ✅ | Error handling |
 
 ---
 
@@ -135,14 +167,19 @@ add_filter('reverse_proxy_rules', function ($rules) {
 ```
 reverse-proxy/
 ├── includes/
-│   └── ReverseProxy.php        # Main proxy class
+│   ├── Http/
+│   │   ├── NetworkException.php    # PSR-18 network exception
+│   │   └── WordPressHttpClient.php # WordPress HTTP adapter
+│   └── ReverseProxy.php            # Main proxy class
 ├── tests/
 │   ├── Integration/
-│   │   └── ReverseProxyTest.php
+│   │   └── ReverseProxyTest.php    # Integration tests
+│   ├── Unit/
+│   │   └── WordPressHttpClientTest.php
 │   ├── bootstrap.php
 │   └── wp-config.php
 ├── docs/
-│   └── IMPLEMENTATION.md       # This file
+│   └── IMPLEMENTATION.md           # This file
 ├── bin/
 │   └── install-wp-tests.sh
 ├── .github/
@@ -150,7 +187,7 @@ reverse-proxy/
 │       └── tests.yml
 ├── composer.json
 ├── phpunit.xml.dist
-└── reverse-proxy.php           # Plugin entry point
+└── reverse-proxy.php               # Plugin entry point
 ```
 
 ---
