@@ -50,11 +50,11 @@ add_filter('reverse_proxy_rules', function ($rules) {
 - [x] Error handling (connection refused → 502 Bad Gateway)
 - [ ] Streaming large responses
 
-### Phase 4: Advanced Features [TODO]
+### Phase 4: Advanced Features [COMPLETED]
 
-- [ ] Multiple rules with priority/order
-- [ ] Path rewriting (e.g., `/api/v1/*` -> `/v1/*`)
-- [ ] Host header configuration
+- [x] Multiple rules with priority/order (first match wins)
+- [x] Path rewriting (e.g., `/api/v1/*` -> `/v1/$1`)
+- [x] Host header configuration (`preserve_host` option)
 - [ ] Timeout configuration
 - [ ] Retry logic
 
@@ -83,10 +83,14 @@ add_filter('reverse_proxy_rules', function ($rules) {
 | `test_it_forwards_backend_500_error` | ✅ | 500 error forwarding |
 | `test_it_handles_connection_error` | ✅ | Connection error → 502 |
 | `test_it_forwards_response_headers` | ✅ | Response headers forwarding |
+| `test_it_matches_first_matching_rule` | ✅ | First match wins |
+| `test_it_falls_through_to_next_rule` | ✅ | Falls through to next rule |
+| `test_it_rewrites_path` | ✅ | Path rewriting with $1 |
+| `test_it_rewrites_path_with_static_replacement` | ✅ | Static path rewriting |
+| `test_it_sets_host_header_to_target_by_default` | ✅ | Host header = target |
+| `test_it_preserves_original_host_when_configured` | ✅ | preserve_host option |
 
 ### Planned Tests
-| `test_it_matches_rules_in_order` | 4 | Rule priority |
-| `test_it_rewrites_path` | 4 | Path rewriting |
 
 ---
 

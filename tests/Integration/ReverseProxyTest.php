@@ -384,4 +384,195 @@ class ReverseProxyTest extends WP_UnitTestCase
         // And: 驗證回應內容
         $this->assertEquals('{"data":"test"}', $output);
     }
+
+    public function test_it_matches_first_matching_rule()
+    {
+        // Given: 註冊多個代理規則（順序很重要）
+        add_filter('reverse_proxy_rules', function ($rules) {
+            // 更具體的規則應該放前面
+            $rules[] = [
+                'source' => '/api/v2/*',
+                'target' => 'https://api-v2.example.com',
+            ];
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://api.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(
+            new Response(200, [], '{"version":"v2"}')
+        );
+
+        // When: 請求 /api/v2/users（應該匹配第一個規則）
+        ob_start();
+        $this->go_to('/api/v2/users');
+        ob_get_clean();
+
+        // Then: 應該代理到 api-v2.example.com
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest);
+        $this->assertEquals(
+            'https://api-v2.example.com/api/v2/users',
+            (string) $lastRequest->getUri()
+        );
+    }
+
+    public function test_it_falls_through_to_next_rule()
+    {
+        // Given: 註冊多個代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/v2/*',
+                'target' => 'https://api-v2.example.com',
+            ];
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://api.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(
+            new Response(200, [], '{"version":"v1"}')
+        );
+
+        // When: 請求 /api/users（不匹配 v2，應該匹配第二個規則）
+        ob_start();
+        $this->go_to('/api/users');
+        ob_get_clean();
+
+        // Then: 應該代理到 api.example.com
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest);
+        $this->assertEquals(
+            'https://api.example.com/api/users',
+            (string) $lastRequest->getUri()
+        );
+    }
+
+    public function test_it_rewrites_path()
+    {
+        // Given: 註冊帶有 path rewrite 的規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/v1/*',
+                'target' => 'https://backend.example.com',
+                'rewrite' => '/v1/$1',  // $1 = wildcard 匹配的部分
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(
+            new Response(200, [], '{"rewritten":true}')
+        );
+
+        // When: 請求 /api/v1/users/123
+        ob_start();
+        $this->go_to('/api/v1/users/123');
+        ob_get_clean();
+
+        // Then: 應該代理到 /v1/users/123（移除 /api 前綴）
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest);
+        $this->assertEquals(
+            'https://backend.example.com/v1/users/123',
+            (string) $lastRequest->getUri()
+        );
+    }
+
+    public function test_it_rewrites_path_with_static_replacement()
+    {
+        // Given: 註冊帶有靜態 path rewrite 的規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/legacy-api/*',
+                'target' => 'https://new-api.example.com',
+                'rewrite' => '/api/v2/$1',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(
+            new Response(200, [], '{"migrated":true}')
+        );
+
+        // When: 請求 /legacy-api/users
+        ob_start();
+        $this->go_to('/legacy-api/users');
+        ob_get_clean();
+
+        // Then: 應該代理到 /api/v2/users
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest);
+        $this->assertEquals(
+            'https://new-api.example.com/api/v2/users',
+            (string) $lastRequest->getUri()
+        );
+    }
+
+    public function test_it_sets_host_header_to_target_by_default()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        // When: 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        ob_get_clean();
+
+        // Then: Host header 應該設置為目標主機
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest);
+        $this->assertEquals('backend.example.com', $lastRequest->getHeaderLine('Host'));
+    }
+
+    public function test_it_preserves_original_host_when_configured()
+    {
+        // Given: 設置原始 Host
+        $_SERVER['HTTP_HOST'] = 'original.example.com';
+
+        // And: 註冊代理規則，保留原始 Host
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+                'preserve_host' => true,
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        // When: 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        ob_get_clean();
+
+        // Then: Host header 應該保留原始值
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest);
+        $this->assertEquals('original.example.com', $lastRequest->getHeaderLine('Host'));
+    }
 }

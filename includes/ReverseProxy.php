@@ -32,8 +32,9 @@ class ReverseProxy
         $rules = apply_filters('reverse_proxy_rules', []);
 
         foreach ($rules as $rule) {
-            if ($this->matches($path, $rule['source'])) {
-                $this->proxy($method, $path, $queryString, $rule);
+            $matches = [];
+            if ($this->matches($path, $rule['source'], $matches)) {
+                $this->proxy($method, $path, $queryString, $rule, $matches);
 
                 return true;
             }
@@ -42,14 +43,23 @@ class ReverseProxy
         return false;
     }
 
-    private function proxy(string $method, string $path, string $queryString, array $rule): void
+    private function proxy(string $method, string $path, string $queryString, array $rule, array $matches = []): void
     {
-        $targetUrl = $this->buildTargetUrl($path, $queryString, $rule);
+        $targetUrl = $this->buildTargetUrl($path, $queryString, $rule, $matches);
         $request = $this->requestFactory->createRequest($method, $targetUrl);
 
         // Forward request headers
         foreach ($this->getRequestHeaders() as $name => $value) {
             $request = $request->withHeader($name, $value);
+        }
+
+        // Handle Host header
+        if (empty($rule['preserve_host'])) {
+            // 默認：使用目標主機作為 Host header
+            $targetHost = parse_url($rule['target'], PHP_URL_HOST);
+            if ($targetHost) {
+                $request = $request->withHeader('Host', $targetHost);
+            }
         }
 
         // Forward request body for POST, PUT, PATCH
@@ -128,16 +138,35 @@ class ReverseProxy
         echo $response->getBody();
     }
 
-    private function matches(string $path, string $pattern): bool
+    private function matches(string $path, string $pattern, ?array &$matches = null): bool
     {
-        $regex = '#^' . str_replace('\*', '.*', preg_quote($pattern, '#')) . '$#';
+        // 將 * 轉換為捕獲組
+        $regex = '#^' . str_replace('\*', '(.*)', preg_quote($pattern, '#')) . '$#';
 
-        return preg_match($regex, $path) === 1;
+        if (preg_match($regex, $path, $captured)) {
+            $matches = array_slice($captured, 1); // 移除完整匹配，只保留捕獲組
+
+            return true;
+        }
+
+        return false;
     }
 
-    private function buildTargetUrl(string $path, string $queryString, array $rule): string
+    private function buildTargetUrl(string $path, string $queryString, array $rule, array $matches = []): string
     {
-        $url = rtrim($rule['target'], '/') . $path;
+        // 如果有 rewrite 規則，使用它
+        if (isset($rule['rewrite'])) {
+            $rewrittenPath = $rule['rewrite'];
+
+            // 替換 $1, $2, ... 為捕獲的匹配
+            foreach ($matches as $index => $match) {
+                $rewrittenPath = str_replace('$' . ($index + 1), $match, $rewrittenPath);
+            }
+
+            $url = rtrim($rule['target'], '/') . $rewrittenPath;
+        } else {
+            $url = rtrim($rule['target'], '/') . $path;
+        }
 
         if ($queryString !== '') {
             $url .= '?' . $queryString;
