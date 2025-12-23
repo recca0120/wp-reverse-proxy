@@ -178,6 +178,41 @@ Middlewares execute in onion-style order:
 Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Response
 ```
 
+### MiddlewareInterface
+
+For reusable middleware classes, implement `MiddlewareInterface`:
+
+```php
+use ReverseProxy\MiddlewareInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+class AddAuthHeader implements MiddlewareInterface
+{
+    private $token;
+
+    public function __construct(string $token)
+    {
+        $this->token = $token;
+    }
+
+    public function process(RequestInterface $request, callable $next): ResponseInterface
+    {
+        $request = $request->withHeader('Authorization', 'Bearer ' . $this->token);
+
+        return $next($request);
+    }
+}
+
+// Usage
+$rule = (new Rule('/api/*', 'https://backend.example.com'))
+    ->middleware(new AddAuthHeader('my-secret-token'));
+```
+
+`Rule->middleware()` accepts both:
+- `callable` (closures, invokable objects)
+- `MiddlewareInterface` implementations
+
 ## Available Hooks
 
 ### Filters
