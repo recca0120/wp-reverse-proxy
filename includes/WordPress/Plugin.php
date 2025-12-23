@@ -16,10 +16,17 @@ class Plugin
     /** @var ServerRequestFactory */
     private $serverRequestFactory;
 
-    public function __construct(ReverseProxy $reverseProxy, ServerRequestFactory $serverRequestFactory)
-    {
+    /** @var ResponseEmitter */
+    private $responseEmitter;
+
+    public function __construct(
+        ReverseProxy $reverseProxy,
+        ServerRequestFactory $serverRequestFactory,
+        ResponseEmitter $responseEmitter
+    ) {
         $this->reverseProxy = $reverseProxy;
         $this->serverRequestFactory = $serverRequestFactory;
+        $this->responseEmitter = $responseEmitter;
     }
 
     public static function create(?ClientInterface $httpClient = null): self
@@ -37,8 +44,9 @@ class Plugin
         );
 
         $serverRequestFactory = new ServerRequestFactory($psr17Factory);
+        $responseEmitter = new ResponseEmitter();
 
-        return new self($reverseProxy, $serverRequestFactory);
+        return new self($reverseProxy, $serverRequestFactory, $responseEmitter);
     }
 
     /**
@@ -54,15 +62,6 @@ class Plugin
 
     public function emit(ResponseInterface $response): void
     {
-        if (! headers_sent()) {
-            http_response_code($response->getStatusCode());
-            foreach ($response->getHeaders() as $name => $values) {
-                foreach ($values as $value) {
-                    header("{$name}: {$value}", false);
-                }
-            }
-        }
-
-        echo $response->getBody();
+        $this->responseEmitter->emit($response);
     }
 }
