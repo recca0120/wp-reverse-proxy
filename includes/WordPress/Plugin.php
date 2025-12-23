@@ -37,11 +37,7 @@ class Plugin
         $psr17Factory = new Psr17Factory();
         $httpClient = $httpClient ?? new WordPressHttpClient();
 
-        $reverseProxy = new ReverseProxy(
-            $httpClient,
-            $psr17Factory,
-            $psr17Factory
-        );
+        $reverseProxy = new ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
 
         $reverseProxy->addGlobalMiddleware(new ErrorHandlingMiddleware());
         $reverseProxy->addGlobalMiddleware(new LoggingMiddleware(new Logger()));
