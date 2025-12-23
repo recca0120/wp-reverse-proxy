@@ -8,6 +8,7 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use ReverseProxy\ReverseProxy;
+use ReverseProxy\Rule;
 use WP_UnitTestCase;
 
 class ReverseProxyTest extends WP_UnitTestCase
@@ -41,13 +42,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_proxies_request_matching_rule_to_target_server()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應
@@ -73,13 +69,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_does_not_proxy_request_not_matching_any_rule()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // When: 請求不匹配的路徑
@@ -99,13 +90,8 @@ class ReverseProxyTest extends WP_UnitTestCase
         ]);
 
         // And: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // When: 請求這篇文章
@@ -123,13 +109,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_forwards_post_request_with_body()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應
@@ -168,13 +149,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_forwards_request_headers()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應
@@ -204,13 +180,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_preserves_query_string()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應
@@ -235,13 +206,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_forwards_backend_error_status_code()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應 404 錯誤
@@ -271,13 +237,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_forwards_backend_500_error()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應 500 錯誤
@@ -307,13 +268,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_handles_connection_error()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 連線錯誤
@@ -334,13 +290,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_forwards_response_headers()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應帶有自訂 headers
@@ -380,18 +331,12 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_matches_first_matching_rule()
     {
         // Given: 註冊多個代理規則（順序很重要）
-        add_filter('reverse_proxy_rules', function ($rules) {
+        add_filter('reverse_proxy_rules', function () {
             // 更具體的規則應該放前面
-            $rules[] = [
-                'source' => '/api/v2/*',
-                'target' => 'https://api-v2.example.com',
+            return [
+                new Rule('/api/v2/*', 'https://api-v2.example.com'),
+                new Rule('/api/*', 'https://api.example.com'),
             ];
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://api.example.com',
-            ];
-
-            return $rules;
         });
 
         // And: Mock 後端回應
@@ -416,17 +361,11 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_falls_through_to_next_rule()
     {
         // Given: 註冊多個代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/v2/*',
-                'target' => 'https://api-v2.example.com',
+        add_filter('reverse_proxy_rules', function () {
+            return [
+                new Rule('/api/v2/*', 'https://api-v2.example.com'),
+                new Rule('/api/*', 'https://api.example.com'),
             ];
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://api.example.com',
-            ];
-
-            return $rules;
         });
 
         // And: Mock 後端回應
@@ -451,14 +390,9 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_rewrites_path()
     {
         // Given: 註冊帶有 path rewrite 的規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/v1/*',
-                'target' => 'https://backend.example.com',
-                'rewrite' => '/v1/$1',  // $1 = wildcard 匹配的部分
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            // $1 = wildcard 匹配的部分
+            return [new Rule('/api/v1/*', 'https://backend.example.com', '/v1/$1')];
         });
 
         // And: Mock 後端回應
@@ -483,14 +417,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_rewrites_path_with_static_replacement()
     {
         // Given: 註冊帶有靜態 path rewrite 的規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/legacy-api/*',
-                'target' => 'https://new-api.example.com',
-                'rewrite' => '/api/v2/$1',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/legacy-api/*', 'https://new-api.example.com', '/api/v2/$1')];
         });
 
         // And: Mock 後端回應
@@ -515,13 +443,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_sets_host_header_to_target_by_default()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應
@@ -544,14 +467,8 @@ class ReverseProxyTest extends WP_UnitTestCase
         $_SERVER['HTTP_HOST'] = 'original.example.com';
 
         // And: 註冊代理規則，保留原始 Host
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-                'preserve_host' => true,
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com', null, true)];
         });
 
         // And: Mock 後端回應
@@ -571,13 +488,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_logs_proxy_request()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 後端回應
@@ -607,13 +519,8 @@ class ReverseProxyTest extends WP_UnitTestCase
     public function test_it_logs_proxy_error()
     {
         // Given: 註冊代理規則
-        add_filter('reverse_proxy_rules', function ($rules) {
-            $rules[] = [
-                'source' => '/api/*',
-                'target' => 'https://backend.example.com',
-            ];
-
-            return $rules;
+        add_filter('reverse_proxy_rules', function () {
+            return [new Rule('/api/*', 'https://backend.example.com')];
         });
 
         // And: Mock 連線錯誤
