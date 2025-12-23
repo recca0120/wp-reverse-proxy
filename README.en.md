@@ -48,7 +48,7 @@ Add proxy routes in your theme's `functions.php` or a custom plugin:
 ```php
 use ReverseProxy\Route;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/*', 'https://api.example.com'),
     ];
@@ -62,7 +62,7 @@ Routes are matched in order (first match wins):
 ```php
 use ReverseProxy\Route;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         // More specific routes first
         new Route('/api/v2/*', 'https://api-v2.example.com'),
@@ -80,7 +80,7 @@ use ReverseProxy\Middleware\ProxyHeadersMiddleware;
 use ReverseProxy\Middleware\SetHostMiddleware;
 use ReverseProxy\Middleware\RewritePathMiddleware;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/*', 'https://backend.example.com', [
             new ProxyHeadersMiddleware(),
@@ -126,7 +126,7 @@ Route different HTTP methods to different backends:
 ```php
 use ReverseProxy\Route;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         // Read operations → read replica
         new Route('GET /api/users/*', 'https://read-replica.example.com'),
@@ -339,7 +339,7 @@ use ReverseProxy\Route;
 use ReverseProxy\Middleware\ProxyHeadersMiddleware;
 use ReverseProxy\Middleware\SetHostMiddleware;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/v1/*', 'https://127.0.0.1:8080', [
             new ProxyHeadersMiddleware(),
@@ -355,7 +355,7 @@ add_filter('reverse_proxy_rules', function () {
 
 | Hook | Parameters | Description |
 |------|------------|-------------|
-| `reverse_proxy_rules` | `$rules` | Configure proxy routes |
+| `reverse_proxy_routes` | `$routes` | Configure proxy routes |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
 | `reverse_proxy_request_body` | `$body` | Override request body (for testing) |
 | `reverse_proxy_response` | `$response` | Modify response before sending |

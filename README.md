@@ -48,7 +48,7 @@ composer require recca0120/wp-reverse-proxy
 ```php
 use ReverseProxy\Route;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/*', 'https://api.example.com'),
     ];
@@ -62,7 +62,7 @@ add_filter('reverse_proxy_rules', function () {
 ```php
 use ReverseProxy\Route;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         // 更具體的路由放前面
         new Route('/api/v2/*', 'https://api-v2.example.com'),
@@ -80,7 +80,7 @@ use ReverseProxy\Middleware\ProxyHeadersMiddleware;
 use ReverseProxy\Middleware\SetHostMiddleware;
 use ReverseProxy\Middleware\RewritePathMiddleware;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/*', 'https://backend.example.com', [
             new ProxyHeadersMiddleware(),
@@ -126,7 +126,7 @@ new Route('GET|POST|PUT|DELETE /api/*', 'https://backend.example.com');
 ```php
 use ReverseProxy\Route;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         // 讀取操作 → 讀取副本
         new Route('GET /api/users/*', 'https://read-replica.example.com'),
@@ -339,7 +339,7 @@ use ReverseProxy\Route;
 use ReverseProxy\Middleware\ProxyHeadersMiddleware;
 use ReverseProxy\Middleware\SetHostMiddleware;
 
-add_filter('reverse_proxy_rules', function () {
+add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/v1/*', 'https://127.0.0.1:8080', [
             new ProxyHeadersMiddleware(),
@@ -355,7 +355,7 @@ add_filter('reverse_proxy_rules', function () {
 
 | Hook | 參數 | 說明 |
 |------|------|------|
-| `reverse_proxy_rules` | `$rules` | 設定代理路由 |
+| `reverse_proxy_routes` | `$routes` | 設定代理路由 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |
 | `reverse_proxy_request_body` | `$body` | 覆寫請求主體（用於測試） |
 | `reverse_proxy_response` | `$response` | 在發送前修改回應 |

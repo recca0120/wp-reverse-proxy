@@ -50,14 +50,14 @@ class Plugin
     }
 
     /**
-     * @param array $rules
+     * @param array $routes
      * @return ResponseInterface|null
      */
-    public function handle(array $rules): ?ResponseInterface
+    public function handle(array $routes): ?ResponseInterface
     {
         $request = $this->serverRequestFactory->createFromGlobals();
 
-        return $this->reverseProxy->handle($request, $rules);
+        return $this->reverseProxy->handle($request, $routes);
     }
 
     public function emit(ResponseInterface $response): void

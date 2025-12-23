@@ -30,8 +30,8 @@ add_action('parse_request', function () {
     $httpClient = apply_filters('reverse_proxy_http_client', null);
     $plugin = ReverseProxy\WordPress\Plugin::create($httpClient);
 
-    $rules = apply_filters('reverse_proxy_rules', []);
-    $response = $plugin->handle($rules);
+    $routes = apply_filters('reverse_proxy_routes', []);
+    $response = $plugin->handle($routes);
 
     if ($response !== null) {
         $response = apply_filters('reverse_proxy_response', $response);

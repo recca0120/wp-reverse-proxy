@@ -14,14 +14,9 @@ WordPress plugin that proxies specific URL paths to external backend servers.
 ### Configuration via Filter
 
 ```php
-add_filter('reverse_proxy_rules', function ($rules) {
-    $rules[] = [
-        'source' => '/api/*',
-        'target' => 'https://backend.example.com',
-        'rewrite' => '/v1/$1',      // Optional: rewrite path
-        'preserve_host' => false,   // Optional: keep original Host header
-    ];
-    return $rules;
+add_filter('reverse_proxy_routes', function ($routes) {
+    $routes[] = new Route('/api/*', 'https://backend.example.com');
+    return $routes;
 });
 ```
 
@@ -29,7 +24,7 @@ add_filter('reverse_proxy_rules', function ($rules) {
 
 | Hook | Type | Description |
 |------|------|-------------|
-| `reverse_proxy_rules` | filter | Configure proxy rules |
+| `reverse_proxy_routes` | filter | Configure proxy routes |
 | `reverse_proxy_http_client` | filter | Override HTTP client |
 | `reverse_proxy_request_body` | filter | Override request body |
 | `reverse_proxy_response` | filter | Modify response before sending |
