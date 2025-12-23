@@ -43,9 +43,12 @@ composer require recca0120/wp-reverse-proxy
 
 ### Basic Configuration
 
-Add proxy routes in your theme's `functions.php` or a custom plugin:
+Create a configuration file at `wp-content/mu-plugins/reverse-proxy-config.php`:
 
 ```php
+<?php
+// wp-content/mu-plugins/reverse-proxy-config.php
+
 use ReverseProxy\Route;
 
 add_filter('reverse_proxy_routes', function () {
@@ -54,6 +57,18 @@ add_filter('reverse_proxy_routes', function () {
     ];
 });
 ```
+
+> **Why use mu-plugins?**
+> - Auto-loaded, no activation required
+> - Theme-independent
+> - Loads before regular plugins
+> - Ideal for infrastructure-level configuration
+>
+> See [WordPress MU-Plugins Documentation](https://developer.wordpress.org/advanced-administration/plugins/mu-plugins/)
+
+**Alternative locations** (not recommended):
+- `functions.php` - Lost when switching themes
+- Custom plugin - Can be deactivated
 
 ### Multiple Routes
 

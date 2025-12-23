@@ -43,9 +43,12 @@ composer require recca0120/wp-reverse-proxy
 
 ### 基本設定
 
-在佈景主題的 `functions.php` 或自訂外掛中新增代理路由：
+建立設定檔 `wp-content/mu-plugins/reverse-proxy-config.php`：
 
 ```php
+<?php
+// wp-content/mu-plugins/reverse-proxy-config.php
+
 use ReverseProxy\Route;
 
 add_filter('reverse_proxy_routes', function () {
@@ -54,6 +57,18 @@ add_filter('reverse_proxy_routes', function () {
     ];
 });
 ```
+
+> **為什麼使用 mu-plugins？**
+> - 自動載入，不需在後台啟用
+> - 不受佈景主題影響
+> - 比一般外掛更早載入
+> - 適合基礎設施層級的設定
+>
+> 詳見 [WordPress MU-Plugins 文件](https://developer.wordpress.org/advanced-administration/plugins/mu-plugins/)
+
+**其他設定位置**（不建議）：
+- `functions.php` - 換主題會失效
+- 自訂外掛 - 可能被停用
 
 ### 多個路由
 
