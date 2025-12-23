@@ -26,18 +26,24 @@
 
 ## 安裝
 
+### 從 GitHub Releases 下載（推薦）
+
+1. 前往 [Releases 頁面](https://github.com/recca0120/wp-reverse-proxy/releases)
+2. 下載最新版本的 `wp-reverse-proxy.zip`
+3. 在 WordPress 後台 → 外掛 → 安裝外掛 → 上傳外掛
+4. 上傳 zip 檔案並啟用
+
 ### 透過 Composer
 
 ```bash
 composer require recca0120/wp-reverse-proxy
 ```
 
-### 手動安裝
+### 手動安裝（開發用）
 
-1. 下載外掛
-2. 上傳至 `/wp-content/plugins/reverse-proxy/`
-3. 在外掛目錄執行 `composer install`
-4. 在 WordPress 後台啟用外掛
+1. Clone 專案至 `/wp-content/plugins/wp-reverse-proxy/`
+2. 在外掛目錄執行 `composer install`
+3. 在 WordPress 後台啟用外掛
 
 ## 使用方式
 
