@@ -116,4 +116,116 @@ class ReverseProxyTest extends WP_UnitTestCase
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertFalse($lastRequest);
     }
+
+    public function test_it_forwards_post_request_with_body()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(
+            new Response(201, ['Content-Type' => 'application/json'], '{"id":1}')
+        );
+
+        // And: 設置 POST 請求
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['CONTENT_TYPE'] = 'application/json';
+        $requestBody = '{"name":"John","email":"john@example.com"}';
+
+        // 模擬 php://input
+        add_filter('reverse_proxy_request_body', function () use ($requestBody) {
+            return $requestBody;
+        });
+
+        // When: 透過 WordPress 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        $output = ob_get_clean();
+
+        // Then: 驗證發送的請求是 POST
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest, 'Should have made a proxy request');
+        $this->assertEquals('POST', $lastRequest->getMethod());
+        $this->assertEquals('https://backend.example.com/api/users', (string) $lastRequest->getUri());
+
+        // And: 驗證請求 body 被轉發
+        $this->assertEquals($requestBody, (string) $lastRequest->getBody());
+
+        // And: 驗證回應
+        $this->assertEquals('{"id":1}', $output);
+    }
+
+    public function test_it_forwards_request_headers()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(
+            new Response(200, ['Content-Type' => 'application/json'], '{"authenticated":true}')
+        );
+
+        // And: 設置請求 headers
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer token123';
+        $_SERVER['HTTP_X_CUSTOM_HEADER'] = 'custom-value';
+        $_SERVER['CONTENT_TYPE'] = 'application/json';
+
+        // When: 透過 WordPress 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        ob_get_clean();
+
+        // Then: 驗證 headers 被轉發
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest);
+        $this->assertEquals('Bearer token123', $lastRequest->getHeaderLine('Authorization'));
+        $this->assertEquals('custom-value', $lastRequest->getHeaderLine('X-Custom-Header'));
+        $this->assertEquals('application/json', $lastRequest->getHeaderLine('Content-Type'));
+    }
+
+    public function test_it_preserves_query_string()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應
+        $this->mockClient->addResponse(
+            new Response(200, ['Content-Type' => 'application/json'], '{"users":[]}')
+        );
+
+        // When: 請求帶有 query string
+        ob_start();
+        $this->go_to('/api/users?page=2&limit=10&sort=name');
+        ob_get_clean();
+
+        // Then: 驗證 query string 被保留
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertNotFalse($lastRequest);
+        $this->assertEquals(
+            'https://backend.example.com/api/users?page=2&limit=10&sort=name',
+            (string) $lastRequest->getUri()
+        );
+    }
 }

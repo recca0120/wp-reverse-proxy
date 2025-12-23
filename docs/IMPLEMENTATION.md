@@ -36,11 +36,11 @@ add_filter('reverse_proxy_rules', function ($rules) {
 - [x] `parse_request` hook integration
 - [x] Mock HTTP Client for testing (`php-http/mock-client`)
 
-### Phase 2: Request Handling [TODO]
+### Phase 2: Request Handling [COMPLETED]
 
-- [ ] POST request with body forwarding
-- [ ] Request headers forwarding (Authorization, Content-Type, etc.)
-- [ ] Query string preservation
+- [x] POST request with body forwarding
+- [x] Request headers forwarding (Authorization, Content-Type, etc.)
+- [x] Query string preservation
 - [ ] Request body for different content types (JSON, form-data)
 
 ### Phase 3: Response Handling [TODO]
@@ -76,14 +76,11 @@ add_filter('reverse_proxy_rules', function ($rules) {
 | `test_it_proxies_request_matching_rule_to_target_server` | ✅ | Matching path triggers proxy |
 | `test_it_does_not_proxy_request_not_matching_any_rule` | ✅ | Non-matching path skips proxy |
 | `test_wordpress_continues_normally_for_non_matching_requests` | ✅ | WordPress handles normal requests |
+| `test_it_forwards_post_request_with_body` | ✅ | POST body forwarding |
+| `test_it_forwards_request_headers` | ✅ | Headers forwarding |
+| `test_it_preserves_query_string` | ✅ | Query string handling |
 
 ### Planned Tests
-
-| Test | Phase | Description |
-|------|-------|-------------|
-| `test_it_forwards_post_request_with_body` | 2 | POST body forwarding |
-| `test_it_forwards_request_headers` | 2 | Headers forwarding |
-| `test_it_preserves_query_string` | 2 | Query string handling |
 | `test_it_returns_backend_error_response` | 3 | Error response handling |
 | `test_it_handles_connection_timeout` | 3 | Timeout handling |
 | `test_it_matches_rules_in_order` | 4 | Rule priority |
