@@ -26,60 +26,16 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
 }
 
 // Initialize plugin
-add_action('parse_request', function ($wp) {
-    $psr17Factory = new Nyholm\Psr7\Factory\Psr17Factory();
+add_action('parse_request', function () {
+    $httpClient = apply_filters('reverse_proxy_http_client', null);
+    $plugin = ReverseProxy\WordPress\Plugin::create($httpClient);
 
-    // Create ServerRequest from globals
-    $serverRequestFactory = new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory);
-    $request = $serverRequestFactory->createFromGlobals();
-
-    // Get rules from filter and convert arrays to Rule objects
-    $ruleConfigs = apply_filters('reverse_proxy_rules', []);
-    $rules = array_map(function ($config) {
-        if ($config instanceof ReverseProxy\Rule) {
-            return $config;
-        }
-
-        return new ReverseProxy\Rule(
-            $config['source'],
-            $config['target'],
-            $config['rewrite'] ?? null,
-            $config['preserve_host'] ?? false
-        );
-    }, $ruleConfigs);
-
-    // Create dependencies
-    $httpClient = apply_filters(
-        'reverse_proxy_http_client',
-        new ReverseProxy\Http\WordPressHttpClient()
-    );
-    $logger = new ReverseProxy\WordPress\Logger();
-
-    // Create ReverseProxy
-    $reverseProxy = new ReverseProxy\ReverseProxy(
-        $httpClient,
-        $psr17Factory,
-        $psr17Factory,
-        $logger
-    );
-
-    // Handle request
-    $response = $reverseProxy->handle($request, $rules);
+    $rules = apply_filters('reverse_proxy_rules', []);
+    $response = $plugin->handle($rules);
 
     if ($response !== null) {
-        // Apply response filter
-        $response = apply_filters('reverse_proxy_response', $response, $request);
-
-        // Emit response
-        if (! headers_sent()) {
-            http_response_code($response->getStatusCode());
-            foreach ($response->getHeaders() as $name => $values) {
-                foreach ($values as $value) {
-                    header("{$name}: {$value}", false);
-                }
-            }
-        }
-        echo $response->getBody();
+        $response = apply_filters('reverse_proxy_response', $response);
+        $plugin->emit($response);
 
         if (apply_filters('reverse_proxy_should_exit', true)) {
             exit;
