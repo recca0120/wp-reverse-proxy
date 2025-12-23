@@ -5,6 +5,7 @@ namespace ReverseProxy;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -45,46 +46,21 @@ class ReverseProxy
     public function handle(ServerRequestInterface $request, array $rules): ?ResponseInterface
     {
         foreach ($rules as $rule) {
-            $matchResult = $rule->matches($request);
-            if ($matchResult !== null) {
-                return $this->proxy($request, $matchResult);
+            $targetUrl = $rule->matches($request);
+            if ($targetUrl !== null) {
+                return $this->proxy($request, $rule, $targetUrl);
             }
         }
 
         return null;
     }
 
-    private function proxy(ServerRequestInterface $originalRequest, MatchResult $matchResult): ResponseInterface
+    private function proxy(ServerRequestInterface $originalRequest, Rule $rule, string $targetUrl): ResponseInterface
     {
-        $rule = $matchResult->getRule();
-        $targetUrl = $matchResult->getTargetUrl();
-        $method = $originalRequest->getMethod();
-
-        $request = $this->requestFactory->createRequest($method, $targetUrl);
-
-        // Forward request headers
-        foreach ($originalRequest->getHeaders() as $name => $values) {
-            $request = $request->withHeader($name, $values);
-        }
-
-        // Handle Host header
-        if (! $rule->shouldPreserveHost()) {
-            $targetHost = $rule->getTargetHost();
-            if ($targetHost !== '') {
-                $request = $request->withHeader('Host', $targetHost);
-            }
-        }
-
-        // Forward request body for POST, PUT, PATCH
-        if (in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
-            $body = (string) $originalRequest->getBody();
-            if ($body !== '') {
-                $request = $request->withBody($this->streamFactory->createStream($body));
-            }
-        }
+        $request = $this->buildProxyRequest($originalRequest, $rule, $targetUrl);
 
         $this->logger->info('Proxying request', [
-            'method' => $method,
+            'method' => $request->getMethod(),
             'source' => $originalRequest->getUri()->getPath(),
             'target' => $targetUrl,
         ]);
@@ -106,6 +82,32 @@ class ReverseProxy
 
             return $this->createErrorResponse(502, 'Bad Gateway: ' . $e->getMessage());
         }
+    }
+
+    private function buildProxyRequest(ServerRequestInterface $originalRequest, Rule $rule, string $targetUrl): RequestInterface
+    {
+        $method = $originalRequest->getMethod();
+        $request = $this->requestFactory->createRequest($method, $targetUrl);
+
+        foreach ($originalRequest->getHeaders() as $name => $values) {
+            $request = $request->withHeader($name, $values);
+        }
+
+        if (! $rule->shouldPreserveHost()) {
+            $targetHost = $rule->getTargetHost();
+            if ($targetHost !== '') {
+                $request = $request->withHeader('Host', $targetHost);
+            }
+        }
+
+        if (in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
+            $body = (string) $originalRequest->getBody();
+            if ($body !== '') {
+                $request = $request->withBody($this->streamFactory->createStream($body));
+            }
+        }
+
+        return $request;
     }
 
     private function createErrorResponse(int $statusCode, string $message): ResponseInterface

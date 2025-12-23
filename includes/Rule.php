@@ -26,7 +26,7 @@ class Rule
         $this->preserveHost = $preserveHost;
     }
 
-    public function matches(ServerRequestInterface $request): ?MatchResult
+    public function matches(ServerRequestInterface $request): ?string
     {
         $uri = $request->getUri();
         $path = $uri->getPath() ?: '/';
@@ -37,9 +37,7 @@ class Rule
             return null;
         }
 
-        $targetUrl = $this->buildTargetUrl($path, $queryString, $captures);
-
-        return new MatchResult($this, $targetUrl);
+        return $this->buildTargetUrl($path, $queryString, $captures);
     }
 
     public function shouldPreserveHost(): bool

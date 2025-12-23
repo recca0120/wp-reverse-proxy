@@ -4,7 +4,6 @@ namespace ReverseProxy\Tests\Unit;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use ReverseProxy\MatchResult;
 use ReverseProxy\Rule;
 
 class RuleTest extends TestCase
@@ -16,8 +15,7 @@ class RuleTest extends TestCase
 
         $result = $rule->matches($request);
 
-        $this->assertInstanceOf(MatchResult::class, $result);
-        $this->assertEquals('https://backend.example.com/api/users', $result->getTargetUrl());
+        $this->assertEquals('https://backend.example.com/api/users', $result);
     }
 
     public function test_it_returns_null_when_path_does_not_match()
@@ -37,8 +35,7 @@ class RuleTest extends TestCase
 
         $result = $rule->matches($request);
 
-        $this->assertInstanceOf(MatchResult::class, $result);
-        $this->assertEquals('https://backend.example.com/api/users/123', $result->getTargetUrl());
+        $this->assertEquals('https://backend.example.com/api/users/123', $result);
     }
 
     public function test_it_rewrites_path_with_captures()
@@ -48,8 +45,7 @@ class RuleTest extends TestCase
 
         $result = $rule->matches($request);
 
-        $this->assertInstanceOf(MatchResult::class, $result);
-        $this->assertEquals('https://backend.example.com/v1/users/123', $result->getTargetUrl());
+        $this->assertEquals('https://backend.example.com/v1/users/123', $result);
     }
 
     public function test_it_preserves_query_string()
@@ -59,7 +55,7 @@ class RuleTest extends TestCase
 
         $result = $rule->matches($request);
 
-        $this->assertEquals('https://backend.example.com/api/users?page=2&limit=10', $result->getTargetUrl());
+        $this->assertEquals('https://backend.example.com/api/users?page=2&limit=10', $result);
     }
 
     public function test_it_preserves_query_string_with_rewrite()
@@ -69,7 +65,7 @@ class RuleTest extends TestCase
 
         $result = $rule->matches($request);
 
-        $this->assertEquals('https://backend.example.com/v1/users?page=2', $result->getTargetUrl());
+        $this->assertEquals('https://backend.example.com/v1/users?page=2', $result);
     }
 
     public function test_it_returns_preserve_host_setting()
@@ -91,15 +87,5 @@ class RuleTest extends TestCase
         $rule = new Rule('/api/*', 'https://backend.example.com');
 
         $this->assertEquals('backend.example.com', $rule->getTargetHost());
-    }
-
-    public function test_match_result_contains_rule_reference()
-    {
-        $rule = new Rule('/api/*', 'https://backend.example.com');
-        $request = new ServerRequest('GET', '/api/users');
-
-        $result = $rule->matches($request);
-
-        $this->assertSame($rule, $result->getRule());
     }
 }
