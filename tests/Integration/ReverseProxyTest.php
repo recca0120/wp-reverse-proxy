@@ -321,23 +321,14 @@ class ReverseProxyTest extends WP_UnitTestCase
             new NetworkException('Connection refused', new Request('GET', 'https://backend.example.com/api/users'))
         );
 
-        // And: 捕獲錯誤
-        $capturedError = null;
-        add_action('reverse_proxy_error', function ($error) use (&$capturedError) {
-            $capturedError = $error;
-        });
-
         // When: 請求 /api/users
         ob_start();
         $this->go_to('/api/users');
         $output = ob_get_clean();
 
-        // Then: 驗證錯誤被捕獲
-        $this->assertNotNull($capturedError);
-        $this->assertInstanceOf(NetworkException::class, $capturedError);
-
-        // And: 應該返回 502 Bad Gateway
+        // Then: 應該返回 502 Bad Gateway
         $this->assertStringContainsString('502', $output);
+        $this->assertStringContainsString('Bad Gateway', $output);
     }
 
     public function test_it_forwards_response_headers()

@@ -25,21 +25,16 @@ class ReverseProxy
     /** @var LoggerInterface */
     private $logger;
 
-    /** @var ErrorHandlerInterface|null */
-    private $errorHandler;
-
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory,
-        ?LoggerInterface $logger = null,
-        ?ErrorHandlerInterface $errorHandler = null
+        ?LoggerInterface $logger = null
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
         $this->logger = $logger ?? new NullLogger();
-        $this->errorHandler = $errorHandler;
     }
 
     public function handle(ServerRequestInterface $request, array $rules): ?ResponseInterface
@@ -107,10 +102,6 @@ class ReverseProxy
                 'target' => $targetUrl,
                 'exception' => get_class($e),
             ]);
-
-            if ($this->errorHandler) {
-                $this->errorHandler->handle($e, $request);
-            }
 
             return $this->createErrorResponse(502, 'Bad Gateway: ' . $e->getMessage());
         }

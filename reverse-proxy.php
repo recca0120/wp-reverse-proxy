@@ -42,15 +42,13 @@ add_action('parse_request', function ($wp) {
         new ReverseProxy\Http\WordPressHttpClient()
     );
     $logger = new ReverseProxy\WordPress\Logger();
-    $errorHandler = new ReverseProxy\WordPress\ErrorHandler();
 
     // Create ReverseProxy
     $reverseProxy = new ReverseProxy\ReverseProxy(
         $httpClient,
         $psr17Factory,
         $psr17Factory,
-        $logger,
-        $errorHandler
+        $logger
     );
 
     // Handle request
