@@ -493,6 +493,26 @@ add_filter('reverse_proxy_response', function ($response) {
 });
 ```
 
+### Customize Default Middlewares
+
+```php
+// Remove all default middlewares
+add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+
+// Keep only error handling
+add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
+    return array_filter($middlewares, function ($m) {
+        return $m instanceof \ReverseProxy\Middleware\ErrorHandlingMiddleware;
+    });
+});
+
+// Add custom middleware
+add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
+    $middlewares[] = new MyCustomMiddleware();
+    return $middlewares;
+});
+```
+
 ### Custom HTTP Client
 
 ```php

@@ -493,6 +493,26 @@ add_filter('reverse_proxy_response', function ($response) {
 });
 ```
 
+### 自訂預設中介層
+
+```php
+// 移除所有預設中介層
+add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+
+// 只保留錯誤處理
+add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
+    return array_filter($middlewares, function ($m) {
+        return $m instanceof \ReverseProxy\Middleware\ErrorHandlingMiddleware;
+    });
+});
+
+// 新增自訂中介層
+add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
+    $middlewares[] = new MyCustomMiddleware();
+    return $middlewares;
+});
+```
+
 ### 自訂 HTTP 客戶端
 
 ```php
