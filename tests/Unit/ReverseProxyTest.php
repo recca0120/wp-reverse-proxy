@@ -7,6 +7,9 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use ReverseProxy\MiddlewareInterface;
 use ReverseProxy\ReverseProxy;
 use ReverseProxy\Rule;
 
@@ -270,5 +273,31 @@ class ReverseProxyTest extends TestCase
             'middleware2:after',
             'middleware1:after',
         ], $order);
+    }
+
+    public function test_middleware_interface_works()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $middleware = new class implements MiddlewareInterface {
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                $response = $next($request->withHeader('X-From-Interface', 'yes'));
+                return $response->withHeader('X-Processed-By-Interface', 'yes');
+            }
+        };
+
+        $request = new ServerRequest('GET', '/api/users');
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware($middleware);
+
+        $response = $this->reverseProxy->handle($request, [$rule]);
+
+        // Verify request was modified
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertEquals('yes', $lastRequest->getHeaderLine('X-From-Interface'));
+
+        // Verify response was modified
+        $this->assertEquals('yes', $response->getHeaderLine('X-Processed-By-Interface'));
     }
 }

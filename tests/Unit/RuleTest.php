@@ -2,8 +2,12 @@
 
 namespace ReverseProxy\Tests\Unit;
 
+use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use ReverseProxy\MiddlewareInterface;
 use ReverseProxy\Rule;
 
 class RuleTest extends TestCase
@@ -120,6 +124,41 @@ class RuleTest extends TestCase
         $rule = (new Rule('/api/*', 'https://backend.example.com'))
             ->middleware($middleware1)
             ->middleware($middleware2);
+
+        $this->assertCount(2, $rule->getMiddlewares());
+    }
+
+    public function test_it_can_add_middleware_interface()
+    {
+        $middleware = new class implements MiddlewareInterface {
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request->withHeader('X-Test', 'value'));
+            }
+        };
+
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware($middleware);
+
+        $this->assertCount(1, $rule->getMiddlewares());
+    }
+
+    public function test_it_can_mix_callable_and_middleware_interface()
+    {
+        $closureMiddleware = function ($request, $next) {
+            return $next($request);
+        };
+
+        $classMiddleware = new class implements MiddlewareInterface {
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request);
+            }
+        };
+
+        $rule = (new Rule('/api/*', 'https://backend.example.com'))
+            ->middleware($closureMiddleware)
+            ->middleware($classMiddleware);
 
         $this->assertCount(2, $rule->getMiddlewares());
     }

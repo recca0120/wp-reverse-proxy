@@ -109,6 +109,75 @@ new Rule(
 );
 ```
 
+## Middleware
+
+Rules support middleware for request/response processing:
+
+```php
+use ReverseProxy\Rule;
+
+$rule = (new Rule('/api/*', 'https://backend.example.com'))
+    ->middleware(function ($request, $next) {
+        // Before: modify request
+        $request = $request->withHeader('Authorization', 'Bearer token');
+
+        // Execute next middleware or proxy
+        $response = $next($request);
+
+        // After: modify response
+        return $response->withHeader('X-Processed', 'true');
+    });
+```
+
+### Middleware Examples
+
+**Add Authentication Header:**
+```php
+->middleware(function ($request, $next) {
+    return $next($request->withHeader('Authorization', 'Bearer ' . get_api_token()));
+})
+```
+
+**Cache Responses:**
+```php
+->middleware(function ($request, $next) {
+    $cacheKey = md5((string) $request->getUri());
+
+    if ($cached = wp_cache_get($cacheKey, 'proxy')) {
+        return $cached;  // Short-circuit: skip proxy
+    }
+
+    $response = $next($request);
+    wp_cache_set($cacheKey, $response, 'proxy', 300);
+
+    return $response;
+})
+```
+
+**Measure Request Time:**
+```php
+->middleware(function ($request, $next) {
+    $start = microtime(true);
+    $response = $next($request);
+    $elapsed = microtime(true) - $start;
+
+    return $response->withHeader('X-Response-Time', round($elapsed * 1000) . 'ms');
+})
+```
+
+**Chain Multiple Middlewares:**
+```php
+$rule = (new Rule('/api/*', 'https://backend.example.com'))
+    ->middleware($authMiddleware)
+    ->middleware($cacheMiddleware)
+    ->middleware($loggingMiddleware);
+```
+
+Middlewares execute in onion-style order:
+```
+Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Response
+```
+
 ## Available Hooks
 
 ### Filters

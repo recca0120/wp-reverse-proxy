@@ -30,12 +30,18 @@ class Rule
     }
 
     /**
-     * @param callable $middleware
+     * @param callable|MiddlewareInterface $middleware
      * @return self
      */
-    public function middleware(callable $middleware): self
+    public function middleware($middleware): self
     {
-        $this->middlewares[] = $middleware;
+        if ($middleware instanceof MiddlewareInterface) {
+            $this->middlewares[] = function ($request, $next) use ($middleware) {
+                return $middleware->process($request, $next);
+            };
+        } else {
+            $this->middlewares[] = $middleware;
+        }
 
         return $this;
     }
