@@ -47,7 +47,10 @@ Create a configuration file at `wp-content/mu-plugins/reverse-proxy-config.php`:
 
 ```php
 <?php
-// wp-content/mu-plugins/reverse-proxy-config.php
+/**
+ * Plugin Name: Reverse Proxy Config
+ * Description: Custom reverse proxy routes configuration
+ */
 
 use ReverseProxy\Route;
 
@@ -57,6 +60,8 @@ add_filter('reverse_proxy_routes', function () {
     ];
 });
 ```
+
+> **Note**: The `mu-plugins` folder does not exist by default and must be created manually.
 
 > **Why use mu-plugins?**
 > - Auto-loaded, no activation required

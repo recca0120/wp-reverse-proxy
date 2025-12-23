@@ -47,7 +47,10 @@ composer require recca0120/wp-reverse-proxy
 
 ```php
 <?php
-// wp-content/mu-plugins/reverse-proxy-config.php
+/**
+ * Plugin Name: Reverse Proxy Config
+ * Description: Custom reverse proxy routes configuration
+ */
 
 use ReverseProxy\Route;
 
@@ -57,6 +60,8 @@ add_filter('reverse_proxy_routes', function () {
     ];
 });
 ```
+
+> **注意**：`mu-plugins` 資料夾預設不存在，需手動建立。
 
 > **為什麼使用 mu-plugins？**
 > - 自動載入，不需在後台啟用
