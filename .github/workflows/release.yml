@@ -26,10 +26,10 @@ jobs:
 
       - name: Create plugin directory
         run: |
-          mkdir -p build/reverse-proxy
+          mkdir -p build/wp-reverse-proxy
 
           # Copy plugin files (exclude dev files)
-          rsync -av --progress . build/reverse-proxy \
+          rsync -av --progress . build/wp-reverse-proxy \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='build' \
@@ -45,17 +45,17 @@ jobs:
             --exclude='.phpunit.result.cache'
 
           # Keep LICENSE and essential files
-          cp LICENSE build/reverse-proxy/ 2>/dev/null || true
-          cp README.md build/reverse-proxy/ 2>/dev/null || true
+          cp LICENSE build/wp-reverse-proxy/ 2>/dev/null || true
+          cp README.md build/wp-reverse-proxy/ 2>/dev/null || true
 
       - name: Create ZIP archive
         run: |
           cd build
-          zip -r reverse-proxy.zip reverse-proxy
+          zip -r wp-reverse-proxy.zip wp-reverse-proxy
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: build/reverse-proxy.zip
+          files: build/wp-reverse-proxy.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
