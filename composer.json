@@ -1,0 +1,33 @@
+{
+    "name": "recca0120/reverse-proxy",
+    "description": "WordPress reverse proxy plugin",
+    "type": "wordpress-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Recca Tsai",
+            "email": "recca0120@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5 || ^9.5",
+        "wp-phpunit/wp-phpunit": "^6.6",
+        "yoast/phpunit-polyfills": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ReverseProxy\\": "includes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ReverseProxy\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}
