@@ -41,14 +41,13 @@ composer require recca0120/wp-reverse-proxy
 Add proxy rules in your theme's `functions.php` or a custom plugin:
 
 ```php
-add_filter('reverse_proxy_rules', function ($rules) {
-    // Proxy /api/* to backend server
-    $rules[] = [
-        'source' => '/api/*',
-        'target' => 'https://api.example.com',
-    ];
+use ReverseProxy\Rule;
 
-    return $rules;
+add_filter('reverse_proxy_rules', function () {
+    return [
+        // Proxy /api/* to backend server
+        new Rule('/api/*', 'https://api.example.com'),
+    ];
 });
 ```
 
@@ -57,15 +56,14 @@ add_filter('reverse_proxy_rules', function ($rules) {
 Rewrite paths when proxying:
 
 ```php
-add_filter('reverse_proxy_rules', function ($rules) {
-    // /api/v1/users → https://backend.com/v1/users
-    $rules[] = [
-        'source' => '/api/v1/*',
-        'target' => 'https://backend.example.com',
-        'rewrite' => '/v1/$1',  // $1 = matched wildcard content
-    ];
+use ReverseProxy\Rule;
 
-    return $rules;
+add_filter('reverse_proxy_rules', function () {
+    return [
+        // /api/v1/users → https://backend.com/v1/users
+        // $1 = matched wildcard content
+        new Rule('/api/v1/*', 'https://backend.example.com', '/v1/$1'),
+    ];
 });
 ```
 
@@ -74,14 +72,12 @@ add_filter('reverse_proxy_rules', function ($rules) {
 Keep the original Host header instead of using the target host:
 
 ```php
-add_filter('reverse_proxy_rules', function ($rules) {
-    $rules[] = [
-        'source' => '/api/*',
-        'target' => 'https://backend.example.com',
-        'preserve_host' => true,
-    ];
+use ReverseProxy\Rule;
 
-    return $rules;
+add_filter('reverse_proxy_rules', function () {
+    return [
+        new Rule('/api/*', 'https://backend.example.com', null, true),
+    ];
 });
 ```
 
@@ -90,31 +86,28 @@ add_filter('reverse_proxy_rules', function ($rules) {
 Rules are matched in order (first match wins):
 
 ```php
-add_filter('reverse_proxy_rules', function ($rules) {
-    // More specific rules first
-    $rules[] = [
-        'source' => '/api/v2/*',
-        'target' => 'https://api-v2.example.com',
-    ];
+use ReverseProxy\Rule;
 
-    // Fallback for other API routes
-    $rules[] = [
-        'source' => '/api/*',
-        'target' => 'https://api.example.com',
+add_filter('reverse_proxy_rules', function () {
+    return [
+        // More specific rules first
+        new Rule('/api/v2/*', 'https://api-v2.example.com'),
+        // Fallback for other API routes
+        new Rule('/api/*', 'https://api.example.com'),
     ];
-
-    return $rules;
 });
 ```
 
-## Rule Options
+## Rule Constructor
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `source` | string | required | URL pattern to match (supports `*` wildcard) |
-| `target` | string | required | Target server URL |
-| `rewrite` | string | null | Rewrite path pattern (`$1`, `$2` for wildcards) |
-| `preserve_host` | bool | false | Keep original Host header |
+```php
+new Rule(
+    string $source,         // URL pattern to match (supports `*` wildcard)
+    string $target,         // Target server URL
+    ?string $rewrite,       // Rewrite path pattern (`$1`, `$2` for wildcards)
+    bool $preserveHost      // Keep original Host header (default: false)
+);
+```
 
 ## Available Hooks
 
@@ -124,16 +117,15 @@ add_filter('reverse_proxy_rules', function ($rules) {
 |------|------------|-------------|
 | `reverse_proxy_rules` | `$rules` | Configure proxy rules |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
-| `reverse_proxy_request_body` | `$body` | Override request body |
-| `reverse_proxy_response` | `$response, $request` | Modify response before sending |
+| `reverse_proxy_request_body` | `$body` | Override request body (for testing) |
+| `reverse_proxy_response` | `$response` | Modify response before sending |
 | `reverse_proxy_should_exit` | `$should_exit` | Control exit behavior |
 
 ### Actions
 
 | Hook | Parameters | Description |
 |------|------------|-------------|
-| `reverse_proxy_error` | `$exception, $request` | Handle proxy errors |
-| `reverse_proxy_log` | `$level, $message, $context` | Log proxy events |
+| `reverse_proxy_log` | `$level, $message, $context` | Log proxy events (PSR-3 levels) |
 
 ## Examples
 
@@ -153,23 +145,25 @@ add_action('reverse_proxy_log', function ($level, $message, $context) {
 ### Error Handling
 
 ```php
-add_action('reverse_proxy_error', function ($exception, $request) {
-    // Send notification, log to external service, etc.
-    wp_mail(
-        'admin@example.com',
-        'Reverse Proxy Error',
-        sprintf('Error: %s\nURL: %s', $exception->getMessage(), $request->getUri())
-    );
-}, 10, 2);
+add_action('reverse_proxy_log', function ($level, $message, $context) {
+    if ($level === 'error') {
+        // Send notification, log to external service, etc.
+        wp_mail(
+            'admin@example.com',
+            'Reverse Proxy Error',
+            sprintf('Error: %s', $message)
+        );
+    }
+}, 10, 3);
 ```
 
 ### Modify Response
 
 ```php
-add_filter('reverse_proxy_response', function ($response, $request) {
+add_filter('reverse_proxy_response', function ($response) {
     // Add custom header to response
     return $response->withHeader('X-Proxied-By', 'WP-Reverse-Proxy');
-}, 10, 2);
+});
 ```
 
 ### Custom HTTP Client
