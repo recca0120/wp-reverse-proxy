@@ -27,8 +27,52 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
 
 // Initialize plugin
 add_action('parse_request', function ($wp) {
-    $reverseProxy = new ReverseProxy\ReverseProxy();
-    if ($reverseProxy->handle($wp) && apply_filters('reverse_proxy_should_exit', true)) {
-        exit;
+    $psr17Factory = new Nyholm\Psr7\Factory\Psr17Factory();
+
+    // Create ServerRequest from globals
+    $serverRequestFactory = new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory);
+    $request = $serverRequestFactory->createFromGlobals();
+
+    // Get rules from filter
+    $rules = apply_filters('reverse_proxy_rules', []);
+
+    // Create dependencies
+    $httpClient = apply_filters(
+        'reverse_proxy_http_client',
+        new ReverseProxy\Http\WordPressHttpClient()
+    );
+    $logger = new ReverseProxy\WordPress\Logger();
+    $errorHandler = new ReverseProxy\WordPress\ErrorHandler();
+
+    // Create ReverseProxy
+    $reverseProxy = new ReverseProxy\ReverseProxy(
+        $httpClient,
+        $psr17Factory,
+        $psr17Factory,
+        $logger,
+        $errorHandler
+    );
+
+    // Handle request
+    $response = $reverseProxy->handle($request, $rules);
+
+    if ($response !== null) {
+        // Apply response filter
+        $response = apply_filters('reverse_proxy_response', $response, $request);
+
+        // Emit response
+        if (! headers_sent()) {
+            http_response_code($response->getStatusCode());
+            foreach ($response->getHeaders() as $name => $values) {
+                foreach ($values as $value) {
+                    header("{$name}: {$value}", false);
+                }
+            }
+        }
+        echo $response->getBody();
+
+        if (apply_filters('reverse_proxy_should_exit', true)) {
+            exit;
+        }
     }
 });

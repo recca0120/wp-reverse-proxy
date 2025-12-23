@@ -8,7 +8,8 @@ use WP_UnitTestCase;
 
 class WordPressHttpClientTest extends WP_UnitTestCase
 {
-    private WordPressHttpClient $client;
+    /** @var WordPressHttpClient */
+    private $client;
 
     protected function setUp(): void
     {

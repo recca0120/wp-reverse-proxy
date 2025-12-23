@@ -12,7 +12,8 @@ use WP_UnitTestCase;
 
 class ReverseProxyTest extends WP_UnitTestCase
 {
-    private MockClient $mockClient;
+    /** @var MockClient */
+    private $mockClient;
 
     protected function setUp(): void
     {
@@ -606,7 +607,9 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertNotEmpty($logEntries);
 
         // And: 應該記錄請求資訊
-        $requestLog = array_filter($logEntries, fn($e) => strpos($e['message'], 'Proxying') !== false);
+        $requestLog = array_filter($logEntries, function ($e) {
+            return strpos($e['message'], 'Proxying') !== false;
+        });
         $this->assertNotEmpty($requestLog);
     }
 
@@ -639,7 +642,9 @@ class ReverseProxyTest extends WP_UnitTestCase
         ob_get_clean();
 
         // Then: 應該有錯誤日誌
-        $errorLog = array_filter($logEntries, fn($e) => $e['level'] === 'error');
+        $errorLog = array_filter($logEntries, function ($e) {
+            return $e['level'] === 'error';
+        });
         $this->assertNotEmpty($errorLog);
     }
 }

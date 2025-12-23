@@ -7,7 +7,8 @@ use Psr\Http\Message\RequestInterface;
 
 class NetworkException extends \RuntimeException implements NetworkExceptionInterface
 {
-    private RequestInterface $request;
+    /** @var RequestInterface */
+    private $request;
 
     public function __construct(string $message, RequestInterface $request, ?\Throwable $previous = null)
     {
