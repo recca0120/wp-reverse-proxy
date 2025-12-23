@@ -444,6 +444,7 @@ add_filter('reverse_proxy_routes', function () {
 | Hook | Parameters | Description |
 |------|------------|-------------|
 | `reverse_proxy_routes` | `$routes` | Configure proxy routes |
+| `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
 | `reverse_proxy_request_body` | `$body` | Override request body (for testing) |
 | `reverse_proxy_response` | `$response` | Modify response before sending |

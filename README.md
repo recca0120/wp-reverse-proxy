@@ -444,6 +444,7 @@ add_filter('reverse_proxy_routes', function () {
 | Hook | 參數 | 說明 |
 |------|------|------|
 | `reverse_proxy_routes` | `$routes` | 設定代理路由 |
+| `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |
 | `reverse_proxy_request_body` | `$body` | 覆寫請求主體（用於測試） |
 | `reverse_proxy_response` | `$response` | 在發送前修改回應 |

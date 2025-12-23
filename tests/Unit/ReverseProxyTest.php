@@ -394,4 +394,39 @@ class ReverseProxyTest extends TestCase
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals('yes', $lastRequest->getHeaderLine('X-Interface-Global'));
     }
+
+    public function test_add_global_middlewares_accepts_array()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $order = [];
+
+        $middleware1 = function ($request, $next) use (&$order) {
+            $order[] = 'mw1:before';
+            $response = $next($request);
+            $order[] = 'mw1:after';
+            return $response;
+        };
+
+        $middleware2 = function ($request, $next) use (&$order) {
+            $order[] = 'mw2:before';
+            $response = $next($request);
+            $order[] = 'mw2:after';
+            return $response;
+        };
+
+        $this->reverseProxy->addGlobalMiddlewares([$middleware1, $middleware2]);
+
+        $request = new ServerRequest('GET', '/api/users');
+        $route = new Route('/api/*', 'https://backend.example.com');
+
+        $this->reverseProxy->handle($request, [$route]);
+
+        $this->assertEquals([
+            'mw1:before',
+            'mw2:before',
+            'mw2:after',
+            'mw1:after',
+        ], $order);
+    }
 }

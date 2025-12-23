@@ -45,6 +45,19 @@ class ReverseProxy
     }
 
     /**
+     * @param array $middlewares
+     * @return self
+     */
+    public function addGlobalMiddlewares(array $middlewares): self
+    {
+        foreach ($middlewares as $middleware) {
+            $this->globalMiddlewares[] = $middleware;
+        }
+
+        return $this;
+    }
+
+    /**
      * @param ServerRequestInterface $request
      * @param Route[] $routes
      * @return ResponseInterface|null
