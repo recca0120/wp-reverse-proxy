@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Reverse Proxy
- * Plugin URI: https://github.com/recca0120/reverse-proxy
+ * Plugin URI: https://github.com/recca0120/wp-reverse-proxy
  * Description: WordPress reverse proxy plugin
  * Version: 1.0.0
  * Author: Recca Tsai
