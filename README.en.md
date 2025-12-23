@@ -516,8 +516,17 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 ### Custom HTTP Client
 
 ```php
+// Use Guzzle instead of default WordPressHttpClient
 add_filter('reverse_proxy_http_client', function ($client) {
     return new \GuzzleHttp\Client();
+});
+
+// Or configure custom options
+add_filter('reverse_proxy_http_client', function ($client) {
+    return new \GuzzleHttp\Client([
+        'timeout' => 30,
+        'verify' => false,
+    ]);
 });
 ```
 

@@ -3,7 +3,6 @@
 namespace ReverseProxy\WordPress;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
-use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\Http\WordPressHttpClient;
 use ReverseProxy\Middleware\ErrorHandlingMiddleware;
@@ -32,10 +31,10 @@ class Plugin
         $this->responseEmitter = $responseEmitter;
     }
 
-    public static function create(?ClientInterface $httpClient = null): self
+    public static function create(): self
     {
         $psr17Factory = new Psr17Factory();
-        $httpClient = $httpClient ?? new WordPressHttpClient();
+        $httpClient = apply_filters('reverse_proxy_http_client', new WordPressHttpClient());
 
         $reverseProxy = new ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
         $reverseProxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
