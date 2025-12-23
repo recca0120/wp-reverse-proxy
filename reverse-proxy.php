@@ -33,8 +33,20 @@ add_action('parse_request', function ($wp) {
     $serverRequestFactory = new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory);
     $request = $serverRequestFactory->createFromGlobals();
 
-    // Get rules from filter
-    $rules = apply_filters('reverse_proxy_rules', []);
+    // Get rules from filter and convert arrays to Rule objects
+    $ruleConfigs = apply_filters('reverse_proxy_rules', []);
+    $rules = array_map(function ($config) {
+        if ($config instanceof ReverseProxy\Rule) {
+            return $config;
+        }
+
+        return new ReverseProxy\Rule(
+            $config['source'],
+            $config['target'],
+            $config['rewrite'] ?? null,
+            $config['preserve_host'] ?? false
+        );
+    }, $ruleConfigs);
 
     // Create dependencies
     $httpClient = apply_filters(

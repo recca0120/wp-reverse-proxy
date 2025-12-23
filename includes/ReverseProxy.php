@@ -37,28 +37,29 @@ class ReverseProxy
         $this->logger = $logger ?? new NullLogger();
     }
 
+    /**
+     * @param ServerRequestInterface $request
+     * @param Rule[] $rules
+     * @return ResponseInterface|null
+     */
     public function handle(ServerRequestInterface $request, array $rules): ?ResponseInterface
     {
-        $path = $request->getUri()->getPath() ?: '/';
-
         foreach ($rules as $rule) {
-            $matches = [];
-            if ($this->matches($path, $rule['source'], $matches)) {
-                return $this->proxy($request, $rule, $matches);
+            $matchResult = $rule->matches($request);
+            if ($matchResult !== null) {
+                return $this->proxy($request, $matchResult);
             }
         }
 
         return null;
     }
 
-    private function proxy(ServerRequestInterface $originalRequest, array $rule, array $matches = []): ResponseInterface
+    private function proxy(ServerRequestInterface $originalRequest, MatchResult $matchResult): ResponseInterface
     {
+        $rule = $matchResult->getRule();
+        $targetUrl = $matchResult->getTargetUrl();
         $method = $originalRequest->getMethod();
-        $uri = $originalRequest->getUri();
-        $path = $uri->getPath() ?: '/';
-        $queryString = $uri->getQuery() ?: '';
 
-        $targetUrl = $this->buildTargetUrl($path, $queryString, $rule, $matches);
         $request = $this->requestFactory->createRequest($method, $targetUrl);
 
         // Forward request headers
@@ -67,9 +68,9 @@ class ReverseProxy
         }
 
         // Handle Host header
-        if (empty($rule['preserve_host'])) {
-            $targetHost = parse_url($rule['target'], PHP_URL_HOST);
-            if ($targetHost) {
+        if (! $rule->shouldPreserveHost()) {
+            $targetHost = $rule->getTargetHost();
+            if ($targetHost !== '') {
                 $request = $request->withHeader('Host', $targetHost);
             }
         }
@@ -84,7 +85,7 @@ class ReverseProxy
 
         $this->logger->info('Proxying request', [
             'method' => $method,
-            'source' => $path,
+            'source' => $originalRequest->getUri()->getPath(),
             'target' => $targetUrl,
         ]);
 
@@ -116,39 +117,5 @@ class ReverseProxy
             ['Content-Type' => 'application/json'],
             $body
         );
-    }
-
-    private function matches(string $path, string $pattern, ?array &$matches = null): bool
-    {
-        $regex = '#^' . str_replace('\*', '(.*)', preg_quote($pattern, '#')) . '$#';
-
-        if (preg_match($regex, $path, $captured)) {
-            $matches = array_slice($captured, 1);
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private function buildTargetUrl(string $path, string $queryString, array $rule, array $matches = []): string
-    {
-        if (isset($rule['rewrite'])) {
-            $rewrittenPath = $rule['rewrite'];
-
-            foreach ($matches as $index => $match) {
-                $rewrittenPath = str_replace('$' . ($index + 1), $match, $rewrittenPath);
-            }
-
-            $url = rtrim($rule['target'], '/') . $rewrittenPath;
-        } else {
-            $url = rtrim($rule['target'], '/') . $path;
-        }
-
-        if ($queryString !== '') {
-            $url .= '?' . $queryString;
-        }
-
-        return $url;
     }
 }
