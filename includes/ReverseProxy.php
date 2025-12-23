@@ -44,29 +44,25 @@ class ReverseProxy
 
     public function handle(ServerRequestInterface $request, array $rules): ?ResponseInterface
     {
-        $uri = $request->getUri();
-        $path = $uri->getPath() ?: '/';
-        $queryString = $uri->getQuery() ?: '';
-        $method = $request->getMethod();
+        $path = $request->getUri()->getPath() ?: '/';
 
         foreach ($rules as $rule) {
             $matches = [];
             if ($this->matches($path, $rule['source'], $matches)) {
-                return $this->proxy($request, $method, $path, $queryString, $rule, $matches);
+                return $this->proxy($request, $rule, $matches);
             }
         }
 
         return null;
     }
 
-    private function proxy(
-        ServerRequestInterface $originalRequest,
-        string $method,
-        string $path,
-        string $queryString,
-        array $rule,
-        array $matches = []
-    ): ResponseInterface {
+    private function proxy(ServerRequestInterface $originalRequest, array $rule, array $matches = []): ResponseInterface
+    {
+        $method = $originalRequest->getMethod();
+        $uri = $originalRequest->getUri();
+        $path = $uri->getPath() ?: '/';
+        $queryString = $uri->getQuery() ?: '';
+
         $targetUrl = $this->buildTargetUrl($path, $queryString, $rule, $matches);
         $request = $this->requestFactory->createRequest($method, $targetUrl);
 
