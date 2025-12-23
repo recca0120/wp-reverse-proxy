@@ -10,6 +10,9 @@ use ReverseProxy\MiddlewareInterface;
 
 class ErrorHandlingMiddleware implements MiddlewareInterface
 {
+    /** @var int */
+    public $priority = -100;
+
     public function process(RequestInterface $request, callable $next): ResponseInterface
     {
         try {

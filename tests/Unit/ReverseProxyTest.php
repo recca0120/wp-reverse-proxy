@@ -266,4 +266,132 @@ class ReverseProxyTest extends TestCase
         // Verify response was modified
         $this->assertEquals('yes', $response->getHeaderLine('X-Processed-By-Interface'));
     }
+
+    public function test_global_middleware_executes_for_all_routes()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) {
+            $response = $next($request->withHeader('X-Global', 'yes'));
+            return $response->withHeader('X-Global-Response', 'yes');
+        });
+
+        $request = new ServerRequest('GET', '/api/users');
+        $route = new Route('/api/*', 'https://backend.example.com');
+
+        $response = $this->reverseProxy->handle($request, [$route]);
+
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertEquals('yes', $lastRequest->getHeaderLine('X-Global'));
+        $this->assertEquals('yes', $response->getHeaderLine('X-Global-Response'));
+    }
+
+    public function test_global_middleware_wraps_route_middleware()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $order = [];
+
+        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
+            $order[] = 'global:before';
+            $response = $next($request);
+            $order[] = 'global:after';
+            return $response;
+        });
+
+        $route = (new Route('/api/*', 'https://backend.example.com'))
+            ->middleware(function ($request, $next) use (&$order) {
+                $order[] = 'route:before';
+                $response = $next($request);
+                $order[] = 'route:after';
+                return $response;
+            });
+
+        $request = new ServerRequest('GET', '/api/users');
+        $this->reverseProxy->handle($request, [$route]);
+
+        $this->assertEquals([
+            'global:before',
+            'route:before',
+            'route:after',
+            'global:after',
+        ], $order);
+    }
+
+    public function test_multiple_global_middlewares_execute_in_order()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $order = [];
+
+        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
+            $order[] = 'global1:before';
+            $response = $next($request);
+            $order[] = 'global1:after';
+            return $response;
+        });
+
+        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
+            $order[] = 'global2:before';
+            $response = $next($request);
+            $order[] = 'global2:after';
+            return $response;
+        });
+
+        $request = new ServerRequest('GET', '/api/users');
+        $route = new Route('/api/*', 'https://backend.example.com');
+
+        $this->reverseProxy->handle($request, [$route]);
+
+        $this->assertEquals([
+            'global1:before',
+            'global2:before',
+            'global2:after',
+            'global1:after',
+        ], $order);
+    }
+
+    public function test_global_middleware_can_catch_exception()
+    {
+        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) {
+            try {
+                return $next($request);
+            } catch (\Exception $e) {
+                return new Response(502, [], '{"error":"caught"}');
+            }
+        });
+
+        $route = (new Route('/api/*', 'https://backend.example.com'))
+            ->middleware(function ($request, $next) {
+                throw new \RuntimeException('Error');
+            });
+
+        $request = new ServerRequest('GET', '/api/users');
+        $response = $this->reverseProxy->handle($request, [$route]);
+
+        $this->assertEquals(502, $response->getStatusCode());
+        $this->assertEquals('{"error":"caught"}', (string) $response->getBody());
+    }
+
+    public function test_global_middleware_accepts_middleware_interface()
+    {
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        $middleware = new class implements MiddlewareInterface {
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request->withHeader('X-Interface-Global', 'yes'));
+            }
+        };
+
+        $this->reverseProxy->addGlobalMiddleware($middleware);
+
+        $request = new ServerRequest('GET', '/api/users');
+        $route = new Route('/api/*', 'https://backend.example.com');
+
+        $this->reverseProxy->handle($request, [$route]);
+
+        $lastRequest = $this->mockClient->getLastRequest();
+        $this->assertEquals('yes', $lastRequest->getHeaderLine('X-Interface-Global'));
+    }
 }

@@ -10,6 +10,9 @@ use ReverseProxy\MiddlewareInterface;
 
 class LoggingMiddleware implements MiddlewareInterface
 {
+    /** @var int */
+    public $priority = -90;
+
     /** @var LoggerInterface */
     private $logger;
 

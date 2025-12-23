@@ -237,4 +237,114 @@ class RouteTest extends TestCase
 
         $this->assertEquals('https://backend.example.com/api/users/123', $result);
     }
+
+    public function test_it_sorts_middlewares_by_priority()
+    {
+        $lowPriority = new class implements MiddlewareInterface {
+            public $priority = 10;
+
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request);
+            }
+        };
+
+        $highPriority = new class implements MiddlewareInterface {
+            public $priority = -100;
+
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request);
+            }
+        };
+
+        $route = new Route('/api/*', 'https://backend.example.com', [$lowPriority, $highPriority]);
+
+        $middlewares = $route->getMiddlewares();
+
+        // highPriority (-100) should come before lowPriority (10)
+        $this->assertSame($highPriority, $middlewares[0]);
+        $this->assertSame($lowPriority, $middlewares[1]);
+    }
+
+    public function test_it_uses_zero_priority_for_middlewares_without_priority()
+    {
+        $withPriority = new class implements MiddlewareInterface {
+            public $priority = -50;
+
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request);
+            }
+        };
+
+        $withoutPriority = new class implements MiddlewareInterface {
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request);
+            }
+        };
+
+        $route = new Route('/api/*', 'https://backend.example.com', [$withoutPriority, $withPriority]);
+
+        $middlewares = $route->getMiddlewares();
+
+        // withPriority (-50) should come before withoutPriority (0)
+        $this->assertSame($withPriority, $middlewares[0]);
+        $this->assertSame($withoutPriority, $middlewares[1]);
+    }
+
+    public function test_it_uses_zero_priority_for_closure_middlewares()
+    {
+        $highPriority = new class implements MiddlewareInterface {
+            public $priority = -100;
+
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request);
+            }
+        };
+
+        $closure = function ($request, $next) {
+            return $next($request);
+        };
+
+        $route = new Route('/api/*', 'https://backend.example.com', [$closure, $highPriority]);
+
+        $middlewares = $route->getMiddlewares();
+
+        // highPriority (-100) should come before closure (0)
+        $this->assertSame($highPriority, $middlewares[0]);
+        $this->assertSame($closure, $middlewares[1]);
+    }
+
+    public function test_it_maintains_order_for_same_priority()
+    {
+        $first = new class implements MiddlewareInterface {
+            public $priority = 0;
+            public $name = 'first';
+
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request);
+            }
+        };
+
+        $second = new class implements MiddlewareInterface {
+            public $priority = 0;
+            public $name = 'second';
+
+            public function process(RequestInterface $request, callable $next): ResponseInterface
+            {
+                return $next($request);
+            }
+        };
+
+        $route = new Route('/api/*', 'https://backend.example.com', [$first, $second]);
+
+        $middlewares = $route->getMiddlewares();
+
+        $this->assertEquals('first', $middlewares[0]->name);
+        $this->assertEquals('second', $middlewares[1]->name);
+    }
 }

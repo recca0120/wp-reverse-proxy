@@ -15,7 +15,7 @@ class Route
     /** @var string */
     private $target;
 
-    /** @var callable[] */
+    /** @var array */
     private $middlewares = [];
 
     /**
@@ -51,23 +51,46 @@ class Route
      */
     public function middleware($middleware): self
     {
-        if ($middleware instanceof MiddlewareInterface) {
-            $this->middlewares[] = function ($request, $next) use ($middleware) {
-                return $middleware->process($request, $next);
-            };
-        } else {
-            $this->middlewares[] = $middleware;
-        }
+        $this->middlewares[] = $middleware;
 
         return $this;
     }
 
     /**
-     * @return callable[]
+     * @return array
      */
     public function getMiddlewares(): array
     {
-        return $this->middlewares;
+        return $this->sortByPriority($this->middlewares);
+    }
+
+    /**
+     * @param array $middlewares
+     * @return array
+     */
+    private function sortByPriority(array $middlewares): array
+    {
+        usort($middlewares, function ($a, $b) {
+            $priorityA = $this->getPriority($a);
+            $priorityB = $this->getPriority($b);
+
+            return $priorityA <=> $priorityB;
+        });
+
+        return $middlewares;
+    }
+
+    /**
+     * @param mixed $middleware
+     * @return int
+     */
+    private function getPriority($middleware): int
+    {
+        if (is_object($middleware) && property_exists($middleware, 'priority')) {
+            return (int) $middleware->priority;
+        }
+
+        return 0;
     }
 
     public function matches(ServerRequestInterface $request): ?string

@@ -20,6 +20,9 @@ class ReverseProxy
     /** @var StreamFactoryInterface */
     private $streamFactory;
 
+    /** @var array */
+    private $globalMiddlewares = [];
+
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
@@ -28,6 +31,17 @@ class ReverseProxy
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
+    }
+
+    /**
+     * @param callable|MiddlewareInterface $middleware
+     * @return self
+     */
+    public function addGlobalMiddleware($middleware): self
+    {
+        $this->globalMiddlewares[] = $middleware;
+
+        return $this;
     }
 
     /**
@@ -56,14 +70,33 @@ class ReverseProxy
             return $this->client->sendRequest($request);
         };
 
-        // Wrap with middlewares (in reverse order)
+        // Wrap with route middlewares (in reverse order)
         foreach (array_reverse($route->getMiddlewares()) as $middleware) {
-            $handler = function (RequestInterface $request) use ($middleware, $handler) {
-                return $middleware($request, $handler);
-            };
+            $handler = $this->wrapMiddleware($middleware, $handler);
+        }
+
+        // Wrap with global middlewares (in reverse order, so first added is outermost)
+        foreach (array_reverse($this->globalMiddlewares) as $middleware) {
+            $handler = $this->wrapMiddleware($middleware, $handler);
         }
 
         return $handler($request);
+    }
+
+    /**
+     * @param callable|MiddlewareInterface $middleware
+     * @param callable $handler
+     * @return callable
+     */
+    private function wrapMiddleware($middleware, callable $handler): callable
+    {
+        return function (RequestInterface $request) use ($middleware, $handler) {
+            if ($middleware instanceof MiddlewareInterface) {
+                return $middleware->process($request, $handler);
+            }
+
+            return $middleware($request, $handler);
+        };
     }
 
     private function buildProxyRequest(ServerRequestInterface $originalRequest, Route $route, string $targetUrl): RequestInterface

@@ -22,19 +22,14 @@ class Plugin
     /** @var ResponseEmitter */
     private $responseEmitter;
 
-    /** @var array */
-    private $defaultMiddlewares;
-
     public function __construct(
         ReverseProxy $reverseProxy,
         ServerRequestFactory $serverRequestFactory,
-        ResponseEmitter $responseEmitter,
-        array $defaultMiddlewares = []
+        ResponseEmitter $responseEmitter
     ) {
         $this->reverseProxy = $reverseProxy;
         $this->serverRequestFactory = $serverRequestFactory;
         $this->responseEmitter = $responseEmitter;
-        $this->defaultMiddlewares = $defaultMiddlewares;
     }
 
     public static function create(?ClientInterface $httpClient = null): self
@@ -48,15 +43,13 @@ class Plugin
             $psr17Factory
         );
 
+        $reverseProxy->addGlobalMiddleware(new ErrorHandlingMiddleware());
+        $reverseProxy->addGlobalMiddleware(new LoggingMiddleware(new Logger()));
+
         $serverRequestFactory = new ServerRequestFactory($psr17Factory);
         $responseEmitter = new ResponseEmitter();
 
-        $defaultMiddlewares = [
-            new ErrorHandlingMiddleware(),
-            new LoggingMiddleware(new Logger()),
-        ];
-
-        return new self($reverseProxy, $serverRequestFactory, $responseEmitter, $defaultMiddlewares);
+        return new self($reverseProxy, $serverRequestFactory, $responseEmitter);
     }
 
     /**
@@ -66,24 +59,8 @@ class Plugin
     public function handle(array $routes): ?ResponseInterface
     {
         $request = $this->serverRequestFactory->createFromGlobals();
-        $routes = $this->wrapRoutesWithDefaultMiddlewares($routes);
 
         return $this->reverseProxy->handle($request, $routes);
-    }
-
-    /**
-     * @param Route[] $routes
-     * @return Route[]
-     */
-    private function wrapRoutesWithDefaultMiddlewares(array $routes): array
-    {
-        foreach ($routes as $route) {
-            foreach ($this->defaultMiddlewares as $middleware) {
-                $route->middleware($middleware);
-            }
-        }
-
-        return $routes;
     }
 
     public function emit(ResponseInterface $response): void
