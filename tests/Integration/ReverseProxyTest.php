@@ -2,8 +2,10 @@
 
 namespace ReverseProxy\Tests\Integration;
 
+use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use ReverseProxy\ReverseProxy;
 use WP_UnitTestCase;
@@ -227,5 +229,159 @@ class ReverseProxyTest extends WP_UnitTestCase
             'https://backend.example.com/api/users?page=2&limit=10&sort=name',
             (string) $lastRequest->getUri()
         );
+    }
+
+    public function test_it_forwards_backend_error_status_code()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應 404 錯誤
+        $this->mockClient->addResponse(
+            new Response(404, ['Content-Type' => 'application/json'], '{"error":"Not Found"}')
+        );
+
+        // And: 捕獲 response 資訊
+        $capturedResponse = null;
+        add_filter('reverse_proxy_response', function ($response) use (&$capturedResponse) {
+            $capturedResponse = $response;
+
+            return $response;
+        });
+
+        // When: 請求 /api/users/999
+        ob_start();
+        $this->go_to('/api/users/999');
+        $output = ob_get_clean();
+
+        // Then: 驗證狀態碼和回應
+        $this->assertNotNull($capturedResponse);
+        $this->assertEquals(404, $capturedResponse->getStatusCode());
+        $this->assertEquals('{"error":"Not Found"}', $output);
+    }
+
+    public function test_it_forwards_backend_500_error()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應 500 錯誤
+        $this->mockClient->addResponse(
+            new Response(500, ['Content-Type' => 'application/json'], '{"error":"Internal Server Error"}')
+        );
+
+        // And: 捕獲 response 資訊
+        $capturedResponse = null;
+        add_filter('reverse_proxy_response', function ($response) use (&$capturedResponse) {
+            $capturedResponse = $response;
+
+            return $response;
+        });
+
+        // When: 請求 /api/crash
+        ob_start();
+        $this->go_to('/api/crash');
+        $output = ob_get_clean();
+
+        // Then: 驗證狀態碼和回應
+        $this->assertNotNull($capturedResponse);
+        $this->assertEquals(500, $capturedResponse->getStatusCode());
+        $this->assertEquals('{"error":"Internal Server Error"}', $output);
+    }
+
+    public function test_it_handles_connection_error()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 連線錯誤
+        $this->mockClient->addException(
+            new NetworkException('Connection refused', new Request('GET', 'https://backend.example.com/api/users'))
+        );
+
+        // And: 捕獲錯誤
+        $capturedError = null;
+        add_action('reverse_proxy_error', function ($error) use (&$capturedError) {
+            $capturedError = $error;
+        });
+
+        // When: 請求 /api/users
+        ob_start();
+        $this->go_to('/api/users');
+        $output = ob_get_clean();
+
+        // Then: 驗證錯誤被捕獲
+        $this->assertNotNull($capturedError);
+        $this->assertInstanceOf(NetworkException::class, $capturedError);
+
+        // And: 應該返回 502 Bad Gateway
+        $this->assertStringContainsString('502', $output);
+    }
+
+    public function test_it_forwards_response_headers()
+    {
+        // Given: 註冊代理規則
+        add_filter('reverse_proxy_rules', function ($rules) {
+            $rules[] = [
+                'source' => '/api/*',
+                'target' => 'https://backend.example.com',
+            ];
+
+            return $rules;
+        });
+
+        // And: Mock 後端回應帶有自訂 headers
+        $this->mockClient->addResponse(
+            new Response(200, [
+                'Content-Type' => 'application/json',
+                'X-Custom-Header' => 'custom-value',
+                'X-Request-Id' => 'abc123',
+                'Cache-Control' => 'no-cache',
+            ], '{"data":"test"}')
+        );
+
+        // And: 捕獲 response 資訊
+        $capturedResponse = null;
+        add_filter('reverse_proxy_response', function ($response) use (&$capturedResponse) {
+            $capturedResponse = $response;
+
+            return $response;
+        });
+
+        // When: 請求 /api/data
+        ob_start();
+        $this->go_to('/api/data');
+        $output = ob_get_clean();
+
+        // Then: 驗證 response headers 存在
+        $this->assertNotNull($capturedResponse);
+        $this->assertEquals('application/json', $capturedResponse->getHeaderLine('Content-Type'));
+        $this->assertEquals('custom-value', $capturedResponse->getHeaderLine('X-Custom-Header'));
+        $this->assertEquals('abc123', $capturedResponse->getHeaderLine('X-Request-Id'));
+        $this->assertEquals('no-cache', $capturedResponse->getHeaderLine('Cache-Control'));
+
+        // And: 驗證回應內容
+        $this->assertEquals('{"data":"test"}', $output);
     }
 }

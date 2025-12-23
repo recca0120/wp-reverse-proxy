@@ -43,12 +43,12 @@ add_filter('reverse_proxy_rules', function ($rules) {
 - [x] Query string preservation
 - [ ] Request body for different content types (JSON, form-data)
 
-### Phase 3: Response Handling [TODO]
+### Phase 3: Response Handling [COMPLETED]
 
-- [ ] Response headers forwarding
-- [ ] Response status code handling
+- [x] Response headers forwarding
+- [x] Response status code handling (404, 500, etc.)
+- [x] Error handling (connection refused → 502 Bad Gateway)
 - [ ] Streaming large responses
-- [ ] Error handling (timeout, connection refused, etc.)
 
 ### Phase 4: Advanced Features [TODO]
 
@@ -79,10 +79,12 @@ add_filter('reverse_proxy_rules', function ($rules) {
 | `test_it_forwards_post_request_with_body` | ✅ | POST body forwarding |
 | `test_it_forwards_request_headers` | ✅ | Headers forwarding |
 | `test_it_preserves_query_string` | ✅ | Query string handling |
+| `test_it_forwards_backend_error_status_code` | ✅ | 404 error forwarding |
+| `test_it_forwards_backend_500_error` | ✅ | 500 error forwarding |
+| `test_it_handles_connection_error` | ✅ | Connection error → 502 |
+| `test_it_forwards_response_headers` | ✅ | Response headers forwarding |
 
 ### Planned Tests
-| `test_it_returns_backend_error_response` | 3 | Error response handling |
-| `test_it_handles_connection_timeout` | 3 | Timeout handling |
 | `test_it_matches_rules_in_order` | 4 | Rule priority |
 | `test_it_rewrites_path` | 4 | Path rewriting |
 

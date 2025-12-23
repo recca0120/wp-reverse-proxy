@@ -3,6 +3,7 @@
 namespace ReverseProxy;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
@@ -59,9 +60,26 @@ class ReverseProxy
             }
         }
 
-        $response = $this->client->sendRequest($request);
+        try {
+            $response = $this->client->sendRequest($request);
+            $response = apply_filters('reverse_proxy_response', $response, $request);
 
-        $this->sendResponse($response);
+            $this->sendResponse($response);
+        } catch (ClientExceptionInterface $e) {
+            do_action('reverse_proxy_error', $e, $request);
+
+            $this->sendErrorResponse(502, 'Bad Gateway: ' . $e->getMessage());
+        }
+    }
+
+    private function sendErrorResponse(int $statusCode, string $message): void
+    {
+        if (! headers_sent()) {
+            http_response_code($statusCode);
+            header('Content-Type: application/json');
+        }
+
+        echo json_encode(['error' => $message, 'status' => $statusCode]);
     }
 
     private function getRequestHeaders(): array
