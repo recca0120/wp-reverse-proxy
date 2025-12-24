@@ -516,12 +516,7 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 ### 自訂 HTTP 客戶端
 
 ```php
-// 使用 Guzzle 取代預設的 WordPressHttpClient
-add_filter('reverse_proxy_http_client', function ($client) {
-    return new \GuzzleHttp\Client();
-});
-
-// 或設定自訂選項
+// 自訂 Guzzle 選項
 add_filter('reverse_proxy_http_client', function ($client) {
     return new \GuzzleHttp\Client([
         'timeout' => 30,
