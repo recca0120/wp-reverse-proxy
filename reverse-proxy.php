@@ -27,8 +27,7 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
 
 // Initialize plugin
 add_action('parse_request', function () {
-    $httpClient = apply_filters('reverse_proxy_http_client', null);
-    $plugin = ReverseProxy\WordPress\Plugin::create($httpClient);
+    $plugin = ReverseProxy\WordPress\Plugin::create();
 
     $routes = apply_filters('reverse_proxy_routes', []);
     $response = $plugin->handle($routes);
