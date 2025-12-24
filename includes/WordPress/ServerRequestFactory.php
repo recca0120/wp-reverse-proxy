@@ -37,9 +37,17 @@ class ServerRequestFactory
     {
         $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
-        $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+        $requestUri = $this->normalizeRequestUri($_SERVER['REQUEST_URI'] ?? '/');
 
         return new Uri($scheme . '://' . $host . $requestUri);
+    }
+
+    private function normalizeRequestUri(string $requestUri): string
+    {
+        $parts = explode('?', $requestUri, 2);
+        $path = preg_replace('#/+#', '/', $parts[0]);
+
+        return isset($parts[1]) ? $path . '?' . $parts[1] : $path;
     }
 
     private function getHeaders(): array
