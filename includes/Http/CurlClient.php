@@ -22,6 +22,8 @@ class CurlClient implements ClientInterface
     {
         $ch = curl_init();
 
+        $verify = $this->options['verify'] ?? true;
+
         $curlOptions = [
             CURLOPT_URL => (string) $request->getUri(),
             CURLOPT_CUSTOMREQUEST => $request->getMethod(),
@@ -30,7 +32,8 @@ class CurlClient implements ClientInterface
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_HTTPHEADER => $this->prepareHeaders($request),
             CURLOPT_TIMEOUT => $this->options['timeout'] ?? 30,
-            CURLOPT_SSL_VERIFYPEER => $this->options['verify'] ?? true,
+            CURLOPT_SSL_VERIFYPEER => $verify,
+            CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
         ];
 
         if (isset($this->options['resolve'])) {

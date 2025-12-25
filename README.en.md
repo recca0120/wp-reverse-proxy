@@ -102,15 +102,15 @@ add_filter('reverse_proxy_routes', function () {
 
 ```php
 use ReverseProxy\Route;
-use ReverseProxy\Middleware\ProxyHeadersMiddleware;
-use ReverseProxy\Middleware\SetHostMiddleware;
-use ReverseProxy\Middleware\RewritePathMiddleware;
+use ReverseProxy\Middleware\ProxyHeaders;
+use ReverseProxy\Middleware\SetHost;
+use ReverseProxy\Middleware\RewritePath;
 
 add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/*', 'https://backend.example.com', [
-            new ProxyHeadersMiddleware(),
-            new SetHostMiddleware('custom-host.com'),
+            new ProxyHeaders(),
+            new SetHost('custom-host.com'),
         ]),
     ];
 });
@@ -164,15 +164,15 @@ add_filter('reverse_proxy_routes', function () {
 
 ## Built-in Middlewares
 
-### ProxyHeadersMiddleware
+### ProxyHeaders
 
 Adds standard proxy headers to forwarded requests:
 
 ```php
-use ReverseProxy\Middleware\ProxyHeadersMiddleware;
+use ReverseProxy\Middleware\ProxyHeaders;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new ProxyHeadersMiddleware(),
+    new ProxyHeaders(),
 ]);
 ```
 
@@ -182,50 +182,50 @@ Headers added:
 - `X-Forwarded-Proto` - Original protocol (http/https)
 - `X-Forwarded-Port` - Original port
 
-### SetHostMiddleware
+### SetHost
 
 Sets a custom Host header:
 
 ```php
-use ReverseProxy\Middleware\SetHostMiddleware;
+use ReverseProxy\Middleware\SetHost;
 
 new Route('/api/*', 'https://127.0.0.1:8080', [
-    new SetHostMiddleware('api.example.com'),
+    new SetHost('api.example.com'),
 ]);
 ```
 
-### RewritePathMiddleware
+### RewritePath
 
 Rewrites the request path:
 
 ```php
-use ReverseProxy\Middleware\RewritePathMiddleware;
+use ReverseProxy\Middleware\RewritePath;
 
 // /api/v1/users → /v1/users
 new Route('/api/v1/*', 'https://backend.example.com', [
-    new RewritePathMiddleware('/api/v1/*', '/v1/$1'),
+    new RewritePath('/api/v1/*', '/v1/$1'),
 ]);
 
 // /legacy/users → /api/v2/users
 new Route('/legacy/*', 'https://backend.example.com', [
-    new RewritePathMiddleware('/legacy/*', '/api/v2/$1'),
+    new RewritePath('/legacy/*', '/api/v2/$1'),
 ]);
 
 // Multiple wildcards: /api/users/posts/123 → /v2/users/items/123
 new Route('/api/*/posts/*', 'https://backend.example.com', [
-    new RewritePathMiddleware('/api/*/posts/*', '/v2/$1/items/$2'),
+    new RewritePath('/api/*/posts/*', '/v2/$1/items/$2'),
 ]);
 ```
 
-### AllowMethodsMiddleware
+### AllowMethods
 
 Restricts allowed HTTP methods and returns 405 Method Not Allowed for others:
 
 ```php
-use ReverseProxy\Middleware\AllowMethodsMiddleware;
+use ReverseProxy\Middleware\AllowMethods;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new AllowMethodsMiddleware(['GET', 'POST']),
+    new AllowMethods(['GET', 'POST']),
 ]);
 ```
 
@@ -234,22 +234,22 @@ Features:
 - Always allows OPTIONS for CORS preflight
 - Case-insensitive method matching
 
-**Route method vs AllowMethodsMiddleware:**
+**Route method vs AllowMethods:**
 
-| Aspect | Route Method (`POST /api/*`) | AllowMethodsMiddleware |
+| Aspect | Route Method (`POST /api/*`) | AllowMethods |
 |--------|------------------------------|------------------------|
 | No match behavior | Skips to next route | Returns 405 response |
 | Use case | Route to different backends | Restrict methods on a route |
 
-### ErrorHandlingMiddleware (Enabled by Default)
+### ErrorHandling (Enabled by Default)
 
 Catches HTTP client exceptions and returns 502 Bad Gateway:
 
 ```php
-use ReverseProxy\Middleware\ErrorHandlingMiddleware;
+use ReverseProxy\Middleware\ErrorHandling;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new ErrorHandlingMiddleware(),
+    new ErrorHandling(),
 ]);
 ```
 
@@ -258,16 +258,16 @@ Features:
 - Returns 502 status code with JSON error message
 - Other exceptions are re-thrown
 
-### LoggingMiddleware (Enabled by Default)
+### Logging (Enabled by Default)
 
 Logs proxy requests and responses:
 
 ```php
-use ReverseProxy\Middleware\LoggingMiddleware;
+use ReverseProxy\Middleware\Logging;
 use ReverseProxy\WordPress\Logger;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new LoggingMiddleware(new Logger()),
+    new Logging(new Logger()),
 ]);
 ```
 
@@ -276,7 +276,7 @@ Logged information:
 - Response: status code
 - Error: exception message (then re-throws)
 
-> **Note**: `ErrorHandlingMiddleware` and `LoggingMiddleware` are automatically added to all routes by default. No manual configuration required.
+> **Note**: `ErrorHandling` and `Logging` are automatically added to all routes by default. No manual configuration required.
 
 ## Custom Middleware
 
@@ -301,7 +301,7 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 For reusable middleware classes:
 
 ```php
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -359,8 +359,8 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 Using fluent API:
 ```php
 $route = (new Route('/api/*', 'https://backend.example.com'))
-    ->middleware(new ProxyHeadersMiddleware())
-    ->middleware(new SetHostMiddleware('api.example.com'))
+    ->middleware(new ProxyHeaders())
+    ->middleware(new SetHost('api.example.com'))
     ->middleware($authMiddleware)
     ->middleware($loggingMiddleware);
 ```
@@ -368,8 +368,8 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 Or via constructor:
 ```php
 $route = new Route('/api/*', 'https://backend.example.com', [
-    new ProxyHeadersMiddleware(),
-    new SetHostMiddleware('api.example.com'),
+    new ProxyHeaders(),
+    new SetHost('api.example.com'),
     $authMiddleware,
     $loggingMiddleware,
 ]);
@@ -385,7 +385,7 @@ Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Resp
 Middlewares can define a `$priority` property to control execution order (lower numbers execute first, i.e., outermost layer):
 
 ```php
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -401,8 +401,8 @@ class AuthMiddleware implements MiddlewareInterface
 ```
 
 Built-in priorities:
-- `ErrorHandlingMiddleware`: -100 (outermost, catches all errors)
-- `LoggingMiddleware`: -90 (logs all requests)
+- `ErrorHandling`: -100 (outermost, catches all errors)
+- `Logging`: -90 (logs all requests)
 - Custom middlewares default: 0
 
 ## Real-World Example
@@ -424,14 +424,14 @@ WordPress equivalent:
 
 ```php
 use ReverseProxy\Route;
-use ReverseProxy\Middleware\ProxyHeadersMiddleware;
-use ReverseProxy\Middleware\SetHostMiddleware;
+use ReverseProxy\Middleware\ProxyHeaders;
+use ReverseProxy\Middleware\SetHost;
 
 add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/v1/*', 'https://127.0.0.1:8080', [
-            new ProxyHeadersMiddleware(),
-            new SetHostMiddleware('api.example.com'),
+            new ProxyHeaders(),
+            new SetHost('api.example.com'),
         ]),
     ];
 });
@@ -502,7 +502,7 @@ add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
 // Keep only error handling
 add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
     return array_filter($middlewares, function ($m) {
-        return $m instanceof \ReverseProxy\Middleware\ErrorHandlingMiddleware;
+        return $m instanceof \ReverseProxy\Middleware\ErrorHandling;
     });
 });
 

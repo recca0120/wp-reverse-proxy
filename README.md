@@ -102,15 +102,15 @@ add_filter('reverse_proxy_routes', function () {
 
 ```php
 use ReverseProxy\Route;
-use ReverseProxy\Middleware\ProxyHeadersMiddleware;
-use ReverseProxy\Middleware\SetHostMiddleware;
-use ReverseProxy\Middleware\RewritePathMiddleware;
+use ReverseProxy\Middleware\ProxyHeaders;
+use ReverseProxy\Middleware\SetHost;
+use ReverseProxy\Middleware\RewritePath;
 
 add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/*', 'https://backend.example.com', [
-            new ProxyHeadersMiddleware(),
-            new SetHostMiddleware('custom-host.com'),
+            new ProxyHeaders(),
+            new SetHost('custom-host.com'),
         ]),
     ];
 });
@@ -164,15 +164,15 @@ add_filter('reverse_proxy_routes', function () {
 
 ## 內建中介層
 
-### ProxyHeadersMiddleware
+### ProxyHeaders
 
 為轉發請求新增標準代理標頭：
 
 ```php
-use ReverseProxy\Middleware\ProxyHeadersMiddleware;
+use ReverseProxy\Middleware\ProxyHeaders;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new ProxyHeadersMiddleware(),
+    new ProxyHeaders(),
 ]);
 ```
 
@@ -182,50 +182,50 @@ new Route('/api/*', 'https://backend.example.com', [
 - `X-Forwarded-Proto` - 原始協定 (http/https)
 - `X-Forwarded-Port` - 原始連接埠
 
-### SetHostMiddleware
+### SetHost
 
 設定自訂 Host 標頭：
 
 ```php
-use ReverseProxy\Middleware\SetHostMiddleware;
+use ReverseProxy\Middleware\SetHost;
 
 new Route('/api/*', 'https://127.0.0.1:8080', [
-    new SetHostMiddleware('api.example.com'),
+    new SetHost('api.example.com'),
 ]);
 ```
 
-### RewritePathMiddleware
+### RewritePath
 
 重寫請求路徑：
 
 ```php
-use ReverseProxy\Middleware\RewritePathMiddleware;
+use ReverseProxy\Middleware\RewritePath;
 
 // /api/v1/users → /v1/users
 new Route('/api/v1/*', 'https://backend.example.com', [
-    new RewritePathMiddleware('/api/v1/*', '/v1/$1'),
+    new RewritePath('/api/v1/*', '/v1/$1'),
 ]);
 
 // /legacy/users → /api/v2/users
 new Route('/legacy/*', 'https://backend.example.com', [
-    new RewritePathMiddleware('/legacy/*', '/api/v2/$1'),
+    new RewritePath('/legacy/*', '/api/v2/$1'),
 ]);
 
 // 多個萬用字元：/api/users/posts/123 → /v2/users/items/123
 new Route('/api/*/posts/*', 'https://backend.example.com', [
-    new RewritePathMiddleware('/api/*/posts/*', '/v2/$1/items/$2'),
+    new RewritePath('/api/*/posts/*', '/v2/$1/items/$2'),
 ]);
 ```
 
-### AllowMethodsMiddleware
+### AllowMethods
 
 限制允許的 HTTP 方法，其他方法回傳 405 Method Not Allowed：
 
 ```php
-use ReverseProxy\Middleware\AllowMethodsMiddleware;
+use ReverseProxy\Middleware\AllowMethods;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new AllowMethodsMiddleware(['GET', 'POST']),
+    new AllowMethods(['GET', 'POST']),
 ]);
 ```
 
@@ -234,22 +234,22 @@ new Route('/api/*', 'https://backend.example.com', [
 - CORS 預檢請求的 OPTIONS 總是允許
 - 方法匹配不區分大小寫
 
-**Route 方法 vs AllowMethodsMiddleware：**
+**Route 方法 vs AllowMethods：**
 
-| 面向 | Route 方法 (`POST /api/*`) | AllowMethodsMiddleware |
+| 面向 | Route 方法 (`POST /api/*`) | AllowMethods |
 |------|---------------------------|------------------------|
 | 不符合時的行為 | 跳至下一個路由 | 回傳 405 回應 |
 | 使用場景 | 導向不同後端 | 限制路由允許的方法 |
 
-### ErrorHandlingMiddleware（預設啟用）
+### ErrorHandling（預設啟用）
 
 捕獲 HTTP 客戶端異常，回傳 502 Bad Gateway：
 
 ```php
-use ReverseProxy\Middleware\ErrorHandlingMiddleware;
+use ReverseProxy\Middleware\ErrorHandling;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new ErrorHandlingMiddleware(),
+    new ErrorHandling(),
 ]);
 ```
 
@@ -258,16 +258,16 @@ new Route('/api/*', 'https://backend.example.com', [
 - 回傳 502 狀態碼與 JSON 錯誤訊息
 - 其他異常會繼續向上拋出
 
-### LoggingMiddleware（預設啟用）
+### Logging（預設啟用）
 
 記錄代理請求與回應：
 
 ```php
-use ReverseProxy\Middleware\LoggingMiddleware;
+use ReverseProxy\Middleware\Logging;
 use ReverseProxy\WordPress\Logger;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new LoggingMiddleware(new Logger()),
+    new Logging(new Logger()),
 ]);
 ```
 
@@ -276,7 +276,7 @@ new Route('/api/*', 'https://backend.example.com', [
 - 回應：狀態碼
 - 錯誤：異常訊息（然後重新拋出）
 
-> **注意**：`ErrorHandlingMiddleware` 和 `LoggingMiddleware` 預設會自動加入所有路由，不需手動設定。
+> **注意**：`ErrorHandling` 和 `Logging` 預設會自動加入所有路由，不需手動設定。
 
 ## 自訂中介層
 
@@ -301,7 +301,7 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 建立可重複使用的中介層類別：
 
 ```php
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -359,8 +359,8 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 使用流暢 API：
 ```php
 $route = (new Route('/api/*', 'https://backend.example.com'))
-    ->middleware(new ProxyHeadersMiddleware())
-    ->middleware(new SetHostMiddleware('api.example.com'))
+    ->middleware(new ProxyHeaders())
+    ->middleware(new SetHost('api.example.com'))
     ->middleware($authMiddleware)
     ->middleware($loggingMiddleware);
 ```
@@ -368,8 +368,8 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 或透過建構子：
 ```php
 $route = new Route('/api/*', 'https://backend.example.com', [
-    new ProxyHeadersMiddleware(),
-    new SetHostMiddleware('api.example.com'),
+    new ProxyHeaders(),
+    new SetHost('api.example.com'),
     $authMiddleware,
     $loggingMiddleware,
 ]);
@@ -385,7 +385,7 @@ Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Resp
 中介層可透過 `$priority` 屬性控制執行順序（數字越小越先執行，即越外層）：
 
 ```php
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -401,8 +401,8 @@ class AuthMiddleware implements MiddlewareInterface
 ```
 
 內建優先權：
-- `ErrorHandlingMiddleware`: -100（最外層，捕獲所有錯誤）
-- `LoggingMiddleware`: -90（記錄所有請求）
+- `ErrorHandling`: -100（最外層，捕獲所有錯誤）
+- `Logging`: -90（記錄所有請求）
 - 自訂中介層預設: 0
 
 ## 實際範例
@@ -424,14 +424,14 @@ WordPress 對應寫法：
 
 ```php
 use ReverseProxy\Route;
-use ReverseProxy\Middleware\ProxyHeadersMiddleware;
-use ReverseProxy\Middleware\SetHostMiddleware;
+use ReverseProxy\Middleware\ProxyHeaders;
+use ReverseProxy\Middleware\SetHost;
 
 add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/v1/*', 'https://127.0.0.1:8080', [
-            new ProxyHeadersMiddleware(),
-            new SetHostMiddleware('api.example.com'),
+            new ProxyHeaders(),
+            new SetHost('api.example.com'),
         ]),
     ];
 });
@@ -502,7 +502,7 @@ add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
 // 只保留錯誤處理
 add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
     return array_filter($middlewares, function ($m) {
-        return $m instanceof \ReverseProxy\Middleware\ErrorHandlingMiddleware;
+        return $m instanceof \ReverseProxy\Middleware\ErrorHandling;
     });
 });
 
