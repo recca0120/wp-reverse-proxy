@@ -29,7 +29,7 @@ A WordPress plugin that proxies specific URL paths to external backend servers.
 ### Download from GitHub Releases (Recommended)
 
 1. Go to the [Releases page](https://github.com/recca0120/wp-reverse-proxy/releases)
-2. Download the latest `wp-reverse-proxy.zip`
+2. Download the latest `reverse-proxy.zip`
 3. In WordPress admin → Plugins → Add New → Upload Plugin
 4. Upload the zip file and activate
 
