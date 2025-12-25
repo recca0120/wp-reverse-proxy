@@ -34,7 +34,7 @@ switch ($path) {
 
     case '/redirect':
         http_response_code(302);
-        header('Location: http://localhost:' . $_SERVER['SERVER_PORT'] . '/redirected');
+        header('Location: http://localhost:'.$_SERVER['SERVER_PORT'].'/redirected');
         exit;
 
     case '/headers':

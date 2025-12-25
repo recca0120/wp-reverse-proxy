@@ -119,13 +119,6 @@ class ReverseProxy
         $request = $this->requestFactory->createRequest($method, $targetUrl);
 
         foreach ($originalRequest->getHeaders() as $name => $values) {
-            if (strtolower($name) === 'accept-encoding') {
-                $values = [$this->removeUnsupportedEncodings(implode(', ', $values))];
-                if ($values[0] === '') {
-                    continue;
-                }
-            }
-
             $request = $request->withHeader($name, $values);
         }
 
@@ -142,13 +135,5 @@ class ReverseProxy
         }
 
         return $request;
-    }
-
-    private function removeUnsupportedEncodings(string $encoding): string
-    {
-        // Remove Brotli (br) as it may not be supported by all HTTP clients
-        $encoding = preg_replace('/\bbr\b\s*,?\s*/', '', $encoding);
-
-        return rtrim($encoding, ', ');
     }
 }

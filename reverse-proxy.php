@@ -28,7 +28,13 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
 // Handle proxy requests
 add_action('parse_request', function () {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
-    $httpClient = apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\WordPressHttpClient);
+    $httpClient = new ReverseProxy\Http\PluginClient(
+        apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\WordPressHttpClient),
+        [
+            new ReverseProxy\Http\Plugin\RemoveBrotliEncodingPlugin,
+            new ReverseProxy\Http\Plugin\RemoveHopByHopHeadersPlugin,
+        ]
+    );
 
     $proxy = new ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
     $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
@@ -37,7 +43,6 @@ add_action('parse_request', function () {
     ]));
 
     $serverRequestFactory = new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory);
-    $responseEmitter = new ReverseProxy\WordPress\ResponseEmitter;
 
     $routes = apply_filters('reverse_proxy_routes', []);
     $request = $serverRequestFactory->createFromGlobals();
@@ -45,7 +50,16 @@ add_action('parse_request', function () {
 
     if ($response !== null) {
         $response = apply_filters('reverse_proxy_response', $response);
-        $responseEmitter->emit($response);
+
+        if (! headers_sent()) {
+            http_response_code($response->getStatusCode());
+            foreach ($response->getHeaders() as $name => $values) {
+                foreach ($values as $value) {
+                    header("{$name}: {$value}", false);
+                }
+            }
+        }
+        echo $response->getBody();
 
         if (apply_filters('reverse_proxy_should_exit', true)) {
             exit;
