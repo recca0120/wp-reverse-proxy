@@ -2,12 +2,10 @@
 
 namespace ReverseProxy\Tests\Unit;
 
-use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\RequestInterface;
 use Psr\Log\LoggerInterface;
 use ReverseProxy\Middleware\LoggingMiddleware;
 

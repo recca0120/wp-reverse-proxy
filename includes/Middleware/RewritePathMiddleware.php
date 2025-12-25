@@ -45,7 +45,7 @@ class RewritePathMiddleware implements MiddlewareInterface
         $result = $this->replacement;
 
         for ($i = 1; $i < count($matches); $i++) {
-            $result = str_replace('$' . $i, $matches[$i], $result);
+            $result = str_replace('$'.$i, $matches[$i], $result);
         }
 
         return $result;
@@ -53,6 +53,6 @@ class RewritePathMiddleware implements MiddlewareInterface
 
     private function patternToRegex(string $pattern): string
     {
-        return '#^' . str_replace('\*', '(.*?)', preg_quote($pattern, '#')) . '$#';
+        return '#^'.str_replace('\*', '(.*?)', preg_quote($pattern, '#')).'$#';
     }
 }

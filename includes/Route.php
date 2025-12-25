@@ -18,11 +18,6 @@ class Route
     /** @var array */
     private $middlewares = [];
 
-    /**
-     * @param string $source
-     * @param string $target
-     * @param array $middlewares
-     */
     public function __construct(string $source, string $target, array $middlewares = [])
     {
         $this->parseSource($source);
@@ -46,8 +41,7 @@ class Route
     }
 
     /**
-     * @param callable|MiddlewareInterface $middleware
-     * @return self
+     * @param  callable|MiddlewareInterface  $middleware
      */
     public function middleware($middleware): self
     {
@@ -56,18 +50,11 @@ class Route
         return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getMiddlewares(): array
     {
         return $this->sortByPriority($this->middlewares);
     }
 
-    /**
-     * @param array $middlewares
-     * @return array
-     */
     private function sortByPriority(array $middlewares): array
     {
         usort($middlewares, function ($a, $b) {
@@ -81,8 +68,7 @@ class Route
     }
 
     /**
-     * @param mixed $middleware
-     * @return int
+     * @param  mixed  $middleware
      */
     private function getPriority($middleware): int
     {
@@ -127,17 +113,17 @@ class Route
 
     private function matchesPattern(string $path): bool
     {
-        $regex = '#^' . str_replace('\*', '(.*)', preg_quote($this->path, '#')) . '$#';
+        $regex = '#^'.str_replace('\*', '(.*)', preg_quote($this->path, '#')).'$#';
 
         return (bool) preg_match($regex, $path);
     }
 
     private function buildTargetUrl(string $path, string $queryString): string
     {
-        $url = rtrim($this->target, '/') . $path;
+        $url = rtrim($this->target, '/').$path;
 
         if ($queryString !== '') {
-            $url .= '?' . $queryString;
+            $url .= '?'.$queryString;
         }
 
         return $url;

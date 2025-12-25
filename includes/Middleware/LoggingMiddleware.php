@@ -38,7 +38,7 @@ class LoggingMiddleware implements MiddlewareInterface
 
             return $response;
         } catch (ClientExceptionInterface $e) {
-            $this->logger->error('Proxy error: ' . $e->getMessage(), [
+            $this->logger->error('Proxy error: '.$e->getMessage(), [
                 'target' => (string) $request->getUri(),
                 'exception' => get_class($e),
             ]);

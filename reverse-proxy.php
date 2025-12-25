@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Plugin Name: Reverse Proxy
  * Plugin URI: https://github.com/recca0120/wp-reverse-proxy
@@ -9,7 +10,6 @@
  * License: MIT
  * Text Domain: reverse-proxy
  */
-
 if (! defined('ABSPATH')) {
     exit;
 }

@@ -33,24 +33,23 @@ class Plugin
 
     public static function create(): self
     {
-        $psr17Factory = new Psr17Factory();
-        $httpClient = apply_filters('reverse_proxy_http_client', new WordPressHttpClient());
+        $psr17Factory = new Psr17Factory;
+        $httpClient = apply_filters('reverse_proxy_http_client', new WordPressHttpClient);
 
         $reverseProxy = new ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
         $reverseProxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
-            new ErrorHandlingMiddleware(),
-            new LoggingMiddleware(new Logger()),
+            new ErrorHandlingMiddleware,
+            new LoggingMiddleware(new Logger),
         ]));
 
         $serverRequestFactory = new ServerRequestFactory($psr17Factory);
-        $responseEmitter = new ResponseEmitter();
+        $responseEmitter = new ResponseEmitter;
 
         return new self($reverseProxy, $serverRequestFactory, $responseEmitter);
     }
 
     /**
-     * @param Route[] $routes
-     * @return ResponseInterface|null
+     * @param  Route[]  $routes
      */
     public function handle(array $routes): ?ResponseInterface
     {

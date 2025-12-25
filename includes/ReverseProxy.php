@@ -34,8 +34,7 @@ class ReverseProxy
     }
 
     /**
-     * @param callable|MiddlewareInterface $middleware
-     * @return self
+     * @param  callable|MiddlewareInterface  $middleware
      */
     public function addGlobalMiddleware($middleware): self
     {
@@ -44,10 +43,6 @@ class ReverseProxy
         return $this;
     }
 
-    /**
-     * @param array $middlewares
-     * @return self
-     */
     public function addGlobalMiddlewares(array $middlewares): self
     {
         $this->globalMiddlewares = array_merge($this->globalMiddlewares, $middlewares);
@@ -56,9 +51,7 @@ class ReverseProxy
     }
 
     /**
-     * @param ServerRequestInterface $request
-     * @param Route[] $routes
-     * @return ResponseInterface|null
+     * @param  Route[]  $routes
      */
     public function handle(ServerRequestInterface $request, array $routes): ?ResponseInterface
     {
@@ -107,9 +100,7 @@ class ReverseProxy
     }
 
     /**
-     * @param callable|MiddlewareInterface $middleware
-     * @param callable $handler
-     * @return callable
+     * @param  callable|MiddlewareInterface  $middleware
      */
     private function wrapMiddleware($middleware, callable $handler): callable
     {

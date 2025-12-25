@@ -18,7 +18,7 @@ class ErrorHandlingMiddleware implements MiddlewareInterface
         try {
             return $next($request);
         } catch (ClientExceptionInterface $e) {
-            return $this->createErrorResponse(502, 'Bad Gateway: ' . $e->getMessage());
+            return $this->createErrorResponse(502, 'Bad Gateway: '.$e->getMessage());
         }
     }
 

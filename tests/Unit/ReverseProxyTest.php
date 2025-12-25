@@ -26,8 +26,8 @@ class ReverseProxyTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->mockClient = new MockClient();
-        $this->psr17Factory = new Psr17Factory();
+        $this->mockClient = new MockClient;
+        $this->psr17Factory = new Psr17Factory;
         $this->reverseProxy = new ReverseProxy(
             $this->mockClient,
             $this->psr17Factory,
@@ -186,6 +186,7 @@ class ReverseProxyTest extends TestCase
         $route = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware(function ($request, $next) {
                 $response = $next($request);
+
                 return $response->withHeader('X-Modified-By-Middleware', 'yes');
             });
 
@@ -222,12 +223,14 @@ class ReverseProxyTest extends TestCase
                 $order[] = 'middleware1:before';
                 $response = $next($request);
                 $order[] = 'middleware1:after';
+
                 return $response;
             })
             ->middleware(function ($request, $next) use (&$order) {
                 $order[] = 'middleware2:before';
                 $response = $next($request);
                 $order[] = 'middleware2:after';
+
                 return $response;
             });
 
@@ -245,10 +248,12 @@ class ReverseProxyTest extends TestCase
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
-        $middleware = new class implements MiddlewareInterface {
+        $middleware = new class implements MiddlewareInterface
+        {
             public function process(RequestInterface $request, callable $next): ResponseInterface
             {
                 $response = $next($request->withHeader('X-From-Interface', 'yes'));
+
                 return $response->withHeader('X-Processed-By-Interface', 'yes');
             }
         };
@@ -273,6 +278,7 @@ class ReverseProxyTest extends TestCase
 
         $this->reverseProxy->addGlobalMiddleware(function ($request, $next) {
             $response = $next($request->withHeader('X-Global', 'yes'));
+
             return $response->withHeader('X-Global-Response', 'yes');
         });
 
@@ -296,6 +302,7 @@ class ReverseProxyTest extends TestCase
             $order[] = 'global:before';
             $response = $next($request);
             $order[] = 'global:after';
+
             return $response;
         });
 
@@ -304,6 +311,7 @@ class ReverseProxyTest extends TestCase
                 $order[] = 'route:before';
                 $response = $next($request);
                 $order[] = 'route:after';
+
                 return $response;
             });
 
@@ -328,6 +336,7 @@ class ReverseProxyTest extends TestCase
             $order[] = 'global1:before';
             $response = $next($request);
             $order[] = 'global1:after';
+
             return $response;
         });
 
@@ -335,6 +344,7 @@ class ReverseProxyTest extends TestCase
             $order[] = 'global2:before';
             $response = $next($request);
             $order[] = 'global2:after';
+
             return $response;
         });
 
@@ -377,7 +387,8 @@ class ReverseProxyTest extends TestCase
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
-        $middleware = new class implements MiddlewareInterface {
+        $middleware = new class implements MiddlewareInterface
+        {
             public function process(RequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request->withHeader('X-Interface-Global', 'yes'));
@@ -405,6 +416,7 @@ class ReverseProxyTest extends TestCase
             $order[] = 'mw1:before';
             $response = $next($request);
             $order[] = 'mw1:after';
+
             return $response;
         };
 
@@ -412,6 +424,7 @@ class ReverseProxyTest extends TestCase
             $order[] = 'mw2:before';
             $response = $next($request);
             $order[] = 'mw2:after';
+
             return $response;
         };
 

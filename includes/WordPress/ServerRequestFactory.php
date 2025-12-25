@@ -39,7 +39,7 @@ class ServerRequestFactory
         $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
         $requestUri = $this->normalizeRequestUri($_SERVER['REQUEST_URI'] ?? '/');
 
-        return new Uri($scheme . '://' . $host . $requestUri);
+        return new Uri($scheme.'://'.$host.$requestUri);
     }
 
     private function normalizeRequestUri(string $requestUri): string
@@ -47,7 +47,7 @@ class ServerRequestFactory
         $parts = explode('?', $requestUri, 2);
         $path = preg_replace('#/+#', '/', $parts[0]);
 
-        return isset($parts[1]) ? $path . '?' . $parts[1] : $path;
+        return isset($parts[1]) ? $path.'?'.$parts[1] : $path;
     }
 
     private function getHeaders(): array

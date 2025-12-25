@@ -13,7 +13,7 @@ class AllowMethodsMiddleware implements MiddlewareInterface
     private $allowedMethods;
 
     /**
-     * @param string[] $allowedMethods
+     * @param  string[]  $allowedMethods
      */
     public function __construct(array $allowedMethods)
     {

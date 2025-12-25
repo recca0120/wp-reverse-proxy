@@ -4,14 +4,12 @@ namespace ReverseProxy\Tests\Integration;
 
 use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
-use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use ReverseProxy\Middleware\AllowMethodsMiddleware;
 use ReverseProxy\Middleware\ProxyHeadersMiddleware;
 use ReverseProxy\Middleware\RewritePathMiddleware;
 use ReverseProxy\Middleware\SetHostMiddleware;
-use ReverseProxy\ReverseProxy;
 use ReverseProxy\Route;
 use WP_UnitTestCase;
 
@@ -24,7 +22,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient();
+        $this->mockClient = new MockClient;
 
         // 注入 Mock Client 到插件
         add_filter('reverse_proxy_http_client', function () {
@@ -385,7 +383,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new ProxyHeadersMiddleware(),
+                new ProxyHeadersMiddleware,
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -425,7 +423,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->givenRoutes([
             new Route('/api/v1/*', 'https://127.0.0.1:8080', [
                 new RewritePathMiddleware('/api/v1/*', '/v1/$1'),
-                new ProxyHeadersMiddleware(),
+                new ProxyHeadersMiddleware,
                 new SetHostMiddleware('api.example.com'),
             ]),
         ]);

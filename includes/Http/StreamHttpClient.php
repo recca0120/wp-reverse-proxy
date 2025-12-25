@@ -59,16 +59,14 @@ class StreamHttpClient implements ClientInterface
         $headers = [];
 
         foreach ($request->getHeaders() as $name => $values) {
-            $headers[] = $name . ': ' . implode(', ', $values);
+            $headers[] = $name.': '.implode(', ', $values);
         }
 
         return implode("\r\n", $headers);
     }
 
     /**
-     * @param string[] $headerLines
-     * @param int $statusCode
-     * @return array
+     * @param  string[]  $headerLines
      */
     private function parseHeaders(array $headerLines, int &$statusCode): array
     {
@@ -77,6 +75,7 @@ class StreamHttpClient implements ClientInterface
         foreach ($headerLines as $line) {
             if (preg_match('/^HTTP\/[\d.]+ (\d+)/', $line, $matches)) {
                 $statusCode = (int) $matches[1];
+
                 continue;
             }
 

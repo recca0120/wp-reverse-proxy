@@ -29,7 +29,7 @@ class WordPressHttpClientTest extends TestCase
             ];
         }, 10, 3);
 
-        $client = new WordPressHttpClient();
+        $client = new WordPressHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $response = $client->sendRequest($request);
@@ -53,7 +53,7 @@ class WordPressHttpClientTest extends TestCase
             ];
         }, 10, 3);
 
-        $client = new WordPressHttpClient();
+        $client = new WordPressHttpClient;
         $request = new Request('POST', 'https://example.com/api', [
             'Content-Type' => 'application/json',
         ], '{"data":"test"}');
@@ -72,7 +72,7 @@ class WordPressHttpClientTest extends TestCase
         $this->expectException(NetworkException::class);
         $this->expectExceptionMessage('Connection timed out');
 
-        $client = new WordPressHttpClient();
+        $client = new WordPressHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $client->sendRequest($request);
@@ -108,7 +108,7 @@ class WordPressHttpClientTest extends TestCase
             ];
         }, 10, 3);
 
-        $client = new WordPressHttpClient();
+        $client = new WordPressHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $client->sendRequest($request);
@@ -126,7 +126,7 @@ class WordPressHttpClientTest extends TestCase
             ];
         }, 10, 3);
 
-        $client = new WordPressHttpClient();
+        $client = new WordPressHttpClient;
         $request = new Request('GET', 'https://example.com/old');
 
         $response = $client->sendRequest($request);

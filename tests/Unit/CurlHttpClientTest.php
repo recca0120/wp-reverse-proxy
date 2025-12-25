@@ -11,12 +11,14 @@ function curl_init()
 function curl_setopt_array($ch, $options)
 {
     CurlHttpClientTestHelper::$options = $options;
+
     return true;
 }
 
 function curl_setopt($ch, $option, $value)
 {
     CurlHttpClientTestHelper::$options[$option] = $value;
+
     return true;
 }
 
@@ -38,6 +40,7 @@ function curl_getinfo($ch, $option = null)
     if ($option === CURLINFO_HTTP_CODE) {
         return CurlHttpClientTestHelper::$statusCode;
     }
+
     return null;
 }
 
@@ -49,10 +52,15 @@ function curl_close($ch)
 class CurlHttpClientTestHelper
 {
     public static $mockHandle = 'mock_handle';
+
     public static $options = [];
+
     public static $response = '';
+
     public static $error = '';
+
     public static $headerSize = 0;
+
     public static $statusCode = 200;
 
     public static function reset()
@@ -74,7 +82,7 @@ class CurlHttpClientTestHelper
 
         self::$statusCode = $statusCode;
         self::$headerSize = strlen($headerString);
-        self::$response = $headerString . $body;
+        self::$response = $headerString.$body;
     }
 
     public static function setError(string $error)
@@ -104,7 +112,7 @@ class CurlHttpClientTest extends TestCase
     {
         CurlHttpClientTestHelper::setResponse(200, ['Content-Type' => 'application/json'], '{"success":true}');
 
-        $client = new CurlHttpClient();
+        $client = new CurlHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $response = $client->sendRequest($request);
@@ -118,7 +126,7 @@ class CurlHttpClientTest extends TestCase
     {
         CurlHttpClientTestHelper::setResponse(201, [], '');
 
-        $client = new CurlHttpClient();
+        $client = new CurlHttpClient;
         $request = new Request('POST', 'https://example.com/api', [
             'Content-Type' => 'application/json',
         ], '{"data":"test"}');
@@ -136,7 +144,7 @@ class CurlHttpClientTest extends TestCase
         $this->expectException(NetworkException::class);
         $this->expectExceptionMessage('Connection timed out');
 
-        $client = new CurlHttpClient();
+        $client = new CurlHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $client->sendRequest($request);
@@ -146,7 +154,7 @@ class CurlHttpClientTest extends TestCase
     {
         CurlHttpClientTestHelper::setResponse(302, ['Location' => 'https://example.com/new'], '');
 
-        $client = new CurlHttpClient();
+        $client = new CurlHttpClient;
         $request = new Request('GET', 'https://example.com/old');
 
         $client->sendRequest($request);
@@ -170,7 +178,7 @@ class CurlHttpClientTest extends TestCase
     {
         CurlHttpClientTestHelper::setResponse(200, [], '');
 
-        $client = new CurlHttpClient();
+        $client = new CurlHttpClient;
         $request = new Request('GET', 'https://example.com/api', [
             'Accept' => 'application/json',
             'X-Custom' => 'value',
@@ -188,9 +196,9 @@ class CurlHttpClientTest extends TestCase
         $headerString = "HTTP/1.1 200 OK\r\nSet-Cookie: a=1\r\nSet-Cookie: b=2\r\n\r\n";
         CurlHttpClientTestHelper::$statusCode = 200;
         CurlHttpClientTestHelper::$headerSize = strlen($headerString);
-        CurlHttpClientTestHelper::$response = $headerString . 'body';
+        CurlHttpClientTestHelper::$response = $headerString.'body';
 
-        $client = new CurlHttpClient();
+        $client = new CurlHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $response = $client->sendRequest($request);

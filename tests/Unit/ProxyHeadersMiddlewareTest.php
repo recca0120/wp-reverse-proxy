@@ -17,7 +17,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
     public function test_it_sets_x_real_ip_header()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = new ServerRequest('GET', 'https://localhost/api/users');
 
         $middleware->process($request, function ($req) {
@@ -30,7 +30,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
     public function test_it_sets_x_forwarded_for_header()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = new ServerRequest('GET', 'https://localhost/api/users');
 
         $middleware->process($request, function ($req) {
@@ -43,7 +43,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
     public function test_it_appends_to_existing_x_forwarded_for_header()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = (new ServerRequest('GET', 'https://localhost/api/users'))
             ->withHeader('X-Forwarded-For', '10.0.0.1, 10.0.0.2');
 
@@ -56,7 +56,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
 
     public function test_it_sets_x_forwarded_proto_from_request_scheme()
     {
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = new ServerRequest('GET', 'https://localhost/api/users');
 
         $middleware->process($request, function ($req) {
@@ -68,7 +68,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
 
     public function test_it_sets_x_forwarded_proto_as_http()
     {
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = new ServerRequest('GET', 'http://localhost/api/users');
 
         $middleware->process($request, function ($req) {
@@ -80,7 +80,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
 
     public function test_it_sets_x_forwarded_port_from_request_uri()
     {
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = new ServerRequest('GET', 'https://localhost:8443/api/users');
 
         $middleware->process($request, function ($req) {
@@ -92,7 +92,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
 
     public function test_it_sets_default_port_for_https()
     {
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = new ServerRequest('GET', 'https://localhost/api/users');
 
         $middleware->process($request, function ($req) {
@@ -104,7 +104,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
 
     public function test_it_sets_default_port_for_http()
     {
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = new ServerRequest('GET', 'http://localhost/api/users');
 
         $middleware->process($request, function ($req) {
@@ -117,7 +117,7 @@ class ProxyHeadersMiddlewareTest extends TestCase
     public function test_it_handles_missing_remote_addr()
     {
         unset($_SERVER['REMOTE_ADDR']);
-        $middleware = new ProxyHeadersMiddleware();
+        $middleware = new ProxyHeadersMiddleware;
         $request = new ServerRequest('GET', 'https://localhost/api/users');
 
         $middleware->process($request, function ($req) {

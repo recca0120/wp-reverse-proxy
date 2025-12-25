@@ -66,7 +66,7 @@ class CurlHttpClient implements ClientInterface
         $headers = [];
 
         foreach ($request->getHeaders() as $name => $values) {
-            $headers[] = $name . ': ' . implode(', ', $values);
+            $headers[] = $name.': '.implode(', ', $values);
         }
 
         return $headers;

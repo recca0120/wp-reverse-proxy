@@ -10,7 +10,7 @@ class ResponseEmitterTest extends TestCase
 {
     public function test_it_filters_transfer_encoding_header()
     {
-        $emitter = new ResponseEmitter();
+        $emitter = new ResponseEmitter;
         $response = new Response(200, [
             'Content-Type' => 'application/json',
             'Transfer-Encoding' => 'chunked',
@@ -24,7 +24,7 @@ class ResponseEmitterTest extends TestCase
 
     public function test_it_preserves_content_encoding_header()
     {
-        $emitter = new ResponseEmitter();
+        $emitter = new ResponseEmitter;
         $response = new Response(200, [
             'Content-Type' => 'application/json',
             'Content-Encoding' => 'gzip',
@@ -39,7 +39,7 @@ class ResponseEmitterTest extends TestCase
 
     public function test_it_filters_connection_headers()
     {
-        $emitter = new ResponseEmitter();
+        $emitter = new ResponseEmitter;
         $response = new Response(200, [
             'Content-Type' => 'text/html',
             'Connection' => 'keep-alive',
@@ -55,7 +55,7 @@ class ResponseEmitterTest extends TestCase
 
     public function test_it_preserves_original_content_length()
     {
-        $emitter = new ResponseEmitter();
+        $emitter = new ResponseEmitter;
         $response = new Response(200, [
             'Content-Type' => 'application/json',
             'Content-Length' => '999',
@@ -68,7 +68,7 @@ class ResponseEmitterTest extends TestCase
 
     public function test_it_preserves_safe_headers()
     {
-        $emitter = new ResponseEmitter();
+        $emitter = new ResponseEmitter;
         $response = new Response(200, [
             'Content-Type' => 'application/json',
             'Cache-Control' => 'no-cache',
@@ -86,7 +86,7 @@ class ResponseEmitterTest extends TestCase
 
     public function test_it_filters_headers_case_insensitively()
     {
-        $emitter = new ResponseEmitter();
+        $emitter = new ResponseEmitter;
         $response = new Response(200, [
             'transfer-encoding' => 'chunked',
             'CONNECTION' => 'keep-alive',

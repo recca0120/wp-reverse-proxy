@@ -20,6 +20,7 @@ function file_get_contents($filename, $use_include_path = false, $context = null
 function stream_context_create($options = [])
 {
     StreamHttpClientTestHelper::$contextOptions = $options;
+
     return 'mock_context';
 }
 
@@ -31,10 +32,15 @@ function error_get_last()
 class StreamHttpClientTestHelper
 {
     public static $contextOptions = [];
+
     public static $lastContext = null;
+
     public static $responseHeaders = [];
+
     public static $responseBody = '';
+
     public static $shouldFail = false;
+
     public static $lastError = null;
 
     public static function reset()
@@ -83,7 +89,7 @@ class StreamHttpClientTest extends TestCase
     {
         StreamHttpClientTestHelper::setResponse(200, ['Content-Type' => 'application/json'], '{"success":true}');
 
-        $client = new StreamHttpClient();
+        $client = new StreamHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $response = $client->sendRequest($request);
@@ -97,7 +103,7 @@ class StreamHttpClientTest extends TestCase
     {
         StreamHttpClientTestHelper::setResponse(201, [], '');
 
-        $client = new StreamHttpClient();
+        $client = new StreamHttpClient;
         $request = new Request('POST', 'https://example.com/api', [
             'Content-Type' => 'application/json',
         ], '{"data":"test"}');
@@ -116,7 +122,7 @@ class StreamHttpClientTest extends TestCase
         $this->expectException(NetworkException::class);
         $this->expectExceptionMessage('Connection timed out');
 
-        $client = new StreamHttpClient();
+        $client = new StreamHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $client->sendRequest($request);
@@ -126,7 +132,7 @@ class StreamHttpClientTest extends TestCase
     {
         StreamHttpClientTestHelper::setResponse(302, ['Location' => 'https://example.com/new'], '');
 
-        $client = new StreamHttpClient();
+        $client = new StreamHttpClient;
         $request = new Request('GET', 'https://example.com/old');
 
         $response = $client->sendRequest($request);
@@ -151,7 +157,7 @@ class StreamHttpClientTest extends TestCase
     {
         StreamHttpClientTestHelper::setResponse(200, [], '');
 
-        $client = new StreamHttpClient();
+        $client = new StreamHttpClient;
         $request = new Request('GET', 'https://example.com/api', [
             'Accept' => 'application/json',
             'X-Custom' => 'value',
@@ -173,7 +179,7 @@ class StreamHttpClientTest extends TestCase
         ];
         StreamHttpClientTestHelper::$responseBody = 'body';
 
-        $client = new StreamHttpClient();
+        $client = new StreamHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $response = $client->sendRequest($request);
@@ -185,7 +191,7 @@ class StreamHttpClientTest extends TestCase
     {
         StreamHttpClientTestHelper::setResponse(404, [], 'Not Found');
 
-        $client = new StreamHttpClient();
+        $client = new StreamHttpClient;
         $request = new Request('GET', 'https://example.com/api');
 
         $response = $client->sendRequest($request);
