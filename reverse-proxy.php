@@ -25,8 +25,8 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
-// Handle proxy requests
-add_action('parse_request', function () {
+function reverse_proxy_create_proxy()
+{
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
     $httpClient = new ReverseProxy\Http\FilteringHttpClient(
         apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\WordPressHttpClient)
@@ -38,7 +38,27 @@ add_action('parse_request', function () {
         new ReverseProxy\Middleware\LoggingMiddleware(new ReverseProxy\WordPress\Logger),
     ]));
 
-    $serverRequestFactory = new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory);
+    return $proxy;
+}
+
+function reverse_proxy_emit_response($response)
+{
+    if (! headers_sent()) {
+        http_response_code($response->getStatusCode());
+        foreach ($response->getHeaders() as $name => $values) {
+            foreach ($values as $value) {
+                header("{$name}: {$value}", false);
+            }
+        }
+    }
+    echo $response->getBody();
+}
+
+add_action('parse_request', function () {
+    $proxy = reverse_proxy_create_proxy();
+    $serverRequestFactory = new ReverseProxy\WordPress\ServerRequestFactory(
+        apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory)
+    );
 
     $routes = apply_filters('reverse_proxy_routes', []);
     $request = $serverRequestFactory->createFromGlobals();
@@ -46,16 +66,7 @@ add_action('parse_request', function () {
 
     if ($response !== null) {
         $response = apply_filters('reverse_proxy_response', $response);
-
-        if (! headers_sent()) {
-            http_response_code($response->getStatusCode());
-            foreach ($response->getHeaders() as $name => $values) {
-                foreach ($values as $value) {
-                    header("{$name}: {$value}", false);
-                }
-            }
-        }
-        echo $response->getBody();
+        reverse_proxy_emit_response($response);
 
         if (apply_filters('reverse_proxy_should_exit', true)) {
             exit;
