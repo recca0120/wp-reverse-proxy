@@ -118,4 +118,23 @@ class StreamClientTest extends HttpClientTestCase
 
         $client->sendRequest($request);
     }
+
+    public function test_it_resolves_hostname_to_specific_ip()
+    {
+        $client = new StreamClient([
+            'resolve' => ['test.example.com:'.self::$serverPort.':127.0.0.1'],
+        ]);
+
+        $request = new Request('GET', 'http://test.example.com:'.self::$serverPort.'/api/test', [
+            'Host' => 'test.example.com',
+        ]);
+
+        $response = $client->sendRequest($request);
+
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertEquals('/api/test', $body['uri']);
+        $this->assertEquals('test.example.com', $body['headers']['HOST']);
+    }
 }

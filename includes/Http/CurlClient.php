@@ -22,7 +22,7 @@ class CurlClient implements ClientInterface
     {
         $ch = curl_init();
 
-        curl_setopt_array($ch, [
+        $curlOptions = [
             CURLOPT_URL => (string) $request->getUri(),
             CURLOPT_CUSTOMREQUEST => $request->getMethod(),
             CURLOPT_RETURNTRANSFER => true,
@@ -31,7 +31,13 @@ class CurlClient implements ClientInterface
             CURLOPT_HTTPHEADER => $this->prepareHeaders($request),
             CURLOPT_TIMEOUT => $this->options['timeout'] ?? 30,
             CURLOPT_SSL_VERIFYPEER => $this->options['verify'] ?? true,
-        ]);
+        ];
+
+        if (isset($this->options['resolve'])) {
+            $curlOptions[CURLOPT_RESOLVE] = $this->options['resolve'];
+        }
+
+        curl_setopt_array($ch, $curlOptions);
 
         $body = (string) $request->getBody();
         if ($body !== '') {

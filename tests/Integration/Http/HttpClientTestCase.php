@@ -17,7 +17,7 @@ abstract class HttpClientTestCase extends TestCase
 
         $serverDir = __DIR__.'/../../server';
         $command = sprintf(
-            'php -S localhost:%d -t %s > /dev/null 2>&1 & echo $!',
+            'php -S 127.0.0.1:%d -t %s > /dev/null 2>&1 & echo $!',
             self::$serverPort,
             escapeshellarg($serverDir)
         );
@@ -31,7 +31,7 @@ abstract class HttpClientTestCase extends TestCase
         // Verify server is running
         $maxAttempts = 10;
         for ($i = 0; $i < $maxAttempts; $i++) {
-            $connection = @fsockopen('localhost', self::$serverPort, $errno, $errstr, 1);
+            $connection = @fsockopen('127.0.0.1', self::$serverPort, $errno, $errstr, 1);
             if ($connection) {
                 fclose($connection);
 
@@ -54,6 +54,6 @@ abstract class HttpClientTestCase extends TestCase
 
     protected function getServerUrl(string $path = ''): string
     {
-        return 'http://localhost:'.self::$serverPort.$path;
+        return 'http://127.0.0.1:'.self::$serverPort.$path;
     }
 }
