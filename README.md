@@ -515,12 +515,38 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 
 ### 自訂 HTTP 客戶端
 
+外掛預設使用 `WordPressHttpClient`（基於 `wp_remote_request()`），另外提供兩個替代實作：
+
+| 客戶端 | 依賴 | 說明 |
+|--------|------|------|
+| `WordPressHttpClient` | WordPress | 預設，使用 WordPress HTTP API |
+| `CurlHttpClient` | curl 擴充 | 直接使用 curl，效能較好 |
+| `StreamHttpClient` | 無 | 純 PHP，使用 `file_get_contents` |
+
 ```php
-// 自訂 Guzzle 選項
-add_filter('reverse_proxy_http_client', function ($client) {
+// 使用 CurlHttpClient
+add_filter('reverse_proxy_http_client', function () {
+    return new \ReverseProxy\Http\CurlHttpClient([
+        'timeout' => 30,
+        'verify' => true,
+    ]);
+});
+
+// 使用 StreamHttpClient（純 PHP，無需任何擴充）
+add_filter('reverse_proxy_http_client', function () {
+    return new \ReverseProxy\Http\StreamHttpClient([
+        'timeout' => 30,
+    ]);
+});
+```
+
+也可使用任何 PSR-18 相容的第三方客戶端（如 Guzzle），需注意禁用自動解壓縮以保持原始內容：
+
+```php
+add_filter('reverse_proxy_http_client', function () {
     return new \GuzzleHttp\Client([
         'timeout' => 30,
-        'verify' => false,
+        'decode_content' => false,
     ]);
 });
 ```

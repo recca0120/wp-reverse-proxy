@@ -2,9 +2,9 @@
 
 namespace ReverseProxy\WordPress;
 
-use Http\Discovery\Psr17FactoryDiscovery;
-use Http\Discovery\Psr18ClientDiscovery;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\ResponseInterface;
+use ReverseProxy\Http\WordPressHttpClient;
 use ReverseProxy\Middleware\ErrorHandlingMiddleware;
 use ReverseProxy\Middleware\LoggingMiddleware;
 use ReverseProxy\ReverseProxy;
@@ -33,17 +33,16 @@ class Plugin
 
     public static function create(): self
     {
-        $requestFactory = Psr17FactoryDiscovery::findRequestFactory();
-        $streamFactory = Psr17FactoryDiscovery::findStreamFactory();
-        $httpClient = apply_filters('reverse_proxy_http_client', Psr18ClientDiscovery::find());
+        $psr17Factory = new Psr17Factory();
+        $httpClient = apply_filters('reverse_proxy_http_client', new WordPressHttpClient());
 
-        $reverseProxy = new ReverseProxy($httpClient, $requestFactory, $streamFactory);
+        $reverseProxy = new ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
         $reverseProxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
             new ErrorHandlingMiddleware(),
             new LoggingMiddleware(new Logger()),
         ]));
 
-        $serverRequestFactory = new ServerRequestFactory($streamFactory);
+        $serverRequestFactory = new ServerRequestFactory($psr17Factory);
         $responseEmitter = new ResponseEmitter();
 
         return new self($reverseProxy, $serverRequestFactory, $responseEmitter);

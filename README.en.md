@@ -515,12 +515,38 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 
 ### Custom HTTP Client
 
+The plugin uses `WordPressHttpClient` (based on `wp_remote_request()`) by default, with two alternative implementations available:
+
+| Client | Dependency | Description |
+|--------|------------|-------------|
+| `WordPressHttpClient` | WordPress | Default, uses WordPress HTTP API |
+| `CurlHttpClient` | curl extension | Direct curl usage, better performance |
+| `StreamHttpClient` | None | Pure PHP, uses `file_get_contents` |
+
 ```php
-// Customize Guzzle options
-add_filter('reverse_proxy_http_client', function ($client) {
+// Use CurlHttpClient
+add_filter('reverse_proxy_http_client', function () {
+    return new \ReverseProxy\Http\CurlHttpClient([
+        'timeout' => 30,
+        'verify' => true,
+    ]);
+});
+
+// Use StreamHttpClient (pure PHP, no extensions required)
+add_filter('reverse_proxy_http_client', function () {
+    return new \ReverseProxy\Http\StreamHttpClient([
+        'timeout' => 30,
+    ]);
+});
+```
+
+You can also use any PSR-18 compatible third-party client (e.g., Guzzle). Make sure to disable automatic decompression to preserve original content:
+
+```php
+add_filter('reverse_proxy_http_client', function () {
     return new \GuzzleHttp\Client([
         'timeout' => 30,
-        'verify' => false,
+        'decode_content' => false,
     ]);
 });
 ```

@@ -22,7 +22,7 @@ class ResponseEmitterTest extends TestCase
         $this->assertArrayNotHasKey('Transfer-Encoding', $headers);
     }
 
-    public function test_it_filters_content_encoding_header()
+    public function test_it_preserves_content_encoding_header()
     {
         $emitter = new ResponseEmitter();
         $response = new Response(200, [
@@ -33,7 +33,8 @@ class ResponseEmitterTest extends TestCase
         $headers = $emitter->getHeadersToEmit($response);
 
         $this->assertArrayHasKey('Content-Type', $headers);
-        $this->assertArrayNotHasKey('Content-Encoding', $headers);
+        $this->assertArrayHasKey('Content-Encoding', $headers);
+        $this->assertEquals(['gzip'], $headers['Content-Encoding']);
     }
 
     public function test_it_filters_connection_headers()
@@ -52,18 +53,17 @@ class ResponseEmitterTest extends TestCase
         $this->assertArrayNotHasKey('Keep-Alive', $headers);
     }
 
-    public function test_it_recalculates_content_length()
+    public function test_it_preserves_original_content_length()
     {
         $emitter = new ResponseEmitter();
-        $body = '{"data":"test"}';
         $response = new Response(200, [
             'Content-Type' => 'application/json',
-            'Content-Length' => '999', // Wrong length
-        ], $body);
+            'Content-Length' => '999',
+        ], '{"data":"test"}');
 
         $headers = $emitter->getHeadersToEmit($response);
 
-        $this->assertEquals([(string) strlen($body)], $headers['Content-Length']);
+        $this->assertEquals(['999'], $headers['Content-Length']);
     }
 
     public function test_it_preserves_safe_headers()
@@ -89,7 +89,7 @@ class ResponseEmitterTest extends TestCase
         $emitter = new ResponseEmitter();
         $response = new Response(200, [
             'transfer-encoding' => 'chunked',
-            'CONTENT-ENCODING' => 'gzip',
+            'CONNECTION' => 'keep-alive',
             'Content-Type' => 'text/plain',
         ], 'test');
 
@@ -97,6 +97,6 @@ class ResponseEmitterTest extends TestCase
 
         $this->assertArrayHasKey('Content-Type', $headers);
         $this->assertArrayNotHasKey('transfer-encoding', $headers);
-        $this->assertArrayNotHasKey('CONTENT-ENCODING', $headers);
+        $this->assertArrayNotHasKey('CONNECTION', $headers);
     }
 }

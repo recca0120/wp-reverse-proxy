@@ -7,13 +7,12 @@ use Psr\Http\Message\ResponseInterface;
 class ResponseEmitter
 {
     /**
-     * Headers that should not be forwarded (hop-by-hop headers and problematic headers).
+     * Headers that should not be forwarded (hop-by-hop headers).
      *
      * @var string[]
      */
     private const FILTERED_HEADERS = [
         'transfer-encoding',
-        'content-encoding',
         'connection',
         'keep-alive',
         'proxy-authenticate',
@@ -52,10 +51,6 @@ class ResponseEmitter
 
             $headers[$name] = $values;
         }
-
-        // Recalculate Content-Length based on actual body size
-        $body = (string) $response->getBody();
-        $headers['Content-Length'] = [(string) strlen($body)];
 
         return $headers;
     }
