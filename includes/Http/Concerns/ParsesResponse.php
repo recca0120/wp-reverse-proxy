@@ -17,22 +17,25 @@ trait ParsesResponse
         return $headers;
     }
 
-    private function parseStatusCode(array $headerLines): int
-    {
-        foreach ($headerLines as $line) {
-            if (preg_match('/^HTTP\/[\d.]+ (\d+)/', $line, $matches)) {
-                return (int) $matches[1];
-            }
-        }
-
-        return 200;
-    }
-
+    /**
+     * @return array{0: string, 1: int, 2: string, 3: array}
+     */
     private function parseResponseHeaders(array $headerLines): array
     {
+        $protocolVersion = '1.1';
+        $statusCode = 200;
+        $reasonPhrase = '';
         $headers = [];
 
         foreach ($headerLines as $line) {
+            if (preg_match('/^HTTP\/([\d.]+) (\d+)\s*(.*)/', $line, $matches)) {
+                $protocolVersion = $matches[1];
+                $statusCode = (int) $matches[2];
+                $reasonPhrase = trim($matches[3]);
+
+                continue;
+            }
+
             if (strpos($line, ':') === false) {
                 continue;
             }
@@ -48,6 +51,6 @@ trait ParsesResponse
             }
         }
 
-        return $headers;
+        return [$protocolVersion, $statusCode, $reasonPhrase, $headers];
     }
 }

@@ -49,11 +49,10 @@ class StreamClient implements ClientInterface
             throw new NetworkException($error['message'] ?? 'Unknown error', $request);
         }
 
-        $statusCode = $this->parseStatusCode($http_response_header);
-        $headers = $this->parseResponseHeaders($http_response_header);
+        [$protocolVersion, $statusCode, $reasonPhrase, $headers] = $this->parseResponseHeaders($http_response_header);
         $body = $this->decodeBody($body, $headers);
 
-        return new Response($statusCode, $headers, $body);
+        return new Response($statusCode, $headers, $body, $protocolVersion, $reasonPhrase);
     }
 
     private function decodeBody(string $body, array &$headers): string

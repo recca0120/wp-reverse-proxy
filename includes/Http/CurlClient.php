@@ -69,11 +69,10 @@ class CurlClient implements ClientInterface
 
         $body = substr($response, $headerSize);
         $headerLines = explode("\r\n", trim(substr($response, 0, $headerSize)));
-        $statusCode = $this->parseStatusCode($headerLines);
-        $headers = $this->parseResponseHeaders($headerLines);
+        [$protocolVersion, $statusCode, $reasonPhrase, $headers] = $this->parseResponseHeaders($headerLines);
         $body = $this->decodeBody($body, $headers);
 
-        return new Response($statusCode, $headers, $body);
+        return new Response($statusCode, $headers, $body, $protocolVersion, $reasonPhrase);
     }
 
     private function decodeBody(string $body, array &$headers): string
