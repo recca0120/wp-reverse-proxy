@@ -7,11 +7,11 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\Exceptions\NetworkException;
-use ReverseProxy\Http\Concerns\ParsesHeaders;
+use ReverseProxy\Http\Concerns\ParsesResponse;
 
 class StreamClient implements ClientInterface
 {
-    use ParsesHeaders;
+    use ParsesResponse;
 
     /** @var array */
     private $options;
@@ -24,12 +24,11 @@ class StreamClient implements ClientInterface
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
         $verify = $this->options['verify'] ?? true;
-        $decodeContent = $this->options['decode_content'] ?? true;
 
         $context = stream_context_create([
             'http' => [
                 'method' => $request->getMethod(),
-                'header' => implode("\r\n", $this->formatHeaderLines($request)),
+                'header' => implode("\r\n", $this->prepareHeaders($request)),
                 'content' => (string) $request->getBody(),
                 'timeout' => $this->options['timeout'] ?? 30,
                 'follow_location' => 0,
@@ -41,7 +40,6 @@ class StreamClient implements ClientInterface
             ],
         ]);
 
-        // $http_response_header is a magic variable set by file_get_contents in local scope
         $http_response_header = [];
 
         $body = @file_get_contents((string) $request->getUri(), false, $context);
@@ -51,25 +49,19 @@ class StreamClient implements ClientInterface
             throw new NetworkException($error['message'] ?? 'Unknown error', $request);
         }
 
-        $statusCode = 200;
-        $headers = [];
-
-        if (! empty($http_response_header)) {
-            $headers = $this->parseResponseHeaders($http_response_header, $statusCode);
-        }
-
-        if ($decodeContent) {
-            $body = $this->decodeBody($body, $headers);
-        }
+        $statusCode = $this->parseStatusCode($http_response_header);
+        $headers = $this->parseResponseHeaders($http_response_header);
+        $body = $this->decodeBody($body, $headers);
 
         return new Response($statusCode, $headers, $body);
     }
 
-    /**
-     * Decode response body based on Content-Encoding header.
-     */
     private function decodeBody(string $body, array &$headers): string
     {
+        if (! ($this->options['decode_content'] ?? true)) {
+            return $body;
+        }
+
         $encoding = $headers['Content-Encoding'][0] ?? null;
 
         if ($encoding === null) {

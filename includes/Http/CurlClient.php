@@ -7,11 +7,11 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\Exceptions\NetworkException;
-use ReverseProxy\Http\Concerns\ParsesHeaders;
+use ReverseProxy\Http\Concerns\ParsesResponse;
 
 class CurlClient implements ClientInterface
 {
-    use ParsesHeaders;
+    use ParsesResponse;
 
     /** @var array */
     private $options;
@@ -26,7 +26,6 @@ class CurlClient implements ClientInterface
         $ch = curl_init();
 
         $verify = $this->options['verify'] ?? true;
-        $decodeContent = $this->options['decode_content'] ?? true;
 
         $curlOptions = [
             CURLOPT_URL => (string) $request->getUri(),
@@ -34,13 +33,13 @@ class CurlClient implements ClientInterface
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => true,
             CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_HTTPHEADER => $this->formatHeaderLines($request),
+            CURLOPT_HTTPHEADER => $this->prepareHeaders($request),
             CURLOPT_TIMEOUT => $this->options['timeout'] ?? 30,
             CURLOPT_SSL_VERIFYPEER => $verify,
             CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
         ];
 
-        if ($decodeContent) {
+        if ($this->options['decode_content'] ?? true) {
             $curlOptions[CURLOPT_ENCODING] = '';
         }
 
@@ -66,25 +65,23 @@ class CurlClient implements ClientInterface
         }
 
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         $body = substr($response, $headerSize);
-        $headers = $this->parseResponseHeaders(explode("\r\n", trim(substr($response, 0, $headerSize))));
-
-        if ($decodeContent) {
-            $body = $this->decodeBody($body, $headers);
-        }
+        $headerLines = explode("\r\n", trim(substr($response, 0, $headerSize)));
+        $statusCode = $this->parseStatusCode($headerLines);
+        $headers = $this->parseResponseHeaders($headerLines);
+        $body = $this->decodeBody($body, $headers);
 
         return new Response($statusCode, $headers, $body);
     }
 
-    /**
-     * Handle decoded content by removing Content-Encoding header.
-     * Note: curl already decompresses when CURLOPT_ENCODING is set.
-     */
     private function decodeBody(string $body, array &$headers): string
     {
+        if (! ($this->options['decode_content'] ?? true)) {
+            return $body;
+        }
+
         unset($headers['Content-Encoding']);
 
         return $body;
