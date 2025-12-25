@@ -25,7 +25,8 @@ class CurlClient implements ClientInterface
     {
         $ch = curl_init();
 
-        $verify = $this->options['verify'] ?? false;
+        $verify = $this->options['verify'] ?? true;
+        $decodeContent = $this->options['decode_content'] ?? true;
 
         $curlOptions = [
             CURLOPT_URL => (string) $request->getUri(),
@@ -39,8 +40,8 @@ class CurlClient implements ClientInterface
             CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
         ];
 
-        if (isset($this->options['resolve'])) {
-            $curlOptions[CURLOPT_RESOLVE] = $this->options['resolve'];
+        if ($decodeContent) {
+            $curlOptions[CURLOPT_ENCODING] = '';
         }
 
         curl_setopt_array($ch, $curlOptions);
@@ -70,8 +71,13 @@ class CurlClient implements ClientInterface
 
         $headerString = substr($response, 0, $headerSize);
         $body = substr($response, $headerSize);
+        $headers = $this->parseResponseHeaders($headerString);
 
-        return new Response($statusCode, $this->parseResponseHeaders($headerString), $body);
+        if ($decodeContent) {
+            unset($headers['Content-Encoding']);
+        }
+
+        return new Response($statusCode, $headers, $body);
     }
 
     private function parseResponseHeaders(string $headerString): array

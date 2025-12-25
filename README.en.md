@@ -519,24 +519,19 @@ The plugin uses `CurlClient` (based on cURL extension) by default, with one alte
 
 | Client | Dependency | Description |
 |--------|------------|-------------|
-| `CurlClient` | curl extension | Default, direct curl usage, supports resolve option |
+| `CurlClient` | curl extension | Default, direct curl usage |
 | `StreamClient` | None | Pure PHP, uses `file_get_contents` |
 
+The plugin uses the following default options for reverse proxying:
+- `verify => false` - SSL verification disabled for internal networks
+- `decode_content => false` - Preserve original compressed responses
+
 ```php
-// Use CurlClient (default) with custom options
+// Disable SSL verification and auto-decompression (for reverse proxy)
 add_filter('reverse_proxy_http_client', function () {
     return new \ReverseProxy\Http\CurlClient([
-        'timeout' => 30,
-        'verify' => true,
-        // Resolve hostname to specific IP (useful for internal networks)
-        'resolve' => ['api.example.com:443:172.17.0.1'],
-    ]);
-});
-
-// Use StreamClient (pure PHP, no extensions required)
-add_filter('reverse_proxy_http_client', function () {
-    return new \ReverseProxy\Http\StreamClient([
-        'timeout' => 30,
+        'verify' => false,
+        'decode_content' => false,
     ]);
 });
 ```

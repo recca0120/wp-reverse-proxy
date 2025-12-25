@@ -29,7 +29,7 @@ function reverse_proxy_create_proxy()
 {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
     $httpClient = new ReverseProxy\Http\FilteringClient(
-        apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\CurlClient)
+        apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]))
     );
 
     $proxy = new ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);

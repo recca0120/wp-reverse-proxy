@@ -6,7 +6,6 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\UriInterface;
 use ReverseProxy\Exceptions\NetworkException;
 use ReverseProxy\Http\Concerns\ParsesHeaders;
 
@@ -24,22 +23,8 @@ class StreamClient implements ClientInterface
 
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
-        $uri = $request->getUri();
-        $url = (string) $uri;
-        $verify = $this->options['verify'] ?? false;
-        $sslOptions = [
-            'verify_peer' => $verify,
-            'verify_peer_name' => $verify,
-        ];
-
-        // Handle resolve option: map hostname to specific IP
-        if (isset($this->options['resolve'])) {
-            $resolved = $this->resolveHost($uri, $this->options['resolve']);
-            if ($resolved !== null) {
-                $url = $resolved['url'];
-                $sslOptions['peer_name'] = $resolved['peer_name'];
-            }
-        }
+        $verify = $this->options['verify'] ?? true;
+        $decodeContent = $this->options['decode_content'] ?? true;
 
         $context = stream_context_create([
             'http' => [
@@ -50,13 +35,16 @@ class StreamClient implements ClientInterface
                 'follow_location' => 0,
                 'ignore_errors' => true,
             ],
-            'ssl' => $sslOptions,
+            'ssl' => [
+                'verify_peer' => $verify,
+                'verify_peer_name' => $verify,
+            ],
         ]);
 
         // $http_response_header is a magic variable set by file_get_contents in local scope
         $http_response_header = [];
 
-        $body = @file_get_contents($url, false, $context);
+        $body = @file_get_contents((string) $request->getUri(), false, $context);
 
         if ($body === false) {
             $error = error_get_last();
@@ -70,41 +58,42 @@ class StreamClient implements ClientInterface
             $headers = $this->parseResponseHeaders($http_response_header, $statusCode);
         }
 
+        if ($decodeContent) {
+            $body = $this->decodeBody($body, $headers);
+        }
+
         return new Response($statusCode, $headers, $body);
     }
 
     /**
-     * Resolve hostname to IP based on resolve option.
-     *
-     * @param  \Psr\Http\Message\UriInterface  $uri
-     * @param  string[]  $resolveList  Format: ['hostname:port:ip', ...]
-     * @return array{url: string, peer_name: string}|null
+     * Decode response body based on Content-Encoding header.
      */
-    private function resolveHost($uri, array $resolveList): ?array
+    private function decodeBody(string $body, array &$headers): string
     {
-        $host = $uri->getHost();
-        $port = $uri->getPort() ?? ($uri->getScheme() === 'https' ? 443 : 80);
+        $encoding = $headers['Content-Encoding'][0] ?? null;
 
-        foreach ($resolveList as $entry) {
-            $parts = explode(':', $entry);
-            if (count($parts) !== 3) {
-                continue;
-            }
-
-            [$resolveHost, $resolvePort, $resolveIp] = $parts;
-
-            if ($host === $resolveHost && (int) $resolvePort === $port) {
-                // Replace hostname with IP in URL
-                $newUrl = str_replace("://{$host}", "://{$resolveIp}", (string) $uri);
-
-                return [
-                    'url' => $newUrl,
-                    'peer_name' => $host,
-                ];
-            }
+        if ($encoding === null) {
+            return $body;
         }
 
-        return null;
+        $decoded = null;
+
+        switch (strtolower($encoding)) {
+            case 'gzip':
+                $decoded = @gzdecode($body);
+                break;
+            case 'deflate':
+                $decoded = @gzinflate($body);
+                break;
+        }
+
+        if ($decoded !== false && $decoded !== null) {
+            unset($headers['Content-Encoding']);
+
+            return $decoded;
+        }
+
+        return $body;
     }
 
     /**

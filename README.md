@@ -519,24 +519,19 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 
 | 客戶端 | 依賴 | 說明 |
 |--------|------|------|
-| `CurlClient` | curl 擴充 | 預設，直接使用 curl，支援 resolve 選項 |
+| `CurlClient` | curl 擴充 | 預設，直接使用 curl |
 | `StreamClient` | 無 | 純 PHP，使用 `file_get_contents` |
 
+外掛使用以下預設選項以適應反向代理：
+- `verify => false` - 停用 SSL 驗證（適用於內部網路）
+- `decode_content => false` - 保留原始壓縮回應
+
 ```php
-// 使用 CurlClient（預設）搭配自訂選項
+// 停用 SSL 驗證和自動解壓縮（適用於反向代理）
 add_filter('reverse_proxy_http_client', function () {
     return new \ReverseProxy\Http\CurlClient([
-        'timeout' => 30,
-        'verify' => true,
-        // 將 hostname 解析到指定 IP（適用於內部網路）
-        'resolve' => ['api.example.com:443:172.17.0.1'],
-    ]);
-});
-
-// 使用 StreamClient（純 PHP，無需任何擴充）
-add_filter('reverse_proxy_http_client', function () {
-    return new \ReverseProxy\Http\StreamClient([
-        'timeout' => 30,
+        'verify' => false,
+        'decode_content' => false,
     ]);
 });
 ```

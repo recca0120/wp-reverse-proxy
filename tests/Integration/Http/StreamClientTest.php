@@ -119,28 +119,26 @@ class StreamClientTest extends HttpClientTestCase
         $client->sendRequest($request);
     }
 
-    public function test_it_resolves_hostname_to_specific_ip()
+    public function test_it_auto_decodes_gzip_response_by_default()
     {
-        $client = new StreamClient([
-            'resolve' => ['test.example.com:'.self::$serverPort.':127.0.0.1'],
-        ]);
-
-        $request = new Request('GET', 'http://test.example.com:'.self::$serverPort.'/api/test', [
-            'Host' => 'test.example.com',
+        $client = new StreamClient;
+        $request = new Request('GET', $this->getServerUrl('/gzip'), [
+            'Accept-Encoding' => 'gzip',
         ]);
 
         $response = $client->sendRequest($request);
 
         $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEmpty($response->getHeaderLine('Content-Encoding'));
 
+        // Body should be automatically decompressed
         $body = json_decode((string) $response->getBody(), true);
-        $this->assertEquals('/api/test', $body['uri']);
-        $this->assertEquals('test.example.com', $body['headers']['HOST']);
+        $this->assertStringContainsString('gzip', $body['accept_encoding']);
     }
 
-    public function test_it_handles_gzip_compressed_response()
+    public function test_it_preserves_gzip_response_when_decode_content_is_false()
     {
-        $client = new StreamClient;
+        $client = new StreamClient(['decode_content' => false]);
         $request = new Request('GET', $this->getServerUrl('/gzip'), [
             'Accept-Encoding' => 'gzip',
         ]);
@@ -153,13 +151,9 @@ class StreamClientTest extends HttpClientTestCase
         // Verify body is gzip compressed (starts with gzip magic number 1f8b)
         $body = (string) $response->getBody();
         $this->assertStringStartsWith("\x1f\x8b", $body);
-
-        // Verify we can decompress it
-        $decompressed = json_decode(gzdecode($body), true);
-        $this->assertStringContainsString('gzip', $decompressed['accept_encoding']);
     }
 
-    public function test_it_handles_deflate_compressed_response()
+    public function test_it_auto_decodes_deflate_response_by_default()
     {
         $client = new StreamClient;
         $request = new Request('GET', $this->getServerUrl('/deflate'), [
@@ -169,9 +163,26 @@ class StreamClientTest extends HttpClientTestCase
         $response = $client->sendRequest($request);
 
         $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEmpty($response->getHeaderLine('Content-Encoding'));
+
+        // Body should be automatically decompressed
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertStringContainsString('deflate', $body['accept_encoding']);
+    }
+
+    public function test_it_preserves_deflate_response_when_decode_content_is_false()
+    {
+        $client = new StreamClient(['decode_content' => false]);
+        $request = new Request('GET', $this->getServerUrl('/deflate'), [
+            'Accept-Encoding' => 'deflate',
+        ]);
+
+        $response = $client->sendRequest($request);
+
+        $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('deflate', $response->getHeaderLine('Content-Encoding'));
 
-        // Verify we can decompress it
+        // Verify body is deflate compressed
         $body = (string) $response->getBody();
         $decompressed = json_decode(gzinflate($body), true);
         $this->assertStringContainsString('deflate', $decompressed['accept_encoding']);
