@@ -55,9 +55,8 @@ class ReverseProxyTest extends WP_UnitTestCase
 
     private function whenRequesting(string $path): string
     {
-        $this->go_to($path);
         ob_start();
-        reverse_proxy_handle();
+        $this->go_to($path);
 
         return ob_get_clean();
     }

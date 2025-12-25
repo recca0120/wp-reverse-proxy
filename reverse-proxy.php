@@ -84,4 +84,7 @@ function reverse_proxy_handle()
     }
 }
 
-add_action('plugins_loaded', 'reverse_proxy_handle');
+add_action(
+    apply_filters('reverse_proxy_action_hook', 'plugins_loaded'),
+    'reverse_proxy_handle'
+);

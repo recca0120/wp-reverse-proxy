@@ -17,6 +17,11 @@ require_once dirname(__DIR__).'/vendor/wp-phpunit/wp-phpunit/includes/functions.
  */
 function _manually_load_plugins()
 {
+    // Use parse_request hook for testing (allows go_to() to trigger handler)
+    add_filter('reverse_proxy_action_hook', function () {
+        return 'parse_request';
+    });
+
     // Load our plugin
     require dirname(__DIR__).'/reverse-proxy.php';
 }
