@@ -6,15 +6,22 @@ use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use ReverseProxy\Middleware\RewritePathMiddleware;
+use ReverseProxy\Route;
 
 class RewritePathMiddlewareTest extends TestCase
 {
-    public function test_it_rewrites_path_with_wildcard_capture()
+    public function test_it_rewrites_path_with_single_capture()
     {
-        $middleware = new RewritePathMiddleware('/api/v1/*', '/v1/$1');
+        $route = (new Route('/api/v1/*', 'https://backend.example.com'))
+            ->middleware(new RewritePathMiddleware('/v1/$1'));
+
+        // Trigger route matching to populate captures
+        $route->matches(new ServerRequest('GET', 'https://example.com/api/v1/users/123'));
+
+        $middlewares = $route->getMiddlewares();
         $request = new ServerRequest('GET', 'https://backend.example.com/api/v1/users/123');
 
-        $middleware->process($request, function ($req) {
+        $middlewares[0]->process($request, function ($req) {
             $this->assertEquals('/v1/users/123', $req->getUri()->getPath());
 
             return new Response(200);
@@ -23,10 +30,15 @@ class RewritePathMiddlewareTest extends TestCase
 
     public function test_it_rewrites_path_removing_prefix()
     {
-        $middleware = new RewritePathMiddleware('/api/*', '/$1');
+        $route = (new Route('/api/*', 'https://backend.example.com'))
+            ->middleware(new RewritePathMiddleware('/$1'));
+
+        $route->matches(new ServerRequest('GET', 'https://example.com/api/users'));
+
+        $middlewares = $route->getMiddlewares();
         $request = new ServerRequest('GET', 'https://backend.example.com/api/users');
 
-        $middleware->process($request, function ($req) {
+        $middlewares[0]->process($request, function ($req) {
             $this->assertEquals('/users', $req->getUri()->getPath());
 
             return new Response(200);
@@ -35,10 +47,15 @@ class RewritePathMiddlewareTest extends TestCase
 
     public function test_it_rewrites_path_adding_prefix()
     {
-        $middleware = new RewritePathMiddleware('/users/*', '/api/v2/users/$1');
+        $route = (new Route('/users/*', 'https://backend.example.com'))
+            ->middleware(new RewritePathMiddleware('/api/v2/users/$1'));
+
+        $route->matches(new ServerRequest('GET', 'https://example.com/users/123'));
+
+        $middlewares = $route->getMiddlewares();
         $request = new ServerRequest('GET', 'https://backend.example.com/users/123');
 
-        $middleware->process($request, function ($req) {
+        $middlewares[0]->process($request, function ($req) {
             $this->assertEquals('/api/v2/users/123', $req->getUri()->getPath());
 
             return new Response(200);
@@ -47,10 +64,15 @@ class RewritePathMiddlewareTest extends TestCase
 
     public function test_it_preserves_query_string()
     {
-        $middleware = new RewritePathMiddleware('/api/v1/*', '/v1/$1');
+        $route = (new Route('/api/v1/*', 'https://backend.example.com'))
+            ->middleware(new RewritePathMiddleware('/v1/$1'));
+
+        $route->matches(new ServerRequest('GET', 'https://example.com/api/v1/users?page=2&limit=10'));
+
+        $middlewares = $route->getMiddlewares();
         $request = new ServerRequest('GET', 'https://backend.example.com/api/v1/users?page=2&limit=10');
 
-        $middleware->process($request, function ($req) {
+        $middlewares[0]->process($request, function ($req) {
             $this->assertEquals('/v1/users', $req->getUri()->getPath());
             $this->assertEquals('page=2&limit=10', $req->getUri()->getQuery());
 
@@ -58,36 +80,34 @@ class RewritePathMiddlewareTest extends TestCase
         });
     }
 
-    public function test_it_does_not_modify_path_when_pattern_does_not_match()
+    public function test_it_handles_no_captures()
     {
-        $middleware = new RewritePathMiddleware('/api/v1/*', '/v1/$1');
-        $request = new ServerRequest('GET', 'https://backend.example.com/other/path');
+        $route = (new Route('/old-endpoint', 'https://backend.example.com'))
+            ->middleware(new RewritePathMiddleware('/new-endpoint'));
 
-        $middleware->process($request, function ($req) {
-            $this->assertEquals('/other/path', $req->getUri()->getPath());
+        $route->matches(new ServerRequest('GET', 'https://example.com/old-endpoint'));
 
-            return new Response(200);
-        });
-    }
-
-    public function test_it_handles_exact_path_match()
-    {
-        $middleware = new RewritePathMiddleware('/old-endpoint', '/new-endpoint');
+        $middlewares = $route->getMiddlewares();
         $request = new ServerRequest('GET', 'https://backend.example.com/old-endpoint');
 
-        $middleware->process($request, function ($req) {
+        $middlewares[0]->process($request, function ($req) {
             $this->assertEquals('/new-endpoint', $req->getUri()->getPath());
 
             return new Response(200);
         });
     }
 
-    public function test_it_handles_multiple_wildcards()
+    public function test_it_handles_multiple_captures()
     {
-        $middleware = new RewritePathMiddleware('/api/*/resources/*', '/v2/$1/items/$2');
+        $route = (new Route('/api/*/resources/*', 'https://backend.example.com'))
+            ->middleware(new RewritePathMiddleware('/v2/$1/items/$2'));
+
+        $route->matches(new ServerRequest('GET', 'https://example.com/api/users/resources/123'));
+
+        $middlewares = $route->getMiddlewares();
         $request = new ServerRequest('GET', 'https://backend.example.com/api/users/resources/123');
 
-        $middleware->process($request, function ($req) {
+        $middlewares[0]->process($request, function ($req) {
             $this->assertEquals('/v2/users/items/123', $req->getUri()->getPath());
 
             return new Response(200);
@@ -96,11 +116,16 @@ class RewritePathMiddlewareTest extends TestCase
 
     public function test_it_preserves_host_header_when_rewriting_path()
     {
-        $middleware = new RewritePathMiddleware('/api/*', '/v2/$1');
+        $route = (new Route('/api/*', 'https://172.17.0.1'))
+            ->middleware(new RewritePathMiddleware('/v2/$1'));
+
+        $route->matches(new ServerRequest('GET', 'https://example.com/api/users'));
+
+        $middlewares = $route->getMiddlewares();
         $request = (new ServerRequest('GET', 'https://172.17.0.1/api/users'))
             ->withHeader('Host', 'custom-host.example.com');
 
-        $middleware->process($request, function ($req) {
+        $middlewares[0]->process($request, function ($req) {
             $this->assertEquals('/v2/users', $req->getUri()->getPath());
             $this->assertEquals('custom-host.example.com', $req->getHeaderLine('Host'));
 

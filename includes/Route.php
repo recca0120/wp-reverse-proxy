@@ -18,6 +18,9 @@ class Route
     /** @var array */
     private $middlewares = [];
 
+    /** @var array */
+    private $captures = [];
+
     public function __construct(string $source, string $target, array $middlewares = [])
     {
         $this->parseSource($source);
@@ -45,6 +48,10 @@ class Route
      */
     public function middleware($middleware): self
     {
+        if ($middleware instanceof RouteAwareInterface) {
+            $middleware->setRoute($this);
+        }
+
         $this->middlewares[] = $middleware;
 
         return $this;
@@ -111,11 +118,22 @@ class Route
         return parse_url($this->target, PHP_URL_HOST) ?: '';
     }
 
+    public function getCaptures(): array
+    {
+        return $this->captures;
+    }
+
     private function matchesPattern(string $path): bool
     {
         $regex = '#^'.str_replace('\*', '(.*)', preg_quote($this->path, '#')).'$#';
 
-        return (bool) preg_match($regex, $path);
+        if (preg_match($regex, $path, $matches)) {
+            $this->captures = array_slice($matches, 1);
+
+            return true;
+        }
+
+        return false;
     }
 
     private function buildTargetUrl(string $path, string $queryString): string

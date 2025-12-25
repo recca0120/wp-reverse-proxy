@@ -5,54 +5,47 @@ namespace ReverseProxy\Middleware;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Route;
+use ReverseProxy\RouteAwareInterface;
 
-class RewritePathMiddleware implements MiddlewareInterface
+class RewritePathMiddleware implements MiddlewareInterface, RouteAwareInterface
 {
-    /** @var string */
-    private $pattern;
-
     /** @var string */
     private $replacement;
 
-    public function __construct(string $pattern, string $replacement)
+    /** @var Route */
+    private $route;
+
+    public function __construct(string $replacement)
     {
-        $this->pattern = $pattern;
         $this->replacement = $replacement;
+    }
+
+    public function setRoute(Route $route): void
+    {
+        $this->route = $route;
     }
 
     public function process(RequestInterface $request, callable $next): ResponseInterface
     {
+        $newPath = $this->applyReplacement($this->route->getCaptures());
+
         $uri = $request->getUri();
-        $path = $uri->getPath();
-
-        $newPath = $this->rewritePath($path);
-
-        if ($newPath !== $path) {
+        if ($newPath !== $uri->getPath()) {
             $request = $request->withUri($uri->withPath($newPath), true);
         }
 
         return $next($request);
     }
 
-    private function rewritePath(string $path): string
+    private function applyReplacement(array $captures): string
     {
-        $regex = $this->patternToRegex($this->pattern);
-
-        if (! preg_match($regex, $path, $matches)) {
-            return $path;
-        }
-
         $result = $this->replacement;
 
-        for ($i = 1; $i < count($matches); $i++) {
-            $result = str_replace('$'.$i, $matches[$i], $result);
+        foreach ($captures as $i => $value) {
+            $result = str_replace('$'.($i + 1), $value, $result);
         }
 
         return $result;
-    }
-
-    private function patternToRegex(string $pattern): string
-    {
-        return '#^'.str_replace('\*', '(.*?)', preg_quote($pattern, '#')).'$#';
     }
 }

@@ -402,7 +402,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/v1/*', 'https://backend.example.com', [
-                new RewritePathMiddleware('/api/v1/*', '/v1/$1'),
+                new RewritePathMiddleware('/v1/$1'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -422,7 +422,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
         $this->givenRoutes([
             new Route('/api/v1/*', 'https://127.0.0.1:8080', [
-                new RewritePathMiddleware('/api/v1/*', '/v1/$1'),
+                new RewritePathMiddleware('/v1/$1'),
                 new ProxyHeadersMiddleware,
                 new SetHostMiddleware('api.example.com'),
             ]),
