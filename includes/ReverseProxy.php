@@ -50,9 +50,7 @@ class ReverseProxy
      */
     public function addGlobalMiddlewares(array $middlewares): self
     {
-        foreach ($middlewares as $middleware) {
-            $this->globalMiddlewares[] = $middleware;
-        }
+        $this->globalMiddlewares = array_merge($this->globalMiddlewares, $middlewares);
 
         return $this;
     }
@@ -83,17 +81,29 @@ class ReverseProxy
             return $this->client->sendRequest($request);
         };
 
-        // Wrap with route middlewares (in reverse order)
-        foreach (array_reverse($route->getMiddlewares()) as $middleware) {
-            $handler = $this->wrapMiddleware($middleware, $handler);
-        }
+        // Merge and sort middlewares by priority (lower priority = outer layer)
+        $middlewares = $this->sortMiddlewares(
+            array_merge($this->globalMiddlewares, $route->getMiddlewares())
+        );
 
-        // Wrap with global middlewares (in reverse order, so first added is outermost)
-        foreach (array_reverse($this->globalMiddlewares) as $middleware) {
+        // Wrap middlewares in reverse order (highest priority = innermost)
+        foreach (array_reverse($middlewares) as $middleware) {
             $handler = $this->wrapMiddleware($middleware, $handler);
         }
 
         return $handler($request);
+    }
+
+    private function sortMiddlewares(array $middlewares): array
+    {
+        usort($middlewares, function ($a, $b) {
+            $priorityA = $a instanceof MiddlewareInterface ? ($a->priority ?? 0) : 0;
+            $priorityB = $b instanceof MiddlewareInterface ? ($b->priority ?? 0) : 0;
+
+            return $priorityA <=> $priorityB;
+        });
+
+        return $middlewares;
     }
 
     /**
@@ -118,6 +128,13 @@ class ReverseProxy
         $request = $this->requestFactory->createRequest($method, $targetUrl);
 
         foreach ($originalRequest->getHeaders() as $name => $values) {
+            if (strtolower($name) === 'accept-encoding') {
+                $values = [$this->removeUnsupportedEncodings(implode(', ', $values))];
+                if ($values[0] === '') {
+                    continue;
+                }
+            }
+
             $request = $request->withHeader($name, $values);
         }
 
@@ -134,5 +151,13 @@ class ReverseProxy
         }
 
         return $request;
+    }
+
+    private function removeUnsupportedEncodings(string $encoding): string
+    {
+        // Remove Brotli (br) as it may not be supported by all HTTP clients
+        $encoding = preg_replace('/\bbr\b\s*,?\s*/', '', $encoding);
+
+        return rtrim($encoding, ', ');
     }
 }
