@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit;
+namespace ReverseProxy\Tests\Integration\Http;
 
 use PHPUnit\Framework\TestCase;
 
@@ -14,7 +14,7 @@ abstract class HttpClientTestCase extends TestCase
     {
         parent::setUpBeforeClass();
 
-        $serverDir = __DIR__.'/../server';
+        $serverDir = __DIR__.'/../../server';
         $command = sprintf(
             'php -S localhost:%d -t %s > /dev/null 2>&1 & echo $!',
             self::$serverPort,

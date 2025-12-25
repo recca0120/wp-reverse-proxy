@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit;
+namespace ReverseProxy\Tests\Unit\Middleware;
 
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
