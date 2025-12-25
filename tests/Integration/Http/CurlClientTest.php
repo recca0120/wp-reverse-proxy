@@ -187,4 +187,51 @@ class CurlClientTest extends HttpClientTestCase
         $decompressed = json_decode(gzinflate($body), true);
         $this->assertStringContainsString('deflate', $decompressed['accept_encoding']);
     }
+
+    public function test_it_handles_lowercase_content_encoding_header()
+    {
+        $client = new CurlClient;
+        $request = new Request('GET', $this->getServerUrl('/gzip-lowercase'), [
+            'Accept-Encoding' => 'gzip',
+        ]);
+
+        $response = $client->sendRequest($request);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEmpty($response->getHeaderLine('Content-Encoding'));
+        $this->assertEmpty($response->getHeaderLine('content-encoding'));
+
+        // Body should be automatically decompressed
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertStringContainsString('gzip', $body['accept_encoding']);
+    }
+
+    public function test_it_respects_connect_timeout_option()
+    {
+        // Use a non-routable IP to test connection timeout
+        $client = new CurlClient(['connect_timeout' => 1, 'timeout' => 30]);
+        $request = new Request('GET', 'http://10.255.255.1/');
+
+        $this->expectException(NetworkException::class);
+
+        $start = microtime(true);
+        try {
+            $client->sendRequest($request);
+        } finally {
+            $elapsed = microtime(true) - $start;
+            // Should timeout around 1 second, not 30 seconds
+            $this->assertLessThan(5, $elapsed);
+        }
+    }
+
+    public function test_it_respects_proxy_option()
+    {
+        // Test that proxy option is accepted (will fail to connect but shouldn't error on option)
+        $client = new CurlClient(['proxy' => 'http://127.0.0.1:9999', 'timeout' => 1]);
+        $request = new Request('GET', $this->getServerUrl('/'));
+
+        $this->expectException(NetworkException::class);
+
+        $client->sendRequest($request);
+    }
 }

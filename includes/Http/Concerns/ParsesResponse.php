@@ -17,6 +17,19 @@ trait ParsesResponse
         return $headers;
     }
 
+    private function findHeaderName(array $headers, string $name): ?string
+    {
+        $lowerName = strtolower($name);
+
+        foreach ($headers as $key => $value) {
+            if (strtolower($key) === $lowerName) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * @return array{0: string, 1: int, 2: string, 3: array}
      */

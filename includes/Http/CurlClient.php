@@ -35,12 +35,17 @@ class CurlClient implements ClientInterface
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_HTTPHEADER => $this->prepareHeaders($request),
             CURLOPT_TIMEOUT => $this->options['timeout'] ?? 30,
+            CURLOPT_CONNECTTIMEOUT => $this->options['connect_timeout'] ?? ($this->options['timeout'] ?? 30),
             CURLOPT_SSL_VERIFYPEER => $verify,
             CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
         ];
 
         if ($this->options['decode_content'] ?? true) {
             $curlOptions[CURLOPT_ENCODING] = '';
+        }
+
+        if (isset($this->options['proxy'])) {
+            $curlOptions[CURLOPT_PROXY] = $this->options['proxy'];
         }
 
         curl_setopt_array($ch, $curlOptions);
@@ -81,7 +86,11 @@ class CurlClient implements ClientInterface
             return $body;
         }
 
-        unset($headers['Content-Encoding']);
+        $encodingKey = $this->findHeaderName($headers, 'Content-Encoding');
+
+        if ($encodingKey !== null) {
+            unset($headers[$encodingKey]);
+        }
 
         return $body;
     }

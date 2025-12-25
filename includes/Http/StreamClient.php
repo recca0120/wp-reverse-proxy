@@ -25,15 +25,26 @@ class StreamClient implements ClientInterface
     {
         $verify = $this->options['verify'] ?? true;
 
+        $timeout = $this->options['timeout'] ?? 30;
+        $connectTimeout = $this->options['connect_timeout'] ?? $timeout;
+
+        $httpOptions = [
+            'method' => $request->getMethod(),
+            'header' => implode("\r\n", $this->prepareHeaders($request)),
+            'content' => (string) $request->getBody(),
+            'timeout' => min($timeout, $connectTimeout),
+            'protocol_version' => (float) ($this->options['protocol_version'] ?? '1.1'),
+            'follow_location' => 0,
+            'ignore_errors' => true,
+        ];
+
+        if (isset($this->options['proxy'])) {
+            $httpOptions['proxy'] = $this->options['proxy'];
+            $httpOptions['request_fulluri'] = true;
+        }
+
         $context = stream_context_create([
-            'http' => [
-                'method' => $request->getMethod(),
-                'header' => implode("\r\n", $this->prepareHeaders($request)),
-                'content' => (string) $request->getBody(),
-                'timeout' => $this->options['timeout'] ?? 30,
-                'follow_location' => 0,
-                'ignore_errors' => true,
-            ],
+            'http' => $httpOptions,
             'ssl' => [
                 'verify_peer' => $verify,
                 'verify_peer_name' => $verify,
@@ -61,12 +72,13 @@ class StreamClient implements ClientInterface
             return $body;
         }
 
-        $encoding = $headers['Content-Encoding'][0] ?? null;
+        $encodingKey = $this->findHeaderName($headers, 'Content-Encoding');
 
-        if ($encoding === null) {
+        if ($encodingKey === null) {
             return $body;
         }
 
+        $encoding = $headers[$encodingKey][0] ?? null;
         $decoded = null;
 
         switch (strtolower($encoding)) {
@@ -79,7 +91,7 @@ class StreamClient implements ClientInterface
         }
 
         if ($decoded !== false && $decoded !== null) {
-            unset($headers['Content-Encoding']);
+            unset($headers[$encodingKey]);
 
             return $decoded;
         }

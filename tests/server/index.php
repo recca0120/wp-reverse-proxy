@@ -69,6 +69,21 @@ switch ($path) {
         }
         break;
 
+    case '/gzip-lowercase':
+        $acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '';
+        $response['accept_encoding'] = $acceptEncoding;
+
+        if (strpos($acceptEncoding, 'gzip') !== false) {
+            header('content-encoding: gzip');
+            echo gzencode(json_encode($response, JSON_PRETTY_PRINT));
+            exit;
+        }
+        break;
+
+    case '/protocol':
+        $response['protocol'] = $_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.1';
+        break;
+
     default:
         $response['status'] = 200;
 }
