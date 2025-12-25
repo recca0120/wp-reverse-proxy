@@ -56,6 +56,14 @@ class ServerRequestFactory
 
         foreach ($_SERVER as $key => $value) {
             if (strpos($key, 'HTTP_') === 0) {
+                // Skip CONTENT_TYPE and CONTENT_LENGTH as they're handled separately
+                if ($key === 'HTTP_CONTENT_TYPE' || $key === 'HTTP_CONTENT_LENGTH') {
+                    continue;
+                }
+                // Skip empty values
+                if ($value === '' || $value === null) {
+                    continue;
+                }
                 $name = str_replace('_', '-', substr($key, 5));
                 $headers[$name] = $value;
             } elseif ($key === 'CONTENT_TYPE' && $value) {
