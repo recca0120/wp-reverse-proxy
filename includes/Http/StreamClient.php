@@ -95,27 +95,4 @@ class StreamClient implements ClientInterface
 
         return $body;
     }
-
-    /**
-     * @param  string[]  $headerLines
-     */
-    private function parseResponseHeaders(array $headerLines, int &$statusCode): array
-    {
-        $headers = [];
-
-        foreach ($headerLines as $line) {
-            if (preg_match('/^HTTP\/[\d.]+ (\d+)/', $line, $matches)) {
-                $statusCode = (int) $matches[1];
-
-                continue;
-            }
-
-            $parsed = $this->parseHeaderLine($line);
-            if ($parsed !== null) {
-                $this->addHeader($headers, $parsed[0], $parsed[1]);
-            }
-        }
-
-        return $headers;
-    }
 }

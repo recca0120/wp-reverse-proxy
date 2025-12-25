@@ -71,26 +71,12 @@ class CurlClient implements ClientInterface
 
         $headerString = substr($response, 0, $headerSize);
         $body = substr($response, $headerSize);
-        $headers = $this->parseResponseHeaders($headerString);
+        $headers = $this->parseResponseHeaders(explode("\r\n", trim($headerString)));
 
         if ($decodeContent) {
             unset($headers['Content-Encoding']);
         }
 
         return new Response($statusCode, $headers, $body);
-    }
-
-    private function parseResponseHeaders(string $headerString): array
-    {
-        $headers = [];
-
-        foreach (explode("\r\n", trim($headerString)) as $line) {
-            $parsed = $this->parseHeaderLine($line);
-            if ($parsed !== null) {
-                $this->addHeader($headers, $parsed[0], $parsed[1]);
-            }
-        }
-
-        return $headers;
     }
 }
