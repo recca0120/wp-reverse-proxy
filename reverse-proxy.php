@@ -25,16 +25,27 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
-// Initialize plugin
+// Handle proxy requests
 add_action('parse_request', function () {
-    $plugin = ReverseProxy\WordPress\Plugin::create();
+    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
+    $httpClient = apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\WordPressHttpClient);
+
+    $proxy = new ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
+    $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
+        new ReverseProxy\Middleware\ErrorHandlingMiddleware,
+        new ReverseProxy\Middleware\LoggingMiddleware(new ReverseProxy\WordPress\Logger),
+    ]));
+
+    $serverRequestFactory = new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory);
+    $responseEmitter = new ReverseProxy\WordPress\ResponseEmitter;
 
     $routes = apply_filters('reverse_proxy_routes', []);
-    $response = $plugin->handle($routes);
+    $request = $serverRequestFactory->createFromGlobals();
+    $response = $proxy->handle($request, $routes);
 
     if ($response !== null) {
         $response = apply_filters('reverse_proxy_response', $response);
-        $plugin->emit($response);
+        $responseEmitter->emit($response);
 
         if (apply_filters('reverse_proxy_should_exit', true)) {
             exit;
