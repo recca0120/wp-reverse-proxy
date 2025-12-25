@@ -28,12 +28,8 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
 // Handle proxy requests
 add_action('parse_request', function () {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
-    $httpClient = new ReverseProxy\Http\PluginClient(
-        apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\WordPressHttpClient),
-        [
-            new ReverseProxy\Http\Plugin\RemoveBrotliEncodingPlugin,
-            new ReverseProxy\Http\Plugin\RemoveHopByHopHeadersPlugin,
-        ]
+    $httpClient = new ReverseProxy\Http\FilteringHttpClient(
+        apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\WordPressHttpClient)
     );
 
     $proxy = new ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
