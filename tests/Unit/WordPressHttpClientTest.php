@@ -3,135 +3,119 @@
 namespace ReverseProxy\Tests\Unit;
 
 use Nyholm\Psr7\Request;
-use PHPUnit\Framework\TestCase;
 use ReverseProxy\Http\NetworkException;
 use ReverseProxy\Http\WordPressHttpClient;
-use WP_Error;
 
-class WordPressHttpClientTest extends TestCase
+class WordPressHttpClientTest extends HttpClientTestCase
 {
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-        remove_all_filters('pre_http_request');
-    }
-
     public function test_it_sends_get_request()
     {
-        add_filter('pre_http_request', function ($preempt, $args, $url) {
-            $this->assertEquals('GET', $args['method']);
-            $this->assertEquals('https://example.com/api', $url);
-
-            return [
-                'response' => ['code' => 200],
-                'headers' => new \WpOrg\Requests\Utility\CaseInsensitiveDictionary(['Content-Type' => 'application/json']),
-                'body' => '{"success":true}',
-            ];
-        }, 10, 3);
-
         $client = new WordPressHttpClient;
-        $request = new Request('GET', 'https://example.com/api');
+        $request = new Request('GET', $this->getServerUrl('/api/test'));
 
         $response = $client->sendRequest($request);
 
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
-        $this->assertEquals('{"success":true}', (string) $response->getBody());
+
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertEquals('GET', $body['method']);
+        $this->assertEquals('/api/test', $body['uri']);
     }
 
     public function test_it_sends_post_request_with_body()
     {
-        add_filter('pre_http_request', function ($preempt, $args, $url) {
-            $this->assertEquals('POST', $args['method']);
-            $this->assertEquals('{"data":"test"}', $args['body']);
-            $this->assertEquals('application/json', $args['headers']['Content-Type']);
-
-            return [
-                'response' => ['code' => 201],
-                'headers' => new \WpOrg\Requests\Utility\CaseInsensitiveDictionary([]),
-                'body' => '',
-            ];
-        }, 10, 3);
-
         $client = new WordPressHttpClient;
-        $request = new Request('POST', 'https://example.com/api', [
+        $request = new Request('POST', $this->getServerUrl('/api/test'), [
             'Content-Type' => 'application/json',
         ], '{"data":"test"}');
 
         $response = $client->sendRequest($request);
 
-        $this->assertEquals(201, $response->getStatusCode());
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertEquals('POST', $body['method']);
+        $this->assertEquals('{"data":"test"}', $body['body']);
     }
 
-    public function test_it_throws_exception_on_wp_error()
+    public function test_it_throws_exception_on_connection_error()
     {
-        add_filter('pre_http_request', function () {
-            return new WP_Error('http_request_failed', 'Connection timed out');
-        });
-
         $this->expectException(NetworkException::class);
-        $this->expectExceptionMessage('Connection timed out');
 
-        $client = new WordPressHttpClient;
-        $request = new Request('GET', 'https://example.com/api');
-
-        $client->sendRequest($request);
-    }
-
-    public function test_it_uses_custom_options()
-    {
-        add_filter('pre_http_request', function ($preempt, $args) {
-            $this->assertEquals(60, $args['timeout']);
-
-            return [
-                'response' => ['code' => 200],
-                'headers' => new \WpOrg\Requests\Utility\CaseInsensitiveDictionary([]),
-                'body' => '',
-            ];
-        }, 10, 3);
-
-        $client = new WordPressHttpClient(['timeout' => 60]);
-        $request = new Request('GET', 'https://example.com/api');
-
-        $client->sendRequest($request);
-    }
-
-    public function test_it_does_not_decompress_response()
-    {
-        add_filter('pre_http_request', function ($preempt, $args) {
-            $this->assertFalse($args['decompress']);
-
-            return [
-                'response' => ['code' => 200],
-                'headers' => new \WpOrg\Requests\Utility\CaseInsensitiveDictionary([]),
-                'body' => '',
-            ];
-        }, 10, 3);
-
-        $client = new WordPressHttpClient;
-        $request = new Request('GET', 'https://example.com/api');
+        $client = new WordPressHttpClient(['timeout' => 1]);
+        $request = new Request('GET', 'http://localhost:59999/not-exist');
 
         $client->sendRequest($request);
     }
 
     public function test_it_does_not_follow_redirects()
     {
-        add_filter('pre_http_request', function ($preempt, $args) {
-            $this->assertEquals(0, $args['redirection']);
-
-            return [
-                'response' => ['code' => 302],
-                'headers' => new \WpOrg\Requests\Utility\CaseInsensitiveDictionary(['Location' => 'https://example.com/new']),
-                'body' => '',
-            ];
-        }, 10, 3);
-
         $client = new WordPressHttpClient;
-        $request = new Request('GET', 'https://example.com/old');
+        $request = new Request('GET', $this->getServerUrl('/redirect'));
 
         $response = $client->sendRequest($request);
 
         $this->assertEquals(302, $response->getStatusCode());
-        $this->assertEquals('https://example.com/new', $response->getHeaderLine('Location'));
+        $this->assertStringContainsString('/redirected', $response->getHeaderLine('Location'));
+    }
+
+    public function test_it_handles_error_status_codes()
+    {
+        $client = new WordPressHttpClient;
+
+        $response404 = $client->sendRequest(new Request('GET', $this->getServerUrl('/status/404')));
+        $this->assertEquals(404, $response404->getStatusCode());
+
+        $response500 = $client->sendRequest(new Request('GET', $this->getServerUrl('/status/500')));
+        $this->assertEquals(500, $response500->getStatusCode());
+    }
+
+    public function test_it_sends_request_headers()
+    {
+        $client = new WordPressHttpClient;
+        $request = new Request('GET', $this->getServerUrl('/'), [
+            'Accept' => 'application/json',
+            'X-Custom-Header' => 'custom-value',
+        ]);
+
+        $response = $client->sendRequest($request);
+        $body = json_decode((string) $response->getBody(), true);
+
+        $this->assertEquals('application/json', $body['headers']['ACCEPT']);
+        $this->assertEquals('custom-value', $body['headers']['X-CUSTOM-HEADER']);
+    }
+
+    public function test_it_receives_response_headers()
+    {
+        $client = new WordPressHttpClient;
+        $request = new Request('GET', $this->getServerUrl('/headers'));
+
+        $response = $client->sendRequest($request);
+
+        $this->assertEquals('test-value', $response->getHeaderLine('X-Custom-Header'));
+    }
+
+    public function test_it_handles_multiple_headers_with_same_name()
+    {
+        $client = new WordPressHttpClient;
+        $request = new Request('GET', $this->getServerUrl('/headers'));
+
+        $response = $client->sendRequest($request);
+
+        $cookies = $response->getHeader('Set-Cookie');
+        $this->assertCount(2, $cookies);
+        $this->assertContains('a=1', $cookies);
+        $this->assertContains('b=2', $cookies);
+    }
+
+    public function test_it_respects_timeout_option()
+    {
+        $client = new WordPressHttpClient(['timeout' => 1]);
+        $request = new Request('GET', $this->getServerUrl('/delay'));
+
+        $this->expectException(NetworkException::class);
+
+        $client->sendRequest($request);
     }
 }

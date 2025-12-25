@@ -1,202 +1,121 @@
 <?php
 
-namespace ReverseProxy\Http;
-
-// Mock file_get_contents in the same namespace
-function file_get_contents($filename, $use_include_path = false, $context = null)
-{
-    global $http_response_header;
-
-    if (StreamHttpClientTestHelper::$shouldFail) {
-        return false;
-    }
-
-    StreamHttpClientTestHelper::$lastContext = $context;
-    $http_response_header = StreamHttpClientTestHelper::$responseHeaders;
-
-    return StreamHttpClientTestHelper::$responseBody;
-}
-
-function stream_context_create($options = [])
-{
-    StreamHttpClientTestHelper::$contextOptions = $options;
-
-    return 'mock_context';
-}
-
-function error_get_last()
-{
-    return StreamHttpClientTestHelper::$lastError;
-}
-
-class StreamHttpClientTestHelper
-{
-    public static $contextOptions = [];
-
-    public static $lastContext = null;
-
-    public static $responseHeaders = [];
-
-    public static $responseBody = '';
-
-    public static $shouldFail = false;
-
-    public static $lastError = null;
-
-    public static function reset()
-    {
-        self::$contextOptions = [];
-        self::$lastContext = null;
-        self::$responseHeaders = [];
-        self::$responseBody = '';
-        self::$shouldFail = false;
-        self::$lastError = null;
-    }
-
-    public static function setResponse(int $statusCode, array $headers, string $body)
-    {
-        self::$responseHeaders = ["HTTP/1.1 {$statusCode} OK"];
-        foreach ($headers as $name => $value) {
-            self::$responseHeaders[] = "{$name}: {$value}";
-        }
-        self::$responseBody = $body;
-    }
-
-    public static function setError(string $message)
-    {
-        self::$shouldFail = true;
-        self::$lastError = ['message' => $message];
-    }
-}
-
 namespace ReverseProxy\Tests\Unit;
 
 use Nyholm\Psr7\Request;
-use PHPUnit\Framework\TestCase;
 use ReverseProxy\Http\NetworkException;
 use ReverseProxy\Http\StreamHttpClient;
-use ReverseProxy\Http\StreamHttpClientTestHelper;
 
-class StreamHttpClientTest extends TestCase
+class StreamHttpClientTest extends HttpClientTestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-        StreamHttpClientTestHelper::reset();
-    }
-
     public function test_it_sends_get_request()
     {
-        StreamHttpClientTestHelper::setResponse(200, ['Content-Type' => 'application/json'], '{"success":true}');
-
         $client = new StreamHttpClient;
-        $request = new Request('GET', 'https://example.com/api');
+        $request = new Request('GET', $this->getServerUrl('/api/test'));
 
         $response = $client->sendRequest($request);
 
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
-        $this->assertEquals('{"success":true}', (string) $response->getBody());
+
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertEquals('GET', $body['method']);
+        $this->assertEquals('/api/test', $body['uri']);
     }
 
     public function test_it_sends_post_request_with_body()
     {
-        StreamHttpClientTestHelper::setResponse(201, [], '');
-
         $client = new StreamHttpClient;
-        $request = new Request('POST', 'https://example.com/api', [
+        $request = new Request('POST', $this->getServerUrl('/api/test'), [
             'Content-Type' => 'application/json',
         ], '{"data":"test"}');
 
         $response = $client->sendRequest($request);
 
-        $this->assertEquals(201, $response->getStatusCode());
-        $this->assertEquals('POST', StreamHttpClientTestHelper::$contextOptions['http']['method']);
-        $this->assertEquals('{"data":"test"}', StreamHttpClientTestHelper::$contextOptions['http']['content']);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $body = json_decode((string) $response->getBody(), true);
+        $this->assertEquals('POST', $body['method']);
+        $this->assertEquals('{"data":"test"}', $body['body']);
     }
 
-    public function test_it_throws_exception_on_error()
+    public function test_it_throws_exception_on_connection_error()
     {
-        StreamHttpClientTestHelper::setError('Connection timed out');
-
         $this->expectException(NetworkException::class);
-        $this->expectExceptionMessage('Connection timed out');
 
-        $client = new StreamHttpClient;
-        $request = new Request('GET', 'https://example.com/api');
+        $client = new StreamHttpClient(['timeout' => 1]);
+        $request = new Request('GET', 'http://localhost:59999/not-exist');
 
         $client->sendRequest($request);
     }
 
     public function test_it_does_not_follow_redirects()
     {
-        StreamHttpClientTestHelper::setResponse(302, ['Location' => 'https://example.com/new'], '');
-
         $client = new StreamHttpClient;
-        $request = new Request('GET', 'https://example.com/old');
+        $request = new Request('GET', $this->getServerUrl('/redirect'));
 
         $response = $client->sendRequest($request);
 
-        $this->assertEquals(0, StreamHttpClientTestHelper::$contextOptions['http']['follow_location']);
         $this->assertEquals(302, $response->getStatusCode());
+        $this->assertStringContainsString('/redirected', $response->getHeaderLine('Location'));
     }
 
-    public function test_it_uses_custom_timeout()
+    public function test_it_handles_error_status_codes()
     {
-        StreamHttpClientTestHelper::setResponse(200, [], '');
-
-        $client = new StreamHttpClient(['timeout' => 60]);
-        $request = new Request('GET', 'https://example.com/api');
-
-        $client->sendRequest($request);
-
-        $this->assertEquals(60, StreamHttpClientTestHelper::$contextOptions['http']['timeout']);
-    }
-
-    public function test_it_prepares_headers_correctly()
-    {
-        StreamHttpClientTestHelper::setResponse(200, [], '');
-
         $client = new StreamHttpClient;
-        $request = new Request('GET', 'https://example.com/api', [
+
+        $response404 = $client->sendRequest(new Request('GET', $this->getServerUrl('/status/404')));
+        $this->assertEquals(404, $response404->getStatusCode());
+
+        $response500 = $client->sendRequest(new Request('GET', $this->getServerUrl('/status/500')));
+        $this->assertEquals(500, $response500->getStatusCode());
+    }
+
+    public function test_it_sends_request_headers()
+    {
+        $client = new StreamHttpClient;
+        $request = new Request('GET', $this->getServerUrl('/'), [
             'Accept' => 'application/json',
-            'X-Custom' => 'value',
+            'X-Custom-Header' => 'custom-value',
         ]);
 
+        $response = $client->sendRequest($request);
+        $body = json_decode((string) $response->getBody(), true);
+
+        $this->assertEquals('application/json', $body['headers']['ACCEPT']);
+        $this->assertEquals('custom-value', $body['headers']['X-CUSTOM-HEADER']);
+    }
+
+    public function test_it_receives_response_headers()
+    {
+        $client = new StreamHttpClient;
+        $request = new Request('GET', $this->getServerUrl('/headers'));
+
+        $response = $client->sendRequest($request);
+
+        $this->assertEquals('test-value', $response->getHeaderLine('X-Custom-Header'));
+    }
+
+    public function test_it_handles_multiple_headers_with_same_name()
+    {
+        $client = new StreamHttpClient;
+        $request = new Request('GET', $this->getServerUrl('/headers'));
+
+        $response = $client->sendRequest($request);
+
+        $cookies = $response->getHeader('Set-Cookie');
+        $this->assertCount(2, $cookies);
+        $this->assertContains('a=1', $cookies);
+        $this->assertContains('b=2', $cookies);
+    }
+
+    public function test_it_respects_timeout_option()
+    {
+        $client = new StreamHttpClient(['timeout' => 1]);
+        $request = new Request('GET', $this->getServerUrl('/delay'));
+
+        $this->expectException(NetworkException::class);
+
         $client->sendRequest($request);
-
-        $headers = StreamHttpClientTestHelper::$contextOptions['http']['header'];
-        $this->assertStringContainsString('Accept: application/json', $headers);
-        $this->assertStringContainsString('X-Custom: value', $headers);
-    }
-
-    public function test_it_parses_multiple_headers_with_same_name()
-    {
-        StreamHttpClientTestHelper::$responseHeaders = [
-            'HTTP/1.1 200 OK',
-            'Set-Cookie: a=1',
-            'Set-Cookie: b=2',
-        ];
-        StreamHttpClientTestHelper::$responseBody = 'body';
-
-        $client = new StreamHttpClient;
-        $request = new Request('GET', 'https://example.com/api');
-
-        $response = $client->sendRequest($request);
-
-        $this->assertEquals(['a=1', 'b=2'], $response->getHeader('Set-Cookie'));
-    }
-
-    public function test_it_ignores_errors_to_get_response_body()
-    {
-        StreamHttpClientTestHelper::setResponse(404, [], 'Not Found');
-
-        $client = new StreamHttpClient;
-        $request = new Request('GET', 'https://example.com/api');
-
-        $response = $client->sendRequest($request);
-
-        $this->assertEquals(404, $response->getStatusCode());
-        $this->assertTrue(StreamHttpClientTestHelper::$contextOptions['http']['ignore_errors']);
     }
 }

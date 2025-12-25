@@ -34,6 +34,9 @@ class StreamHttpClient implements ClientInterface
             ],
         ]);
 
+        // $http_response_header is a magic variable set by file_get_contents in local scope
+        $http_response_header = [];
+
         $body = @file_get_contents((string) $request->getUri(), false, $context);
 
         if ($body === false) {
@@ -41,13 +44,10 @@ class StreamHttpClient implements ClientInterface
             throw new NetworkException($error['message'] ?? 'Unknown error', $request);
         }
 
-        // $http_response_header is a magic variable set by file_get_contents
-        global $http_response_header;
-
         $statusCode = 200;
         $headers = [];
 
-        if (isset($http_response_header) && is_array($http_response_header)) {
+        if (! empty($http_response_header)) {
             $headers = $this->parseHeaders($http_response_header, $statusCode);
         }
 
