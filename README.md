@@ -549,7 +549,7 @@ add_filter('reverse_proxy_http_client', function () {
 
 ## 運作原理
 
-1. 外掛掛載到 WordPress `parse_request` action
+1. 外掛掛載到 WordPress `plugins_loaded` action
 2. 檢查請求路徑是否符合任何已設定的路由
 3. 如果符合：
    - 轉發請求到目標伺服器
@@ -559,12 +559,77 @@ add_filter('reverse_proxy_http_client', function () {
    - WordPress 繼續正常處理請求
 
 ```
-Request → parse_request → 符合路由？
-                              ↓
-                    是 ──→ 代理 → 回應 → 結束
-                              ↓
-                    否 ──→ WordPress 正常處理
+Request → plugins_loaded → 符合路由？
+                               ↓
+                     是 ──→ 代理 → 回應 → 結束
+                               ↓
+                     否 ──→ WordPress 正常處理
 ```
+
+## WordPress Hooks 載入順序
+
+外掛使用 `plugins_loaded` hook 而非 `parse_request`，以便在主題載入前執行，提升效能。
+
+| 順序 | Hook | 可用功能 | 主題 |
+|-----|------|---------|------|
+| 1 | `mu_plugin_loaded` | 每個 mu-plugin 載入時 | ❌ |
+| 2 | `muplugins_loaded` | 所有 mu-plugins 載入完成 | ❌ |
+| 3 | `plugin_loaded` | 每個一般插件載入時 | ❌ |
+| 4 | **`plugins_loaded`** | **$wpdb, 所有插件 (WooCommerce)** | ❌ |
+| 5 | `setup_theme` | 主題載入前 | ❌ |
+| 6 | `after_setup_theme` | 主題載入後 | ✅ |
+| 7 | `init` | 用戶認證完成 | ✅ |
+| 8 | `wp_loaded` | WordPress 完全載入 | ✅ |
+| 9 | `parse_request` | 解析請求 | ✅ |
+
+### 為什麼選擇 `plugins_loaded`？
+
+- **跳過主題載入**：比 `parse_request` 更早執行，不載入主題
+- **插件可用**：可使用 WooCommerce 等插件功能
+- **資料庫可用**：`$wpdb` 已初始化
+- **效能提升**：減少不必要的 WordPress 載入
+
+### 需要更早執行？
+
+如果不需要任何 WordPress 功能，可在 mu-plugin 中直接執行（不使用 hook）：
+
+```php
+<?php
+// wp-content/mu-plugins/reverse-proxy-early.php
+
+require_once WP_CONTENT_DIR.'/plugins/reverse-proxy/vendor/autoload.php';
+
+use ReverseProxy\ReverseProxy;
+use ReverseProxy\Route;
+use Nyholm\Psr7\Factory\Psr17Factory;
+
+$psr17Factory = new Psr17Factory();
+$proxy = new ReverseProxy(
+    new ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]),
+    $psr17Factory,
+    $psr17Factory
+);
+
+$routes = [
+    new Route('/api/*', 'https://api.example.com'),
+];
+
+$request = (new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory))->createFromGlobals();
+$response = $proxy->handle($request, $routes);
+
+if ($response !== null) {
+    http_response_code($response->getStatusCode());
+    foreach ($response->getHeaders() as $name => $values) {
+        foreach ($values as $value) {
+            header("{$name}: {$value}", false);
+        }
+    }
+    echo $response->getBody();
+    exit;
+}
+```
+
+這是最快的執行方式，完全跳過 WordPress 載入。
 
 ## 開發
 

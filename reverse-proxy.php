@@ -41,6 +41,13 @@ function reverse_proxy_create_proxy()
     return $proxy;
 }
 
+function reverse_proxy_create_request()
+{
+    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
+
+    return (new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory))->createFromGlobals();
+}
+
 function reverse_proxy_emit_response($response)
 {
     if (! headers_sent()) {
@@ -54,22 +61,27 @@ function reverse_proxy_emit_response($response)
     echo $response->getBody();
 }
 
-add_action('parse_request', function () {
-    $proxy = reverse_proxy_create_proxy();
-    $serverRequestFactory = new ReverseProxy\WordPress\ServerRequestFactory(
-        apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory)
-    );
+function reverse_proxy_send_response($response)
+{
+    $response = apply_filters('reverse_proxy_response', $response);
+    reverse_proxy_emit_response($response);
 
+    if (apply_filters('reverse_proxy_should_exit', true)) {
+        exit;
+    }
+}
+
+function reverse_proxy_handle()
+{
+    $proxy = reverse_proxy_create_proxy();
+    $request = reverse_proxy_create_request();
     $routes = apply_filters('reverse_proxy_routes', []);
-    $request = $serverRequestFactory->createFromGlobals();
+
     $response = $proxy->handle($request, $routes);
 
     if ($response !== null) {
-        $response = apply_filters('reverse_proxy_response', $response);
-        reverse_proxy_emit_response($response);
-
-        if (apply_filters('reverse_proxy_should_exit', true)) {
-            exit;
-        }
+        reverse_proxy_send_response($response);
     }
-});
+}
+
+add_action('plugins_loaded', 'reverse_proxy_handle');

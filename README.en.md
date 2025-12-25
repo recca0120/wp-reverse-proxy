@@ -549,7 +549,7 @@ add_filter('reverse_proxy_http_client', function () {
 
 ## How It Works
 
-1. Plugin hooks into WordPress `parse_request` action
+1. Plugin hooks into WordPress `plugins_loaded` action
 2. Checks if request path matches any configured route
 3. If matched:
    - Forwards request to target server
@@ -559,12 +559,77 @@ add_filter('reverse_proxy_http_client', function () {
    - WordPress continues normal request handling
 
 ```
-Request → parse_request → Match Route?
-                              ↓
-                    Yes ──→ Proxy → Response → Exit
-                              ↓
-                    No  ──→ WordPress handles normally
+Request → plugins_loaded → Match Route?
+                               ↓
+                     Yes ──→ Proxy → Response → Exit
+                               ↓
+                     No  ──→ WordPress handles normally
 ```
+
+## WordPress Hooks Loading Order
+
+The plugin uses `plugins_loaded` hook instead of `parse_request` to execute before theme loading, improving performance.
+
+| Order | Hook | Available Features | Theme |
+|-------|------|-------------------|-------|
+| 1 | `mu_plugin_loaded` | Fires as each mu-plugin loads | ❌ |
+| 2 | `muplugins_loaded` | All mu-plugins loaded | ❌ |
+| 3 | `plugin_loaded` | Fires as each plugin loads | ❌ |
+| 4 | **`plugins_loaded`** | **$wpdb, all plugins (WooCommerce)** | ❌ |
+| 5 | `setup_theme` | Before theme loads | ❌ |
+| 6 | `after_setup_theme` | After theme loads | ✅ |
+| 7 | `init` | User authentication ready | ✅ |
+| 8 | `wp_loaded` | WordPress fully loaded | ✅ |
+| 9 | `parse_request` | Request parsing | ✅ |
+
+### Why `plugins_loaded`?
+
+- **Skip theme loading**: Executes earlier than `parse_request`, no theme loaded
+- **Plugins available**: Can use WooCommerce and other plugin features
+- **Database available**: `$wpdb` is initialized
+- **Performance boost**: Reduces unnecessary WordPress loading
+
+### Need Earlier Execution?
+
+If you don't need any WordPress features, execute directly in mu-plugin (no hook):
+
+```php
+<?php
+// wp-content/mu-plugins/reverse-proxy-early.php
+
+require_once WP_CONTENT_DIR.'/plugins/reverse-proxy/vendor/autoload.php';
+
+use ReverseProxy\ReverseProxy;
+use ReverseProxy\Route;
+use Nyholm\Psr7\Factory\Psr17Factory;
+
+$psr17Factory = new Psr17Factory();
+$proxy = new ReverseProxy(
+    new ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]),
+    $psr17Factory,
+    $psr17Factory
+);
+
+$routes = [
+    new Route('/api/*', 'https://api.example.com'),
+];
+
+$request = (new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory))->createFromGlobals();
+$response = $proxy->handle($request, $routes);
+
+if ($response !== null) {
+    http_response_code($response->getStatusCode());
+    foreach ($response->getHeaders() as $name => $values) {
+        foreach ($values as $value) {
+            header("{$name}: {$value}", false);
+        }
+    }
+    echo $response->getBody();
+    exit;
+}
+```
+
+This is the fastest execution method, completely skipping WordPress loading.
 
 ## Development
 
