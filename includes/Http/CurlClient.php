@@ -86,10 +86,10 @@ class CurlClient implements ClientInterface
             return $body;
         }
 
-        $encodingKey = $this->findHeaderName($headers, 'Content-Encoding');
+        $encodingName = $this->findHeaderName($headers, 'Content-Encoding');
 
-        if ($encodingKey !== null) {
-            unset($headers[$encodingKey]);
+        if ($encodingName !== null) {
+            unset($headers[$encodingName]);
         }
 
         return $body;

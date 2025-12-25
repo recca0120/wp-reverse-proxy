@@ -72,13 +72,13 @@ class StreamClient implements ClientInterface
             return $body;
         }
 
-        $encodingKey = $this->findHeaderName($headers, 'Content-Encoding');
+        $encodingName = $this->findHeaderName($headers, 'Content-Encoding');
 
-        if ($encodingKey === null) {
+        if ($encodingName === null) {
             return $body;
         }
 
-        $encoding = $headers[$encodingKey][0] ?? null;
+        $encoding = $headers[$encodingName][0] ?? null;
         $decoded = null;
 
         switch (strtolower($encoding)) {
@@ -91,7 +91,7 @@ class StreamClient implements ClientInterface
         }
 
         if ($decoded !== false && $decoded !== null) {
-            unset($headers[$encodingKey]);
+            unset($headers[$encodingName]);
 
             return $decoded;
         }
