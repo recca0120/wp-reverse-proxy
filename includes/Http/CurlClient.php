@@ -7,9 +7,12 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\Exceptions\NetworkException;
+use ReverseProxy\Http\Concerns\ParsesHeaders;
 
 class CurlClient implements ClientInterface
 {
+    use ParsesHeaders;
+
     /** @var array */
     private $options;
 
@@ -30,7 +33,7 @@ class CurlClient implements ClientInterface
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => true,
             CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_HTTPHEADER => $this->prepareHeaders($request),
+            CURLOPT_HTTPHEADER => $this->formatHeaderLines($request),
             CURLOPT_TIMEOUT => $this->options['timeout'] ?? 30,
             CURLOPT_SSL_VERIFYPEER => $verify,
             CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
@@ -68,38 +71,17 @@ class CurlClient implements ClientInterface
         $headerString = substr($response, 0, $headerSize);
         $body = substr($response, $headerSize);
 
-        return new Response($statusCode, $this->parseHeaders($headerString), $body);
+        return new Response($statusCode, $this->parseResponseHeaders($headerString), $body);
     }
 
-    private function prepareHeaders(RequestInterface $request): array
+    private function parseResponseHeaders(string $headerString): array
     {
         $headers = [];
 
-        foreach ($request->getHeaders() as $name => $values) {
-            $headers[] = $name.': '.implode(', ', $values);
-        }
-
-        return $headers;
-    }
-
-    private function parseHeaders(string $headerString): array
-    {
-        $headers = [];
-        $lines = explode("\r\n", trim($headerString));
-
-        foreach ($lines as $line) {
-            if (strpos($line, ':') === false) {
-                continue;
-            }
-
-            [$name, $value] = explode(':', $line, 2);
-            $name = trim($name);
-            $value = trim($value);
-
-            if (isset($headers[$name])) {
-                $headers[$name][] = $value;
-            } else {
-                $headers[$name] = [$value];
+        foreach (explode("\r\n", trim($headerString)) as $line) {
+            $parsed = $this->parseHeaderLine($line);
+            if ($parsed !== null) {
+                $this->addHeader($headers, $parsed[0], $parsed[1]);
             }
         }
 

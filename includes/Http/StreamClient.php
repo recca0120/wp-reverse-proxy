@@ -8,9 +8,12 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use ReverseProxy\Exceptions\NetworkException;
+use ReverseProxy\Http\Concerns\ParsesHeaders;
 
 class StreamClient implements ClientInterface
 {
+    use ParsesHeaders;
+
     /** @var array */
     private $options;
 
@@ -41,7 +44,7 @@ class StreamClient implements ClientInterface
         $context = stream_context_create([
             'http' => [
                 'method' => $request->getMethod(),
-                'header' => $this->prepareHeaders($request),
+                'header' => implode("\r\n", $this->formatHeaderLines($request)),
                 'content' => (string) $request->getBody(),
                 'timeout' => $this->options['timeout'] ?? 30,
                 'follow_location' => 0,
@@ -64,7 +67,7 @@ class StreamClient implements ClientInterface
         $headers = [];
 
         if (! empty($http_response_header)) {
-            $headers = $this->parseHeaders($http_response_header, $statusCode);
+            $headers = $this->parseResponseHeaders($http_response_header, $statusCode);
         }
 
         return new Response($statusCode, $headers, $body);
@@ -104,21 +107,10 @@ class StreamClient implements ClientInterface
         return null;
     }
 
-    private function prepareHeaders(RequestInterface $request): string
-    {
-        $headers = [];
-
-        foreach ($request->getHeaders() as $name => $values) {
-            $headers[] = $name.': '.implode(', ', $values);
-        }
-
-        return implode("\r\n", $headers);
-    }
-
     /**
      * @param  string[]  $headerLines
      */
-    private function parseHeaders(array $headerLines, int &$statusCode): array
+    private function parseResponseHeaders(array $headerLines, int &$statusCode): array
     {
         $headers = [];
 
@@ -129,18 +121,9 @@ class StreamClient implements ClientInterface
                 continue;
             }
 
-            if (strpos($line, ':') === false) {
-                continue;
-            }
-
-            [$name, $value] = explode(':', $line, 2);
-            $name = trim($name);
-            $value = trim($value);
-
-            if (isset($headers[$name])) {
-                $headers[$name][] = $value;
-            } else {
-                $headers[$name] = [$value];
+            $parsed = $this->parseHeaderLine($line);
+            if ($parsed !== null) {
+                $this->addHeader($headers, $parsed[0], $parsed[1]);
             }
         }
 
