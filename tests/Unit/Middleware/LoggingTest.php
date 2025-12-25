@@ -7,9 +7,9 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
-use ReverseProxy\Middleware\LoggingMiddleware;
+use ReverseProxy\Middleware\Logging;
 
-class LoggingMiddlewareTest extends TestCase
+class LoggingTest extends TestCase
 {
     public function test_it_logs_request_before_calling_next()
     {
@@ -21,7 +21,7 @@ class LoggingMiddlewareTest extends TestCase
                 [$this->stringContains('Proxy response'), $this->anything()]
             );
 
-        $middleware = new LoggingMiddleware($logger);
+        $middleware = new Logging($logger);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -41,7 +41,7 @@ class LoggingMiddlewareTest extends TestCase
                 }
             });
 
-        $middleware = new LoggingMiddleware($logger);
+        $middleware = new Logging($logger);
         $request = new ServerRequest('POST', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -64,7 +64,7 @@ class LoggingMiddlewareTest extends TestCase
                 }
             });
 
-        $middleware = new LoggingMiddleware($logger);
+        $middleware = new Logging($logger);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -77,7 +77,7 @@ class LoggingMiddlewareTest extends TestCase
     public function test_it_returns_response_from_next()
     {
         $logger = $this->createMock(LoggerInterface::class);
-        $middleware = new LoggingMiddleware($logger);
+        $middleware = new Logging($logger);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
         $expectedResponse = new Response(200, [], '{"data":"test"}');
 
@@ -101,7 +101,7 @@ class LoggingMiddlewareTest extends TestCase
                 $this->anything()
             );
 
-        $middleware = new LoggingMiddleware($logger);
+        $middleware = new Logging($logger);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $this->expectException(ClientExceptionInterface::class);
@@ -114,7 +114,7 @@ class LoggingMiddlewareTest extends TestCase
     public function test_it_rethrows_exception_after_logging()
     {
         $logger = $this->createMock(LoggerInterface::class);
-        $middleware = new LoggingMiddleware($logger);
+        $middleware = new Logging($logger);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $this->expectException(ClientExceptionInterface::class);

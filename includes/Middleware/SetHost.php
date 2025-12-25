@@ -4,9 +4,9 @@ namespace ReverseProxy\Middleware;
 
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
 
-class SetHostMiddleware implements MiddlewareInterface
+class SetHost implements MiddlewareInterface
 {
     /** @var string */
     private $host;

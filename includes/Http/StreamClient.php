@@ -6,8 +6,9 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use ReverseProxy\Exceptions\NetworkException;
 
-class StreamHttpClient implements ClientInterface
+class StreamClient implements ClientInterface
 {
     /** @var array */
     private $options;

@@ -4,9 +4,9 @@ namespace ReverseProxy\Middleware;
 
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
 
-class ProxyHeadersMiddleware implements MiddlewareInterface
+class ProxyHeaders implements MiddlewareInterface
 {
     public function process(RequestInterface $request, callable $next): ResponseInterface
     {

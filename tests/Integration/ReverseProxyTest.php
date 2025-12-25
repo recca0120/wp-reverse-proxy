@@ -6,10 +6,10 @@ use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
-use ReverseProxy\Middleware\AllowMethodsMiddleware;
-use ReverseProxy\Middleware\ProxyHeadersMiddleware;
-use ReverseProxy\Middleware\RewritePathMiddleware;
-use ReverseProxy\Middleware\SetHostMiddleware;
+use ReverseProxy\Middleware\AllowMethods;
+use ReverseProxy\Middleware\ProxyHeaders;
+use ReverseProxy\Middleware\RewritePath;
+use ReverseProxy\Middleware\SetHost;
 use ReverseProxy\Route;
 use WP_UnitTestCase;
 
@@ -366,7 +366,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new SetHostMiddleware('custom-api.example.com'),
+                new SetHost('custom-api.example.com'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -383,7 +383,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new ProxyHeadersMiddleware,
+                new ProxyHeaders,
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -402,7 +402,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/v1/*', 'https://backend.example.com', [
-                new RewritePathMiddleware('/v1/$1'),
+                new RewritePath('/v1/$1'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -422,9 +422,9 @@ class ReverseProxyTest extends WP_UnitTestCase
         $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
         $this->givenRoutes([
             new Route('/api/v1/*', 'https://127.0.0.1:8080', [
-                new RewritePathMiddleware('/v1/$1'),
-                new ProxyHeadersMiddleware,
-                new SetHostMiddleware('api.example.com'),
+                new RewritePath('/v1/$1'),
+                new ProxyHeaders,
+                new SetHost('api.example.com'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"success":true}'));
@@ -443,7 +443,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new SetHostMiddleware('test.example.com'),
+                new SetHost('test.example.com'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -458,7 +458,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new AllowMethodsMiddleware(['GET', 'POST']),
+                new AllowMethods(['GET', 'POST']),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"success":true}'));
@@ -474,7 +474,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new AllowMethodsMiddleware(['GET']),
+                new AllowMethods(['GET']),
             ]),
         ]);
 

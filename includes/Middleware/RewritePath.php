@@ -4,11 +4,11 @@ namespace ReverseProxy\Middleware;
 
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
+use ReverseProxy\Contracts\RouteAwareInterface;
 use ReverseProxy\Route;
-use ReverseProxy\RouteAwareInterface;
 
-class RewritePathMiddleware implements MiddlewareInterface, RouteAwareInterface
+class RewritePath implements MiddlewareInterface, RouteAwareInterface
 {
     /** @var string */
     private $replacement;

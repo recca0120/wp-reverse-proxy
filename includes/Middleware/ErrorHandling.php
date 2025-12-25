@@ -6,9 +6,9 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
 
-class ErrorHandlingMiddleware implements MiddlewareInterface
+class ErrorHandling implements MiddlewareInterface
 {
     /** @var int */
     public $priority = -100;

@@ -3,14 +3,14 @@
 namespace ReverseProxy\Tests\Integration\Http;
 
 use Nyholm\Psr7\Request;
-use ReverseProxy\Http\CurlHttpClient;
-use ReverseProxy\Http\NetworkException;
+use ReverseProxy\Exceptions\NetworkException;
+use ReverseProxy\Http\StreamClient;
 
-class CurlHttpClientTest extends HttpClientTestCase
+class StreamClientTest extends HttpClientTestCase
 {
     public function test_it_sends_get_request()
     {
-        $client = new CurlHttpClient;
+        $client = new StreamClient;
         $request = new Request('GET', $this->getServerUrl('/api/test'));
 
         $response = $client->sendRequest($request);
@@ -25,7 +25,7 @@ class CurlHttpClientTest extends HttpClientTestCase
 
     public function test_it_sends_post_request_with_body()
     {
-        $client = new CurlHttpClient;
+        $client = new StreamClient;
         $request = new Request('POST', $this->getServerUrl('/api/test'), [
             'Content-Type' => 'application/json',
         ], '{"data":"test"}');
@@ -43,7 +43,7 @@ class CurlHttpClientTest extends HttpClientTestCase
     {
         $this->expectException(NetworkException::class);
 
-        $client = new CurlHttpClient(['timeout' => 1]);
+        $client = new StreamClient(['timeout' => 1]);
         $request = new Request('GET', 'http://localhost:59999/not-exist');
 
         $client->sendRequest($request);
@@ -51,7 +51,7 @@ class CurlHttpClientTest extends HttpClientTestCase
 
     public function test_it_does_not_follow_redirects()
     {
-        $client = new CurlHttpClient;
+        $client = new StreamClient;
         $request = new Request('GET', $this->getServerUrl('/redirect'));
 
         $response = $client->sendRequest($request);
@@ -62,7 +62,7 @@ class CurlHttpClientTest extends HttpClientTestCase
 
     public function test_it_handles_error_status_codes()
     {
-        $client = new CurlHttpClient;
+        $client = new StreamClient;
 
         $response404 = $client->sendRequest(new Request('GET', $this->getServerUrl('/status/404')));
         $this->assertEquals(404, $response404->getStatusCode());
@@ -73,7 +73,7 @@ class CurlHttpClientTest extends HttpClientTestCase
 
     public function test_it_sends_request_headers()
     {
-        $client = new CurlHttpClient;
+        $client = new StreamClient;
         $request = new Request('GET', $this->getServerUrl('/'), [
             'Accept' => 'application/json',
             'X-Custom-Header' => 'custom-value',
@@ -88,7 +88,7 @@ class CurlHttpClientTest extends HttpClientTestCase
 
     public function test_it_receives_response_headers()
     {
-        $client = new CurlHttpClient;
+        $client = new StreamClient;
         $request = new Request('GET', $this->getServerUrl('/headers'));
 
         $response = $client->sendRequest($request);
@@ -98,7 +98,7 @@ class CurlHttpClientTest extends HttpClientTestCase
 
     public function test_it_handles_multiple_headers_with_same_name()
     {
-        $client = new CurlHttpClient;
+        $client = new StreamClient;
         $request = new Request('GET', $this->getServerUrl('/headers'));
 
         $response = $client->sendRequest($request);
@@ -111,7 +111,7 @@ class CurlHttpClientTest extends HttpClientTestCase
 
     public function test_it_respects_timeout_option()
     {
-        $client = new CurlHttpClient(['timeout' => 1]);
+        $client = new StreamClient(['timeout' => 1]);
         $request = new Request('GET', $this->getServerUrl('/delay'));
 
         $this->expectException(NetworkException::class);

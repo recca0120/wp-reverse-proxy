@@ -9,13 +9,13 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;
-use ReverseProxy\Middleware\ErrorHandlingMiddleware;
+use ReverseProxy\Middleware\ErrorHandling;
 
-class ErrorHandlingMiddlewareTest extends TestCase
+class ErrorHandlingTest extends TestCase
 {
     public function test_it_returns_response_when_no_exception()
     {
-        $middleware = new ErrorHandlingMiddleware;
+        $middleware = new ErrorHandling;
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
@@ -28,7 +28,7 @@ class ErrorHandlingMiddlewareTest extends TestCase
 
     public function test_it_returns_502_when_network_exception_occurs()
     {
-        $middleware = new ErrorHandlingMiddleware;
+        $middleware = new ErrorHandling;
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
@@ -54,7 +54,7 @@ class ErrorHandlingMiddlewareTest extends TestCase
 
     public function test_it_returns_502_when_client_exception_occurs()
     {
-        $middleware = new ErrorHandlingMiddleware;
+        $middleware = new ErrorHandling;
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
@@ -66,7 +66,7 @@ class ErrorHandlingMiddlewareTest extends TestCase
 
     public function test_it_returns_json_error_body()
     {
-        $middleware = new ErrorHandlingMiddleware;
+        $middleware = new ErrorHandling;
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
@@ -81,7 +81,7 @@ class ErrorHandlingMiddlewareTest extends TestCase
 
     public function test_it_sets_json_content_type_header()
     {
-        $middleware = new ErrorHandlingMiddleware;
+        $middleware = new ErrorHandling;
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
@@ -93,7 +93,7 @@ class ErrorHandlingMiddlewareTest extends TestCase
 
     public function test_it_rethrows_non_client_exceptions()
     {
-        $middleware = new ErrorHandlingMiddleware;
+        $middleware = new ErrorHandling;
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $this->expectException(\RuntimeException::class);

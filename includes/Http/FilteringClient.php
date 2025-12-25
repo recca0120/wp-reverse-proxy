@@ -6,7 +6,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-class FilteringHttpClient implements ClientInterface
+class FilteringClient implements ClientInterface
 {
     /**
      * Headers that should not be forwarded (hop-by-hop headers).

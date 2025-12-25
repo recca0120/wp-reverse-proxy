@@ -28,14 +28,14 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
 function reverse_proxy_create_proxy()
 {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
-    $httpClient = new ReverseProxy\Http\FilteringHttpClient(
-        apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\WordPressHttpClient)
+    $httpClient = new ReverseProxy\Http\FilteringClient(
+        apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\WordPressClient)
     );
 
     $proxy = new ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
     $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
-        new ReverseProxy\Middleware\ErrorHandlingMiddleware,
-        new ReverseProxy\Middleware\LoggingMiddleware(new ReverseProxy\WordPress\Logger),
+        new ReverseProxy\Middleware\ErrorHandling,
+        new ReverseProxy\Middleware\Logging(new ReverseProxy\WordPress\Logger),
     ]));
 
     return $proxy;

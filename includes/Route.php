@@ -3,6 +3,7 @@
 namespace ReverseProxy;
 
 use Psr\Http\Message\ServerRequestInterface;
+use ReverseProxy\Contracts\RouteAwareInterface;
 
 class Route
 {

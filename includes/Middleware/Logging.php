@@ -6,9 +6,9 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
-use ReverseProxy\MiddlewareInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
 
-class LoggingMiddleware implements MiddlewareInterface
+class Logging implements MiddlewareInterface
 {
     /** @var int */
     public $priority = -90;
