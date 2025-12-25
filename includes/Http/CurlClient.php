@@ -69,14 +69,24 @@ class CurlClient implements ClientInterface
         $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        $headerString = substr($response, 0, $headerSize);
         $body = substr($response, $headerSize);
-        $headers = $this->parseResponseHeaders(explode("\r\n", trim($headerString)));
+        $headers = $this->parseResponseHeaders(explode("\r\n", trim(substr($response, 0, $headerSize))));
 
         if ($decodeContent) {
-            unset($headers['Content-Encoding']);
+            $body = $this->decodeBody($body, $headers);
         }
 
         return new Response($statusCode, $headers, $body);
+    }
+
+    /**
+     * Handle decoded content by removing Content-Encoding header.
+     * Note: curl already decompresses when CURLOPT_ENCODING is set.
+     */
+    private function decodeBody(string $body, array &$headers): string
+    {
+        unset($headers['Content-Encoding']);
+
+        return $body;
     }
 }
