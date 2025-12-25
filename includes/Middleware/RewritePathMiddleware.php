@@ -28,7 +28,7 @@ class RewritePathMiddleware implements MiddlewareInterface
         $newPath = $this->rewritePath($path);
 
         if ($newPath !== $path) {
-            $request = $request->withUri($uri->withPath($newPath));
+            $request = $request->withUri($uri->withPath($newPath), true);
         }
 
         return $next($request);

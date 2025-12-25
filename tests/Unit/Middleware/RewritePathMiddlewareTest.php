@@ -93,4 +93,18 @@ class RewritePathMiddlewareTest extends TestCase
             return new Response(200);
         });
     }
+
+    public function test_it_preserves_host_header_when_rewriting_path()
+    {
+        $middleware = new RewritePathMiddleware('/api/*', '/v2/$1');
+        $request = (new ServerRequest('GET', 'https://172.17.0.1/api/users'))
+            ->withHeader('Host', 'custom-host.example.com');
+
+        $middleware->process($request, function ($req) {
+            $this->assertEquals('/v2/users', $req->getUri()->getPath());
+            $this->assertEquals('custom-host.example.com', $req->getHeaderLine('Host'));
+
+            return new Response(200);
+        });
+    }
 }
