@@ -24,8 +24,8 @@ class StreamClient implements ClientInterface
         $uri = $request->getUri();
         $url = (string) $uri;
         $sslOptions = [
-            'verify_peer' => $this->options['verify'] ?? true,
-            'verify_peer_name' => $this->options['verify'] ?? true,
+            'verify_peer' => $this->options['verify'] ?? false,
+            'verify_peer_name' => $this->options['verify'] ?? false,
         ];
 
         // Handle resolve option: map hostname to specific IP

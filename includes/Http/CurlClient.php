@@ -22,7 +22,7 @@ class CurlClient implements ClientInterface
     {
         $ch = curl_init();
 
-        $verify = $this->options['verify'] ?? true;
+        $verify = $this->options['verify'] ?? false;
 
         $curlOptions = [
             CURLOPT_URL => (string) $request->getUri(),
