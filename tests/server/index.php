@@ -47,6 +47,28 @@ switch ($path) {
         sleep(2);
         break;
 
+    case '/gzip':
+        $acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '';
+        $response['accept_encoding'] = $acceptEncoding;
+
+        if (strpos($acceptEncoding, 'gzip') !== false) {
+            header('Content-Encoding: gzip');
+            echo gzencode(json_encode($response, JSON_PRETTY_PRINT));
+            exit;
+        }
+        break;
+
+    case '/deflate':
+        $acceptEncoding = $_SERVER['HTTP_ACCEPT_ENCODING'] ?? '';
+        $response['accept_encoding'] = $acceptEncoding;
+
+        if (strpos($acceptEncoding, 'deflate') !== false) {
+            header('Content-Encoding: deflate');
+            echo gzdeflate(json_encode($response, JSON_PRETTY_PRINT));
+            exit;
+        }
+        break;
+
     default:
         $response['status'] = 200;
 }

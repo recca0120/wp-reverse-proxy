@@ -137,4 +137,43 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertEquals('/api/test', $body['uri']);
         $this->assertEquals('test.example.com', $body['headers']['HOST']);
     }
+
+    public function test_it_handles_gzip_compressed_response()
+    {
+        $client = new CurlClient;
+        $request = new Request('GET', $this->getServerUrl('/gzip'), [
+            'Accept-Encoding' => 'gzip',
+        ]);
+
+        $response = $client->sendRequest($request);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('gzip', $response->getHeaderLine('Content-Encoding'));
+
+        // Verify body is gzip compressed (starts with gzip magic number 1f8b)
+        $body = (string) $response->getBody();
+        $this->assertStringStartsWith("\x1f\x8b", $body);
+
+        // Verify we can decompress it
+        $decompressed = json_decode(gzdecode($body), true);
+        $this->assertStringContainsString('gzip', $decompressed['accept_encoding']);
+    }
+
+    public function test_it_handles_deflate_compressed_response()
+    {
+        $client = new CurlClient;
+        $request = new Request('GET', $this->getServerUrl('/deflate'), [
+            'Accept-Encoding' => 'deflate',
+        ]);
+
+        $response = $client->sendRequest($request);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('deflate', $response->getHeaderLine('Content-Encoding'));
+
+        // Verify we can decompress it
+        $body = (string) $response->getBody();
+        $decompressed = json_decode(gzinflate($body), true);
+        $this->assertStringContainsString('deflate', $decompressed['accept_encoding']);
+    }
 }

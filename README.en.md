@@ -515,26 +515,27 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 
 ### Custom HTTP Client
 
-The plugin uses `WordPressHttpClient` (based on `wp_remote_request()`) by default, with two alternative implementations available:
+The plugin uses `CurlClient` (based on cURL extension) by default, with one alternative implementation available:
 
 | Client | Dependency | Description |
 |--------|------------|-------------|
-| `WordPressHttpClient` | WordPress | Default, uses WordPress HTTP API |
-| `CurlHttpClient` | curl extension | Direct curl usage, better performance |
-| `StreamHttpClient` | None | Pure PHP, uses `file_get_contents` |
+| `CurlClient` | curl extension | Default, direct curl usage, supports resolve option |
+| `StreamClient` | None | Pure PHP, uses `file_get_contents` |
 
 ```php
-// Use CurlHttpClient
+// Use CurlClient (default) with custom options
 add_filter('reverse_proxy_http_client', function () {
-    return new \ReverseProxy\Http\CurlHttpClient([
+    return new \ReverseProxy\Http\CurlClient([
         'timeout' => 30,
         'verify' => true,
+        // Resolve hostname to specific IP (useful for internal networks)
+        'resolve' => ['api.example.com:443:172.17.0.1'],
     ]);
 });
 
-// Use StreamHttpClient (pure PHP, no extensions required)
+// Use StreamClient (pure PHP, no extensions required)
 add_filter('reverse_proxy_http_client', function () {
-    return new \ReverseProxy\Http\StreamHttpClient([
+    return new \ReverseProxy\Http\StreamClient([
         'timeout' => 30,
     ]);
 });

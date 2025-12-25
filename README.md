@@ -515,26 +515,27 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 
 ### 自訂 HTTP 客戶端
 
-外掛預設使用 `WordPressHttpClient`（基於 `wp_remote_request()`），另外提供兩個替代實作：
+外掛預設使用 `CurlClient`（基於 cURL 擴充），另外提供一個替代實作：
 
 | 客戶端 | 依賴 | 說明 |
 |--------|------|------|
-| `WordPressHttpClient` | WordPress | 預設，使用 WordPress HTTP API |
-| `CurlHttpClient` | curl 擴充 | 直接使用 curl，效能較好 |
-| `StreamHttpClient` | 無 | 純 PHP，使用 `file_get_contents` |
+| `CurlClient` | curl 擴充 | 預設，直接使用 curl，支援 resolve 選項 |
+| `StreamClient` | 無 | 純 PHP，使用 `file_get_contents` |
 
 ```php
-// 使用 CurlHttpClient
+// 使用 CurlClient（預設）搭配自訂選項
 add_filter('reverse_proxy_http_client', function () {
-    return new \ReverseProxy\Http\CurlHttpClient([
+    return new \ReverseProxy\Http\CurlClient([
         'timeout' => 30,
         'verify' => true,
+        // 將 hostname 解析到指定 IP（適用於內部網路）
+        'resolve' => ['api.example.com:443:172.17.0.1'],
     ]);
 });
 
-// 使用 StreamHttpClient（純 PHP，無需任何擴充）
+// 使用 StreamClient（純 PHP，無需任何擴充）
 add_filter('reverse_proxy_http_client', function () {
-    return new \ReverseProxy\Http\StreamHttpClient([
+    return new \ReverseProxy\Http\StreamClient([
         'timeout' => 30,
     ]);
 });
