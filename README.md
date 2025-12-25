@@ -443,6 +443,7 @@ add_filter('reverse_proxy_routes', function () {
 
 | Hook | 參數 | 說明 |
 |------|------|------|
+| `reverse_proxy_action_hook` | `$hook` | 設定觸發的 action hook（預設 `plugins_loaded`） |
 | `reverse_proxy_routes` | `$routes` | 設定代理路由 |
 | `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |
