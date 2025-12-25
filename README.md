@@ -591,45 +591,28 @@ Request → plugins_loaded → 符合路由？
 
 ### 需要更早執行？
 
-如果不需要任何 WordPress 功能，可在 mu-plugin 中直接執行（不使用 hook）：
+如果不需要其他 WordPress 插件功能，可在 mu-plugin 中直接執行（不使用 hook）：
 
 ```php
 <?php
 // wp-content/mu-plugins/reverse-proxy-early.php
 
-require_once WP_CONTENT_DIR.'/plugins/reverse-proxy/vendor/autoload.php';
-
-use ReverseProxy\ReverseProxy;
 use ReverseProxy\Route;
-use Nyholm\Psr7\Factory\Psr17Factory;
 
-$psr17Factory = new Psr17Factory();
-$proxy = new ReverseProxy(
-    new ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]),
-    $psr17Factory,
-    $psr17Factory
-);
+require_once WP_CONTENT_DIR.'/plugins/reverse-proxy/reverse-proxy.php';
 
-$routes = [
-    new Route('/api/*', 'https://api.example.com'),
-];
+// 註冊路由
+add_filter('reverse_proxy_routes', function () {
+    return [
+        new Route('/api/*', 'https://api.example.com'),
+    ];
+});
 
-$request = (new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory))->createFromGlobals();
-$response = $proxy->handle($request, $routes);
-
-if ($response !== null) {
-    http_response_code($response->getStatusCode());
-    foreach ($response->getHeaders() as $name => $values) {
-        foreach ($values as $value) {
-            header("{$name}: {$value}", false);
-        }
-    }
-    echo $response->getBody();
-    exit;
-}
+// 直接執行（跳過後續 WordPress 載入）
+reverse_proxy_handle();
 ```
 
-這是最快的執行方式，完全跳過 WordPress 載入。
+這是最快的執行方式，在 mu-plugin 階段直接處理請求。
 
 ## 開發
 
