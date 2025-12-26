@@ -243,6 +243,64 @@ new Route('/api/*', 'https://backend.example.com', [
 | 不符合時的行為 | 跳至下一個路由 | 回傳 405 回應 |
 | 使用場景 | 導向不同後端 | 限制路由允許的方法 |
 
+### Cors
+
+處理跨域資源共享（CORS）：
+
+```php
+use ReverseProxy\Middleware\Cors;
+
+// 基本用法：允許特定來源
+new Route('/api/*', 'https://backend.example.com', [
+    new Cors(['https://example.com', 'https://app.example.com']),
+]);
+
+// 允許所有來源
+new Route('/api/*', 'https://backend.example.com', [
+    new Cors(['*']),
+]);
+
+// 完整設定
+new Route('/api/*', 'https://backend.example.com', [
+    new Cors(
+        ['https://example.com'],           // 允許的來源
+        ['GET', 'POST', 'PUT', 'DELETE'],  // 允許的方法
+        ['Content-Type', 'Authorization'], // 允許的標頭
+        true,                              // 允許攜帶憑證
+        86400                              // 預檢快取時間（秒）
+    ),
+]);
+```
+
+功能：
+- 自動處理 OPTIONS 預檢請求（回傳 204）
+- 加入 `Access-Control-Allow-Origin` 等標頭
+- 支援多個來源或萬用字元 `*`
+- 可設定是否允許攜帶憑證（cookies）
+
+### RequestId
+
+產生或傳遞請求追蹤 ID：
+
+```php
+use ReverseProxy\Middleware\RequestId;
+
+// 使用預設標頭名稱 X-Request-ID
+new Route('/api/*', 'https://backend.example.com', [
+    new RequestId(),
+]);
+
+// 使用自訂標頭名稱
+new Route('/api/*', 'https://backend.example.com', [
+    new RequestId('X-Correlation-ID'),
+]);
+```
+
+功能：
+- 若請求已有 ID，保留並傳遞給後端
+- 若無，自動產生 UUID v4 格式的 ID
+- 將 ID 加入回應標頭，方便追蹤
+
 ### ErrorHandling（預設啟用）
 
 捕獲 HTTP 客戶端異常，回傳 502 Bad Gateway：

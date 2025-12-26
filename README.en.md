@@ -243,6 +243,64 @@ Features:
 | No match behavior | Skips to next route | Returns 405 response |
 | Use case | Route to different backends | Restrict methods on a route |
 
+### Cors
+
+Handles Cross-Origin Resource Sharing (CORS):
+
+```php
+use ReverseProxy\Middleware\Cors;
+
+// Basic usage: allow specific origins
+new Route('/api/*', 'https://backend.example.com', [
+    new Cors(['https://example.com', 'https://app.example.com']),
+]);
+
+// Allow all origins
+new Route('/api/*', 'https://backend.example.com', [
+    new Cors(['*']),
+]);
+
+// Full configuration
+new Route('/api/*', 'https://backend.example.com', [
+    new Cors(
+        ['https://example.com'],           // Allowed origins
+        ['GET', 'POST', 'PUT', 'DELETE'],  // Allowed methods
+        ['Content-Type', 'Authorization'], // Allowed headers
+        true,                              // Allow credentials
+        86400                              // Preflight cache time (seconds)
+    ),
+]);
+```
+
+Features:
+- Automatically handles OPTIONS preflight requests (returns 204)
+- Adds `Access-Control-Allow-Origin` and related headers
+- Supports multiple origins or wildcard `*`
+- Configurable credentials support (cookies)
+
+### RequestId
+
+Generates or propagates request tracking ID:
+
+```php
+use ReverseProxy\Middleware\RequestId;
+
+// Use default header name X-Request-ID
+new Route('/api/*', 'https://backend.example.com', [
+    new RequestId(),
+]);
+
+// Use custom header name
+new Route('/api/*', 'https://backend.example.com', [
+    new RequestId('X-Correlation-ID'),
+]);
+```
+
+Features:
+- Preserves existing ID if present in request
+- Generates UUID v4 format ID if none exists
+- Adds ID to response header for tracing
+
 ### ErrorHandling (Enabled by Default)
 
 Catches HTTP client exceptions and returns 502 Bad Gateway:
