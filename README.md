@@ -301,6 +301,89 @@ new Route('/api/*', 'https://backend.example.com', [
 - 若無，自動產生 UUID v4 格式的 ID
 - 將 ID 加入回應標頭，方便追蹤
 
+### IpFilter
+
+IP 白名單/黑名單過濾：
+
+```php
+use ReverseProxy\Middleware\IpFilter;
+
+// 白名單模式：只允許指定 IP
+new Route('/api/*', 'https://backend.example.com', [
+    IpFilter::allow(['192.168.1.100', '10.0.0.1']),
+]);
+
+// 黑名單模式：封鎖指定 IP
+new Route('/api/*', 'https://backend.example.com', [
+    IpFilter::deny(['192.168.1.100']),
+]);
+
+// 支援 CIDR 格式
+new Route('/api/*', 'https://backend.example.com', [
+    IpFilter::allow(['192.168.1.0/24', '10.0.0.0/8']),
+]);
+```
+
+功能：
+- 支援白名單（allow）和黑名單（deny）模式
+- 支援 CIDR 表示法（如 `192.168.1.0/24`）
+- 被封鎖的請求回傳 403 Forbidden
+
+### RateLimiting
+
+請求限流：
+
+```php
+use ReverseProxy\Middleware\RateLimiting;
+
+// 每分鐘最多 60 個請求
+new Route('/api/*', 'https://backend.example.com', [
+    new RateLimiting(60, 60),
+]);
+
+// 每小時最多 1000 個請求
+new Route('/api/*', 'https://backend.example.com', [
+    new RateLimiting(1000, 3600),
+]);
+
+// 自訂限流 key（例如用 API key）
+new Route('/api/*', 'https://backend.example.com', [
+    new RateLimiting(100, 60, function ($request) {
+        return $request->getHeaderLine('X-API-Key');
+    }),
+]);
+```
+
+功能：
+- 預設以 IP 為限流單位
+- 回應包含 `X-RateLimit-*` 標頭
+- 超過限制回傳 429 Too Many Requests 及 `Retry-After` 標頭
+
+### Caching
+
+回應快取：
+
+```php
+use ReverseProxy\Middleware\Caching;
+
+// 快取 5 分鐘
+new Route('/api/*', 'https://backend.example.com', [
+    new Caching(300),
+]);
+
+// 快取 1 小時
+new Route('/api/*', 'https://backend.example.com', [
+    new Caching(3600),
+]);
+```
+
+功能：
+- 只快取 GET/HEAD 請求
+- 只快取 200 OK 回應
+- 尊重 `Cache-Control: no-cache/no-store/private`
+- 回應包含 `X-Cache: HIT/MISS` 標頭
+- 使用 WordPress transients 儲存
+
 ### ErrorHandling（預設啟用）
 
 捕獲 HTTP 客戶端異常，回傳 502 Bad Gateway：

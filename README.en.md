@@ -301,6 +301,89 @@ Features:
 - Generates UUID v4 format ID if none exists
 - Adds ID to response header for tracing
 
+### IpFilter
+
+IP whitelist/blacklist filtering:
+
+```php
+use ReverseProxy\Middleware\IpFilter;
+
+// Whitelist mode: only allow specified IPs
+new Route('/api/*', 'https://backend.example.com', [
+    IpFilter::allow(['192.168.1.100', '10.0.0.1']),
+]);
+
+// Blacklist mode: block specified IPs
+new Route('/api/*', 'https://backend.example.com', [
+    IpFilter::deny(['192.168.1.100']),
+]);
+
+// Support CIDR notation
+new Route('/api/*', 'https://backend.example.com', [
+    IpFilter::allow(['192.168.1.0/24', '10.0.0.0/8']),
+]);
+```
+
+Features:
+- Supports whitelist (allow) and blacklist (deny) modes
+- Supports CIDR notation (e.g., `192.168.1.0/24`)
+- Blocked requests return 403 Forbidden
+
+### RateLimiting
+
+Request rate limiting:
+
+```php
+use ReverseProxy\Middleware\RateLimiting;
+
+// 60 requests per minute
+new Route('/api/*', 'https://backend.example.com', [
+    new RateLimiting(60, 60),
+]);
+
+// 1000 requests per hour
+new Route('/api/*', 'https://backend.example.com', [
+    new RateLimiting(1000, 3600),
+]);
+
+// Custom rate limit key (e.g., by API key)
+new Route('/api/*', 'https://backend.example.com', [
+    new RateLimiting(100, 60, function ($request) {
+        return $request->getHeaderLine('X-API-Key');
+    }),
+]);
+```
+
+Features:
+- Rate limits by IP address by default
+- Includes `X-RateLimit-*` headers in response
+- Returns 429 Too Many Requests with `Retry-After` header when exceeded
+
+### Caching
+
+Response caching:
+
+```php
+use ReverseProxy\Middleware\Caching;
+
+// Cache for 5 minutes
+new Route('/api/*', 'https://backend.example.com', [
+    new Caching(300),
+]);
+
+// Cache for 1 hour
+new Route('/api/*', 'https://backend.example.com', [
+    new Caching(3600),
+]);
+```
+
+Features:
+- Only caches GET/HEAD requests
+- Only caches 200 OK responses
+- Respects `Cache-Control: no-cache/no-store/private`
+- Includes `X-Cache: HIT/MISS` header in response
+- Uses WordPress transients for storage
+
 ### ErrorHandling (Enabled by Default)
 
 Catches HTTP client exceptions and returns 502 Bad Gateway:
