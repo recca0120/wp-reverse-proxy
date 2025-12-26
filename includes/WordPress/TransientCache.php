@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Cache;
+namespace ReverseProxy\WordPress;
 
 use DateInterval;
 use Psr\SimpleCache\CacheInterface;

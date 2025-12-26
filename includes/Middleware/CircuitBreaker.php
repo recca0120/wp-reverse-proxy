@@ -7,8 +7,8 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\SimpleCache\CacheInterface;
-use ReverseProxy\Cache\TransientCache;
 use ReverseProxy\Contracts\MiddlewareInterface;
+use ReverseProxy\WordPress\TransientCache;
 
 class CircuitBreaker implements MiddlewareInterface
 {
