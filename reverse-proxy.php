@@ -77,10 +77,15 @@ function reverse_proxy_handle()
     $request = reverse_proxy_create_request();
     $routes = apply_filters('reverse_proxy_routes', []);
 
-    $response = $proxy->handle($request, $routes);
+    try {
+        $response = $proxy->handle($request, $routes);
 
-    if ($response !== null) {
-        reverse_proxy_send_response($response);
+        if ($response !== null) {
+            reverse_proxy_send_response($response);
+        }
+    } catch (ReverseProxy\Exceptions\FallbackException $e) {
+        // Let WordPress handle the request
+        return;
     }
 }
 
