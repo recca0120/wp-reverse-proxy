@@ -196,26 +196,28 @@ new Route('/api/*', 'https://127.0.0.1:8080', [
 
 ### RewritePath
 
-重寫請求路徑：
+重寫請求路徑，使用 Route 的萬用字元捕獲值：
 
 ```php
 use ReverseProxy\Middleware\RewritePath;
 
 // /api/v1/users → /v1/users
 new Route('/api/v1/*', 'https://backend.example.com', [
-    new RewritePath('/api/v1/*', '/v1/$1'),
+    new RewritePath('/v1/$1'),
 ]);
 
 // /legacy/users → /api/v2/users
 new Route('/legacy/*', 'https://backend.example.com', [
-    new RewritePath('/legacy/*', '/api/v2/$1'),
+    new RewritePath('/api/v2/$1'),
 ]);
 
 // 多個萬用字元：/api/users/posts/123 → /v2/users/items/123
 new Route('/api/*/posts/*', 'https://backend.example.com', [
-    new RewritePath('/api/*/posts/*', '/v2/$1/items/$2'),
+    new RewritePath('/v2/$1/items/$2'),
 ]);
 ```
+
+`$1`、`$2` 等對應 Route 路徑中 `*` 萬用字元的捕獲值。
 
 ### AllowMethods
 
@@ -446,6 +448,7 @@ add_filter('reverse_proxy_routes', function () {
 | `reverse_proxy_action_hook` | `$hook` | 設定觸發的 action hook（預設 `plugins_loaded`） |
 | `reverse_proxy_routes` | `$routes` | 設定代理路由 |
 | `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
+| `reverse_proxy_psr17_factory` | `$factory` | 覆寫 PSR-17 HTTP 工廠 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |
 | `reverse_proxy_request_body` | `$body` | 覆寫請求主體（用於測試） |
 | `reverse_proxy_response` | `$response` | 在發送前修改回應 |
@@ -523,16 +526,30 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 | `CurlClient` | curl 擴充 | 預設，直接使用 curl |
 | `StreamClient` | 無 | 純 PHP，使用 `file_get_contents` |
 
+**可用選項：**
+
+| 選項 | 說明 | 預設值 | CurlClient | StreamClient |
+|------|------|--------|:----------:|:------------:|
+| `timeout` | 請求逾時（秒） | `30` | ✅ | ✅ |
+| `connect_timeout` | 連線逾時（秒） | 同 timeout | ✅ | ✅ |
+| `verify` | SSL 憑證驗證 | `true` | ✅ | ✅ |
+| `decode_content` | 自動解壓縮回應 | `true` | ✅ | ✅ |
+| `proxy` | 代理伺服器 URL | - | ✅ | ✅ |
+| `protocol_version` | HTTP 協定版本 | `1.1` | ❌ | ✅ |
+
 外掛使用以下預設選項以適應反向代理：
 - `verify => false` - 停用 SSL 驗證（適用於內部網路）
 - `decode_content => false` - 保留原始壓縮回應
 
 ```php
-// 停用 SSL 驗證和自動解壓縮（適用於反向代理）
+// 自訂 HTTP 客戶端選項
 add_filter('reverse_proxy_http_client', function () {
     return new \ReverseProxy\Http\CurlClient([
+        'timeout' => 60,
+        'connect_timeout' => 10,
         'verify' => false,
         'decode_content' => false,
+        'proxy' => 'http://proxy.example.com:8080',
     ]);
 });
 ```
@@ -623,8 +640,11 @@ reverse_proxy_handle();
 # 安裝依賴
 composer install
 
-# 設定 WordPress 測試環境
+# 設定 WordPress 測試環境（使用 SQLite，預設）
 ./bin/install-wp-tests.sh
+
+# 或使用 MySQL
+./bin/install-wp-tests.sh mysql
 
 # 執行測試
 composer test
@@ -633,8 +653,11 @@ composer test
 ### 執行測試
 
 ```bash
-# 所有測試
-./vendor/bin/phpunit
+# 所有測試（使用 SQLite）
+DB_ENGINE=sqlite ./vendor/bin/phpunit
+
+# 或直接使用 composer
+composer test
 
 # 特定測試
 ./vendor/bin/phpunit --filter=test_it_proxies_request
@@ -642,6 +665,10 @@ composer test
 # 含覆蓋率
 ./vendor/bin/phpunit --coverage-text
 ```
+
+### 支援的 PHP 版本
+
+- PHP 7.2 ~ 8.4（CI 測試涵蓋）
 
 ## 授權
 

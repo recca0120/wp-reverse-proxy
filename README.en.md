@@ -196,26 +196,28 @@ new Route('/api/*', 'https://127.0.0.1:8080', [
 
 ### RewritePath
 
-Rewrites the request path:
+Rewrites the request path using Route's wildcard captures:
 
 ```php
 use ReverseProxy\Middleware\RewritePath;
 
 // /api/v1/users → /v1/users
 new Route('/api/v1/*', 'https://backend.example.com', [
-    new RewritePath('/api/v1/*', '/v1/$1'),
+    new RewritePath('/v1/$1'),
 ]);
 
 // /legacy/users → /api/v2/users
 new Route('/legacy/*', 'https://backend.example.com', [
-    new RewritePath('/legacy/*', '/api/v2/$1'),
+    new RewritePath('/api/v2/$1'),
 ]);
 
 // Multiple wildcards: /api/users/posts/123 → /v2/users/items/123
 new Route('/api/*/posts/*', 'https://backend.example.com', [
-    new RewritePath('/api/*/posts/*', '/v2/$1/items/$2'),
+    new RewritePath('/v2/$1/items/$2'),
 ]);
 ```
+
+`$1`, `$2`, etc. correspond to the captured values from `*` wildcards in the Route path.
 
 ### AllowMethods
 
@@ -446,6 +448,7 @@ add_filter('reverse_proxy_routes', function () {
 | `reverse_proxy_action_hook` | `$hook` | Set the trigger action hook (default `plugins_loaded`) |
 | `reverse_proxy_routes` | `$routes` | Configure proxy routes |
 | `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
+| `reverse_proxy_psr17_factory` | `$factory` | Override PSR-17 HTTP factory |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
 | `reverse_proxy_request_body` | `$body` | Override request body (for testing) |
 | `reverse_proxy_response` | `$response` | Modify response before sending |
@@ -523,16 +526,30 @@ The plugin uses `CurlClient` (based on cURL extension) by default, with one alte
 | `CurlClient` | curl extension | Default, direct curl usage |
 | `StreamClient` | None | Pure PHP, uses `file_get_contents` |
 
+**Available Options:**
+
+| Option | Description | Default | CurlClient | StreamClient |
+|--------|-------------|---------|:----------:|:------------:|
+| `timeout` | Request timeout (seconds) | `30` | ✅ | ✅ |
+| `connect_timeout` | Connection timeout (seconds) | same as timeout | ✅ | ✅ |
+| `verify` | SSL certificate verification | `true` | ✅ | ✅ |
+| `decode_content` | Auto-decompress response | `true` | ✅ | ✅ |
+| `proxy` | Proxy server URL | - | ✅ | ✅ |
+| `protocol_version` | HTTP protocol version | `1.1` | ❌ | ✅ |
+
 The plugin uses the following default options for reverse proxying:
 - `verify => false` - SSL verification disabled for internal networks
 - `decode_content => false` - Preserve original compressed responses
 
 ```php
-// Disable SSL verification and auto-decompression (for reverse proxy)
+// Customize HTTP client options
 add_filter('reverse_proxy_http_client', function () {
     return new \ReverseProxy\Http\CurlClient([
+        'timeout' => 60,
+        'connect_timeout' => 10,
         'verify' => false,
         'decode_content' => false,
+        'proxy' => 'http://proxy.example.com:8080',
     ]);
 });
 ```
@@ -623,8 +640,11 @@ This is the fastest execution method, processing requests at the mu-plugin stage
 # Install dependencies
 composer install
 
-# Setup WordPress test environment
+# Setup WordPress test environment (SQLite, default)
 ./bin/install-wp-tests.sh
+
+# Or use MySQL
+./bin/install-wp-tests.sh mysql
 
 # Run tests
 composer test
@@ -633,8 +653,11 @@ composer test
 ### Running Tests
 
 ```bash
-# All tests
-./vendor/bin/phpunit
+# All tests (with SQLite)
+DB_ENGINE=sqlite ./vendor/bin/phpunit
+
+# Or use composer directly
+composer test
 
 # Specific test
 ./vendor/bin/phpunit --filter=test_it_proxies_request
@@ -642,6 +665,10 @@ composer test
 # With coverage
 ./vendor/bin/phpunit --coverage-text
 ```
+
+### Supported PHP Versions
+
+- PHP 7.2 ~ 8.4 (covered by CI)
 
 ## License
 
