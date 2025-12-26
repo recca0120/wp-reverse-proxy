@@ -384,6 +384,78 @@ new Route('/api/*', 'https://backend.example.com', [
 - 回應包含 `X-Cache: HIT/MISS` 標頭
 - 使用 WordPress transients 儲存
 
+### Retry
+
+失敗自動重試：
+
+```php
+use ReverseProxy\Middleware\Retry;
+
+// 最多重試 3 次
+new Route('/api/*', 'https://backend.example.com', [
+    new Retry(3),
+]);
+
+// 自訂可重試的方法和狀態碼
+new Route('/api/*', 'https://backend.example.com', [
+    new Retry(
+        3,                            // 最大重試次數
+        ['GET', 'PUT', 'DELETE'],     // 可重試的方法
+        [502, 503, 504]               // 可重試的狀態碼
+    ),
+]);
+```
+
+功能：
+- 預設只重試 GET/HEAD/OPTIONS 請求
+- 遇到 502/503/504 或網路錯誤時自動重試
+- 不重試 4xx 錯誤（客戶端錯誤）
+
+### CircuitBreaker
+
+熔斷器模式：
+
+```php
+use ReverseProxy\Middleware\CircuitBreaker;
+
+new Route('/api/*', 'https://backend.example.com', [
+    new CircuitBreaker(
+        'my-service',  // 服務名稱（識別不同的 circuit）
+        5,             // 失敗閾值
+        60             // 重置超時（秒）
+    ),
+]);
+```
+
+功能：
+- 連續失敗達到閾值時開啟熔斷器
+- 熔斷器開啟時直接返回 503，不呼叫後端
+- 超時後自動嘗試恢復
+- 成功請求會重置失敗計數
+
+### Timeout
+
+請求超時控制：
+
+```php
+use ReverseProxy\Middleware\Timeout;
+
+// 30 秒超時
+new Route('/api/*', 'https://backend.example.com', [
+    new Timeout(30),
+]);
+
+// 5 秒超時（適合快速失敗）
+new Route('/api/*', 'https://backend.example.com', [
+    new Timeout(5),
+]);
+```
+
+功能：
+- 設定請求超時時間
+- 超時時返回 504 Gateway Timeout
+- 透過 `X-Timeout` header 傳遞超時設定
+
 ### ErrorHandling（預設啟用）
 
 捕獲 HTTP 客戶端異常，回傳 502 Bad Gateway：

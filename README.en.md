@@ -384,6 +384,78 @@ Features:
 - Includes `X-Cache: HIT/MISS` header in response
 - Uses WordPress transients for storage
 
+### Retry
+
+Automatic retry on failure:
+
+```php
+use ReverseProxy\Middleware\Retry;
+
+// Retry up to 3 times
+new Route('/api/*', 'https://backend.example.com', [
+    new Retry(3),
+]);
+
+// Custom retryable methods and status codes
+new Route('/api/*', 'https://backend.example.com', [
+    new Retry(
+        3,                            // Max retries
+        ['GET', 'PUT', 'DELETE'],     // Retryable methods
+        [502, 503, 504]               // Retryable status codes
+    ),
+]);
+```
+
+Features:
+- Only retries GET/HEAD/OPTIONS requests by default
+- Retries on 502/503/504 or network errors
+- Does not retry 4xx errors (client errors)
+
+### CircuitBreaker
+
+Circuit breaker pattern:
+
+```php
+use ReverseProxy\Middleware\CircuitBreaker;
+
+new Route('/api/*', 'https://backend.example.com', [
+    new CircuitBreaker(
+        'my-service',  // Service name (identifies different circuits)
+        5,             // Failure threshold
+        60             // Reset timeout (seconds)
+    ),
+]);
+```
+
+Features:
+- Opens circuit after consecutive failures reach threshold
+- Returns 503 immediately when circuit is open
+- Auto-recovers after timeout
+- Successful requests reset failure count
+
+### Timeout
+
+Request timeout control:
+
+```php
+use ReverseProxy\Middleware\Timeout;
+
+// 30 second timeout
+new Route('/api/*', 'https://backend.example.com', [
+    new Timeout(30),
+]);
+
+// 5 second timeout (fail fast)
+new Route('/api/*', 'https://backend.example.com', [
+    new Timeout(5),
+]);
+```
+
+Features:
+- Sets request timeout duration
+- Returns 504 Gateway Timeout on timeout
+- Passes timeout via `X-Timeout` header
+
 ### ErrorHandling (Enabled by Default)
 
 Catches HTTP client exceptions and returns 502 Bad Gateway:
