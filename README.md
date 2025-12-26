@@ -456,6 +456,29 @@ new Route('/api/*', 'https://backend.example.com', [
 - 超時時返回 504 Gateway Timeout
 - 透過 `X-Timeout` header 傳遞超時設定
 
+### Fallback
+
+當後端回傳指定狀態碼時，回退給 WordPress 處理：
+
+```php
+use ReverseProxy\Middleware\Fallback;
+
+// 404 時回退給 WordPress（預設）
+new Route('/api/*', 'https://backend.example.com', [
+    new Fallback(),
+]);
+
+// 多個狀態碼
+new Route('/api/*', 'https://backend.example.com', [
+    new Fallback([404, 410]),
+]);
+```
+
+功能：
+- 預設只在 404 時回退
+- 回退時 WordPress 會繼續處理請求（例如顯示 WordPress 404 頁面）
+- 適用於讓 WordPress 處理找不到的資源
+
 ### ErrorHandling（預設啟用）
 
 捕獲 HTTP 客戶端異常，回傳 502 Bad Gateway：

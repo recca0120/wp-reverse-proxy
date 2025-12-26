@@ -456,6 +456,29 @@ Features:
 - Returns 504 Gateway Timeout on timeout
 - Passes timeout via `X-Timeout` header
 
+### Fallback
+
+Fall back to WordPress when backend returns specified status codes:
+
+```php
+use ReverseProxy\Middleware\Fallback;
+
+// Fallback on 404 (default)
+new Route('/api/*', 'https://backend.example.com', [
+    new Fallback(),
+]);
+
+// Multiple status codes
+new Route('/api/*', 'https://backend.example.com', [
+    new Fallback([404, 410]),
+]);
+```
+
+Features:
+- Defaults to fallback on 404 only
+- WordPress continues to handle the request (e.g., shows WordPress 404 page)
+- Useful for letting WordPress handle missing resources
+
 ### ErrorHandling (Enabled by Default)
 
 Catches HTTP client exceptions and returns 502 Bad Gateway:
