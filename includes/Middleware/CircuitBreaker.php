@@ -6,6 +6,8 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\SimpleCache\CacheInterface;
+use ReverseProxy\Cache\TransientCache;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
 class CircuitBreaker implements MiddlewareInterface
@@ -31,22 +33,28 @@ class CircuitBreaker implements MiddlewareInterface
     /** @var int[] */
     private $failureStatusCodes;
 
+    /** @var CacheInterface */
+    private $cache;
+
     /**
      * @param  string  $serviceName  服務名稱（用於識別不同的 circuit）
      * @param  int  $failureThreshold  失敗閾值
      * @param  int  $resetTimeout  重置超時（秒）
      * @param  int[]  $failureStatusCodes  視為失敗的狀態碼
+     * @param  CacheInterface|null  $cache  快取實作
      */
     public function __construct(
         string $serviceName,
         int $failureThreshold = 5,
         int $resetTimeout = 60,
-        array $failureStatusCodes = [500, 502, 503, 504]
+        array $failureStatusCodes = [500, 502, 503, 504],
+        ?CacheInterface $cache = null
     ) {
         $this->serviceName = $serviceName;
         $this->failureThreshold = $failureThreshold;
         $this->resetTimeout = $resetTimeout;
         $this->failureStatusCodes = $failureStatusCodes;
+        $this->cache = $cache ?? new TransientCache('rp_cb_');
     }
 
     public function process(RequestInterface $request, callable $next): ResponseInterface
@@ -82,9 +90,9 @@ class CircuitBreaker implements MiddlewareInterface
     private function getState(): array
     {
         $key = $this->getCacheKey();
-        $data = get_transient($key);
+        $data = $this->cache->get($key);
 
-        if ($data === false || ! is_array($data)) {
+        if ($data === null || ! is_array($data)) {
             return [
                 'status' => self::STATE_CLOSED,
                 'failures' => 0,
@@ -100,7 +108,7 @@ class CircuitBreaker implements MiddlewareInterface
         $key = $this->getCacheKey();
         $resetAt = $status === self::STATE_OPEN ? time() + $this->resetTimeout : 0;
 
-        set_transient($key, [
+        $this->cache->set($key, [
             'status' => $status,
             'failures' => $failures,
             'reset_at' => $resetAt,
@@ -131,7 +139,7 @@ class CircuitBreaker implements MiddlewareInterface
 
     private function getCacheKey(): string
     {
-        return 'rp_cb_'.md5($this->serviceName);
+        return md5($this->serviceName);
     }
 
     private function createCircuitOpenResponse(): ResponseInterface

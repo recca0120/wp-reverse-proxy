@@ -5,6 +5,8 @@ namespace ReverseProxy\Middleware;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\SimpleCache\CacheInterface;
+use ReverseProxy\Cache\TransientCache;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
 class Caching implements MiddlewareInterface
@@ -12,17 +14,17 @@ class Caching implements MiddlewareInterface
     /** @var int */
     private $ttl;
 
-    /** @var string */
-    private $cacheGroup;
+    /** @var CacheInterface */
+    private $cache;
 
     /**
      * @param  int  $ttl  快取時間（秒）
-     * @param  string  $cacheGroup  快取群組
+     * @param  CacheInterface|null  $cache  快取實作
      */
-    public function __construct(int $ttl = 300, string $cacheGroup = 'reverse_proxy')
+    public function __construct(int $ttl = 300, ?CacheInterface $cache = null)
     {
         $this->ttl = $ttl;
-        $this->cacheGroup = $cacheGroup;
+        $this->cache = $cache ?? new TransientCache('rp_cache_');
     }
 
     public function process(RequestInterface $request, callable $next): ResponseInterface
@@ -36,8 +38,8 @@ class Caching implements MiddlewareInterface
         $cacheKey = $this->generateCacheKey($request);
 
         // 嘗試從快取取得
-        $cached = get_transient($cacheKey);
-        if ($cached !== false && is_array($cached)) {
+        $cached = $this->cache->get($cacheKey);
+        if ($cached !== null && is_array($cached)) {
             return $this->restoreResponse($cached)->withHeader('X-Cache', 'HIT');
         }
 
@@ -54,7 +56,7 @@ class Caching implements MiddlewareInterface
 
     private function generateCacheKey(RequestInterface $request): string
     {
-        return 'rp_cache_'.md5((string) $request->getUri());
+        return md5((string) $request->getUri());
     }
 
     private function isCacheable(ResponseInterface $response): bool
@@ -88,7 +90,7 @@ class Caching implements MiddlewareInterface
             'reason' => $response->getReasonPhrase(),
         ];
 
-        set_transient($key, $data, $this->ttl);
+        $this->cache->set($key, $data, $this->ttl);
     }
 
     private function restoreResponse(array $data): ResponseInterface
