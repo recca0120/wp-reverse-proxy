@@ -24,7 +24,7 @@ class ServerRequestFactory
         $headers = $this->getHeaders();
         $body = $this->getBody($method);
 
-        $request = new ServerRequest($method, $uri, $headers);
+        $request = new ServerRequest($method, $uri, $headers, null, '1.1', $_SERVER);
 
         if ($body !== '') {
             $request = $request->withBody($this->streamFactory->createStream($body));
