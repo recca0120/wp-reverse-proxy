@@ -7,8 +7,8 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 use ReverseProxy\ReverseProxy;
 use ReverseProxy\Route;
@@ -250,7 +250,7 @@ class ReverseProxyTest extends TestCase
 
         $middleware = new class implements MiddlewareInterface
         {
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 $response = $next($request->withHeader('X-From-Interface', 'yes'));
 
@@ -389,7 +389,7 @@ class ReverseProxyTest extends TestCase
 
         $middleware = new class implements MiddlewareInterface
         {
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request->withHeader('X-Interface-Global', 'yes'));
             }
