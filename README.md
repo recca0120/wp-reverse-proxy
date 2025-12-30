@@ -179,8 +179,32 @@ new Route('/api/*', 'https://backend.example.com', [
 新增的標頭：
 - `X-Real-IP` - 客戶端 IP 位址
 - `X-Forwarded-For` - 代理 IP 鏈
+- `X-Forwarded-Host` - 原始主機名稱
 - `X-Forwarded-Proto` - 原始協定 (http/https)
 - `X-Forwarded-Port` - 原始連接埠
+- `Forwarded` - RFC 7239 標準標頭
+
+**選項設定：**
+
+```php
+// 覆寫特定值
+new ProxyHeaders([
+    'clientIp' => '10.0.0.1',      // 覆寫客戶端 IP
+    'host' => 'example.com',       // 覆寫主機名稱
+    'scheme' => 'https',           // 覆寫協定
+    'port' => '443',               // 覆寫連接埠
+]);
+
+// 只傳送特定標頭（白名單）
+new ProxyHeaders([
+    'headers' => ['X-Real-IP', 'X-Forwarded-For'],
+]);
+
+// 排除特定標頭（黑名單）
+new ProxyHeaders([
+    'except' => ['Forwarded', 'X-Forwarded-Port'],
+]);
+```
 
 ### SetHost
 
@@ -218,6 +242,36 @@ new Route('/api/*/posts/*', 'https://backend.example.com', [
 ```
 
 `$1`、`$2` 等對應 Route 路徑中 `*` 萬用字元的捕獲值。
+
+### RewriteBody
+
+使用正規表示式重寫回應內容：
+
+```php
+use ReverseProxy\Middleware\RewriteBody;
+
+// 將後端 URL 替換為前端 URL
+new Route('/api/*', 'https://backend.example.com', [
+    new RewriteBody([
+        '#https://backend\.example\.com#' => 'https://frontend.example.com',
+    ]),
+]);
+
+// 多個替換規則
+new Route('/api/*', 'https://backend.example.com', [
+    new RewriteBody([
+        '#https://api\.internal\.com#' => 'https://api.example.com',
+        '#/internal/assets/#' => '/assets/',
+        '#"debug":\s*true#' => '"debug": false',
+    ]),
+]);
+```
+
+功能：
+- 使用 PHP `preg_replace()` 進行替換
+- 只處理文字類型的回應（HTML, CSS, JavaScript, JSON, XML 等）
+- 二進位檔案（圖片、PDF 等）不會被處理
+- Key 為正規表示式 pattern，value 為替換字串
 
 ### AllowMethods
 
@@ -540,7 +594,7 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 
 ```php
 use ReverseProxy\Contracts\MiddlewareInterface;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class AddAuthHeader implements MiddlewareInterface
@@ -552,7 +606,7 @@ class AddAuthHeader implements MiddlewareInterface
         $this->token = $token;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         return $next($request->withHeader('Authorization', 'Bearer ' . $this->token));
     }
@@ -624,14 +678,14 @@ Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Resp
 
 ```php
 use ReverseProxy\Contracts\MiddlewareInterface;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class AuthMiddleware implements MiddlewareInterface
 {
     public $priority = -50;  // 比預設 (0) 更早執行
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         return $next($request->withHeader('Authorization', 'Bearer token'));
     }

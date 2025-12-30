@@ -179,8 +179,32 @@ new Route('/api/*', 'https://backend.example.com', [
 Headers added:
 - `X-Real-IP` - Client's IP address
 - `X-Forwarded-For` - Chain of proxy IPs
+- `X-Forwarded-Host` - Original host name
 - `X-Forwarded-Proto` - Original protocol (http/https)
 - `X-Forwarded-Port` - Original port
+- `Forwarded` - RFC 7239 standard header
+
+**Options Configuration:**
+
+```php
+// Override specific values
+new ProxyHeaders([
+    'clientIp' => '10.0.0.1',      // Override client IP
+    'host' => 'example.com',       // Override host
+    'scheme' => 'https',           // Override scheme
+    'port' => '443',               // Override port
+]);
+
+// Only send specific headers (whitelist)
+new ProxyHeaders([
+    'headers' => ['X-Real-IP', 'X-Forwarded-For'],
+]);
+
+// Exclude specific headers (blacklist)
+new ProxyHeaders([
+    'except' => ['Forwarded', 'X-Forwarded-Port'],
+]);
+```
 
 ### SetHost
 
@@ -218,6 +242,36 @@ new Route('/api/*/posts/*', 'https://backend.example.com', [
 ```
 
 `$1`, `$2`, etc. correspond to the captured values from `*` wildcards in the Route path.
+
+### RewriteBody
+
+Rewrites response body using regular expressions:
+
+```php
+use ReverseProxy\Middleware\RewriteBody;
+
+// Replace backend URL with frontend URL
+new Route('/api/*', 'https://backend.example.com', [
+    new RewriteBody([
+        '#https://backend\.example\.com#' => 'https://frontend.example.com',
+    ]),
+]);
+
+// Multiple replacement rules
+new Route('/api/*', 'https://backend.example.com', [
+    new RewriteBody([
+        '#https://api\.internal\.com#' => 'https://api.example.com',
+        '#/internal/assets/#' => '/assets/',
+        '#"debug":\s*true#' => '"debug": false',
+    ]),
+]);
+```
+
+Features:
+- Uses PHP `preg_replace()` for replacements
+- Only processes text-type responses (HTML, CSS, JavaScript, JSON, XML, etc.)
+- Binary files (images, PDFs, etc.) are not processed
+- Keys are regex patterns, values are replacement strings
 
 ### AllowMethods
 
@@ -540,7 +594,7 @@ For reusable middleware classes:
 
 ```php
 use ReverseProxy\Contracts\MiddlewareInterface;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class AddAuthHeader implements MiddlewareInterface
@@ -552,7 +606,7 @@ class AddAuthHeader implements MiddlewareInterface
         $this->token = $token;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         return $next($request->withHeader('Authorization', 'Bearer ' . $this->token));
     }
@@ -624,14 +678,14 @@ Middlewares can define a `$priority` property to control execution order (lower 
 
 ```php
 use ReverseProxy\Contracts\MiddlewareInterface;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class AuthMiddleware implements MiddlewareInterface
 {
     public $priority = -50;  // Executes before default (0)
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         return $next($request->withHeader('Authorization', 'Bearer token'));
     }
