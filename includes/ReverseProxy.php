@@ -2,6 +2,7 @@
 
 namespace ReverseProxy;
 
+use Nyholm\Psr7\Uri;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
@@ -114,25 +115,14 @@ class ReverseProxy
         };
     }
 
-    private function buildProxyRequest(ServerRequestInterface $originalRequest, Route $route, string $targetUrl): RequestInterface
+    private function buildProxyRequest(ServerRequestInterface $originalRequest, Route $route, string $targetUrl): ServerRequestInterface
     {
-        $method = $originalRequest->getMethod();
-        $request = $this->requestFactory->createRequest($method, $targetUrl);
-
-        foreach ($originalRequest->getHeaders() as $name => $values) {
-            $request = $request->withHeader($name, $values);
-        }
+        // Use withUri to change the URI while preserving attributes
+        $request = $originalRequest->withUri(new Uri($targetUrl));
 
         $targetHost = $route->getTargetHost();
         if ($targetHost !== '') {
             $request = $request->withHeader('Host', $targetHost);
-        }
-
-        if (in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
-            $body = (string) $originalRequest->getBody();
-            if ($body !== '') {
-                $request = $request->withBody($this->streamFactory->createStream($body));
-            }
         }
 
         return $request;
