@@ -4,8 +4,8 @@ namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\SimpleCache\CacheInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 use ReverseProxy\WordPress\TransientCache;
@@ -57,7 +57,7 @@ class CircuitBreaker implements MiddlewareInterface
         $this->cache = $cache ?? new TransientCache('rp_cb_');
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $state = $this->getState();
 

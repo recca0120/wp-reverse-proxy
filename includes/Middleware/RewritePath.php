@@ -2,8 +2,8 @@
 
 namespace ReverseProxy\Middleware;
 
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 use ReverseProxy\Contracts\RouteAwareInterface;
 use ReverseProxy\Route;
@@ -26,7 +26,7 @@ class RewritePath implements MiddlewareInterface, RouteAwareInterface
         $this->route = $route;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $newPath = $this->applyReplacement($this->route->getCaptures());
 

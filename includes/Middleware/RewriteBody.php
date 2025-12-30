@@ -3,8 +3,8 @@
 namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
@@ -43,7 +43,7 @@ class RewriteBody implements MiddlewareInterface
         $this->streamFactory = $streamFactory ?? new Psr17Factory;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $response = $next($request);
 

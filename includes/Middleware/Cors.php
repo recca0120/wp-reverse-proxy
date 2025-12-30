@@ -3,8 +3,8 @@
 namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
 class Cors implements MiddlewareInterface
@@ -43,7 +43,7 @@ class Cors implements MiddlewareInterface
         $this->maxAge = $maxAge;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $origin = $request->getHeaderLine('Origin');
 
@@ -79,7 +79,7 @@ class Cors implements MiddlewareInterface
         return '';
     }
 
-    private function isPreflight(RequestInterface $request): bool
+    private function isPreflight(ServerRequestInterface $request): bool
     {
         return strtoupper($request->getMethod()) === 'OPTIONS'
             && $request->hasHeader('Access-Control-Request-Method');

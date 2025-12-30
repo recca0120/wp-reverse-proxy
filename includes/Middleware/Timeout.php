@@ -4,8 +4,8 @@ namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
 class Timeout implements MiddlewareInterface
@@ -24,7 +24,7 @@ class Timeout implements MiddlewareInterface
         $this->seconds = $seconds;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         // 在 header 中標記超時設定（供 HTTP 客戶端使用）
         $request = $request->withHeader('X-Timeout', (string) $this->seconds);

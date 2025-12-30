@@ -3,8 +3,8 @@
 namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\SimpleCache\CacheInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 use ReverseProxy\WordPress\TransientCache;
@@ -27,7 +27,7 @@ class Caching implements MiddlewareInterface
         $this->cache = $cache ?? new TransientCache('rp_cache_');
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         // 只快取 GET 和 HEAD 請求
         $method = strtoupper($request->getMethod());
@@ -54,7 +54,7 @@ class Caching implements MiddlewareInterface
         return $response->withHeader('X-Cache', 'MISS');
     }
 
-    private function generateCacheKey(RequestInterface $request): string
+    private function generateCacheKey(ServerRequestInterface $request): string
     {
         return md5((string) $request->getUri());
     }

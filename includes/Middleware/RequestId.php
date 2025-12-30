@@ -2,8 +2,8 @@
 
 namespace ReverseProxy\Middleware;
 
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
 class RequestId implements MiddlewareInterface
@@ -16,7 +16,7 @@ class RequestId implements MiddlewareInterface
         $this->headerName = $headerName;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         // 使用現有的 Request ID 或產生新的
         $requestId = $request->getHeaderLine($this->headerName);

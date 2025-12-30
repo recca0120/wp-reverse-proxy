@@ -2,8 +2,8 @@
 
 namespace ReverseProxy\Middleware;
 
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 use ReverseProxy\Exceptions\FallbackException;
 
@@ -23,7 +23,7 @@ class Fallback implements MiddlewareInterface
         $this->statusCodes = $statusCodes;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $response = $next($request);
 

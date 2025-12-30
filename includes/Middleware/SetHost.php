@@ -2,8 +2,8 @@
 
 namespace ReverseProxy\Middleware;
 
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
 class SetHost implements MiddlewareInterface
@@ -16,7 +16,7 @@ class SetHost implements MiddlewareInterface
         $this->host = $host;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         return $next($request->withHeader('Host', $this->host));
     }

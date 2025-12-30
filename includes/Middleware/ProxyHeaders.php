@@ -2,7 +2,6 @@
 
 namespace ReverseProxy\Middleware;
 
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
@@ -22,23 +21,24 @@ class ProxyHeaders implements MiddlewareInterface
     private $options;
 
     /**
-     * @param array<string, mixed> $options {
-     *     @type string $clientIp  Override client IP
-     *     @type string $host      Override host
-     *     @type string $scheme    Override scheme (http/https)
-     *     @type string $port      Override port
-     *     @type array  $headers   Only include these headers
-     *     @type array  $except    Exclude these headers
-     * }
+     * @param  array<string, mixed>  $options  {
+     *
+     * @type string $clientIp  Override client IP
+     * @type string $host      Override host
+     * @type string $scheme    Override scheme (http/https)
+     * @type string $port      Override port
+     * @type array $headers   Only include these headers
+     * @type array $except    Exclude these headers
+     *             }
      */
     public function __construct(array $options = [])
     {
         $this->options = $options;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
-        $serverParams = $this->getServerParams($request);
+        $serverParams = $request->getServerParams();
 
         $clientIp = $this->options['clientIp'] ?? $serverParams['REMOTE_ADDR'] ?? '';
         $host = $this->options['host'] ?? $serverParams['HTTP_HOST'] ?? $serverParams['SERVER_NAME'] ?? '';
@@ -62,22 +62,7 @@ class ProxyHeaders implements MiddlewareInterface
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    private function getServerParams(RequestInterface $request): array
-    {
-        if ($request instanceof ServerRequestInterface) {
-            $serverParams = $request->getServerParams();
-            if (! empty($serverParams)) {
-                return $serverParams;
-            }
-        }
-
-        return $_SERVER;
-    }
-
-    /**
-     * @param array<string, mixed> $serverParams
+     * @param  array<string, mixed>  $serverParams
      */
     private function detectScheme(array $serverParams): string
     {
@@ -89,7 +74,7 @@ class ProxyHeaders implements MiddlewareInterface
     }
 
     /**
-     * @param array<string, string> $headers
+     * @param  array<string, string>  $headers
      * @return array<string, string>
      */
     private function filterHeaders(array $headers): array
@@ -108,7 +93,7 @@ class ProxyHeaders implements MiddlewareInterface
     }
 
     private function buildForwarded(
-        RequestInterface $request,
+        ServerRequestInterface $request,
         string $clientIp,
         string $host,
         string $scheme
@@ -137,7 +122,7 @@ class ProxyHeaders implements MiddlewareInterface
         return $existing.', '.$current;
     }
 
-    private function buildForwardedFor(RequestInterface $request, string $clientIp): string
+    private function buildForwardedFor(ServerRequestInterface $request, string $clientIp): string
     {
         $existing = $request->getHeaderLine('X-Forwarded-For');
 
