@@ -33,10 +33,12 @@ class RewriteBody implements MiddlewareInterface
     ];
 
     /**
-     * @param  array<string, string>  $replacements  Key-value pairs of search => replace
+     * @param  array<string, string>  $replacements  Key-value pairs of regex pattern => replacement
      */
-    public function __construct(array $replacements, ?StreamFactoryInterface $streamFactory = null)
-    {
+    public function __construct(
+        array $replacements = [],
+        ?StreamFactoryInterface $streamFactory = null
+    ) {
         $this->replacements = $replacements;
         $this->streamFactory = $streamFactory ?? new Psr17Factory;
     }
@@ -74,7 +76,7 @@ class RewriteBody implements MiddlewareInterface
 
     private function rewrite(string $body): string
     {
-        return str_replace(
+        return preg_replace(
             array_keys($this->replacements),
             array_values($this->replacements),
             $body

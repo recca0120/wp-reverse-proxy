@@ -62,7 +62,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         $this->givenRoutes([
             new Route('/page/*', 'https://example.com', [
                 new RewriteBody(
-                    ['https://example.com' => 'https://my-wordpress.com'],
+                    ['#https://example\.com#' => 'https://my-wordpress.com'],
                     $this->streamFactory
                 ),
             ]),
@@ -88,7 +88,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         $this->givenRoutes([
             new Route('/assets/*', 'https://cdn.example.com', [
                 new RewriteBody(
-                    ['https://cdn.example.com' => 'https://my-wordpress.com/cdn'],
+                    ['#https://cdn\.example\.com#' => 'https://my-wordpress.com/cdn'],
                     $this->streamFactory
                 ),
             ]),
@@ -114,7 +114,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         $this->givenRoutes([
             new Route('/api/*', 'https://api.example.com', [
                 new RewriteBody(
-                    ['https://api.example.com' => 'https://my-wordpress.com/api'],
+                    ['#https://api\.example\.com#' => 'https://my-wordpress.com/api'],
                     $this->streamFactory
                 ),
             ]),
@@ -140,7 +140,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         $this->givenRoutes([
             new Route('/images/*', 'https://example.com', [
                 new RewriteBody(
-                    ['https://example.com' => 'https://my-wordpress.com'],
+                    ['#https://example\.com#' => 'https://my-wordpress.com'],
                     $this->streamFactory
                 ),
             ]),
@@ -164,9 +164,9 @@ class RewriteBodyTest extends WP_UnitTestCase
             new Route('/page/*', 'https://example.com', [
                 new RewriteBody(
                     [
-                        'https://example.com' => 'https://my-wordpress.com',
-                        'https://cdn.example.com' => 'https://my-wordpress.com/cdn',
-                        'https://api.example.com' => 'https://my-wordpress.com/api',
+                        '#https://example\.com#' => 'https://my-wordpress.com',
+                        '#https://cdn\.example\.com#' => 'https://my-wordpress.com/cdn',
+                        '#https://api\.example\.com#' => 'https://my-wordpress.com/api',
                     ],
                     $this->streamFactory
                 ),

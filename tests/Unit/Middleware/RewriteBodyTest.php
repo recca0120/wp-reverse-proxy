@@ -21,7 +21,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_rewrites_urls_in_html_response(): void
     {
         $middleware = new RewriteBody(
-            ['https://example.com' => 'https://my-site.com'],
+            ['#https://example\.com#' => 'https://my-site.com'],
             $this->streamFactory
         );
 
@@ -44,7 +44,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_rewrites_urls_in_css_response(): void
     {
         $middleware = new RewriteBody(
-            ['https://example.com' => 'https://my-site.com'],
+            ['#https://example\.com#' => 'https://my-site.com'],
             $this->streamFactory
         );
 
@@ -67,7 +67,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_rewrites_urls_in_javascript_response(): void
     {
         $middleware = new RewriteBody(
-            ['https://api.example.com' => 'https://my-site.com/api'],
+            ['#https://api\.example\.com#' => 'https://my-site.com/api'],
             $this->streamFactory
         );
 
@@ -90,7 +90,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_rewrites_urls_in_json_response(): void
     {
         $middleware = new RewriteBody(
-            ['https://example.com' => 'https://my-site.com'],
+            ['#https://example\.com#' => 'https://my-site.com'],
             $this->streamFactory
         );
 
@@ -113,7 +113,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_handles_content_type_with_charset(): void
     {
         $middleware = new RewriteBody(
-            ['https://example.com' => 'https://my-site.com'],
+            ['#https://example\.com#' => 'https://my-site.com'],
             $this->streamFactory
         );
 
@@ -136,7 +136,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_does_not_rewrite_binary_content(): void
     {
         $middleware = new RewriteBody(
-            ['https://example.com' => 'https://my-site.com'],
+            ['#https://example\.com#' => 'https://my-site.com'],
             $this->streamFactory
         );
 
@@ -156,7 +156,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_does_not_rewrite_when_no_content_type(): void
     {
         $middleware = new RewriteBody(
-            ['https://example.com' => 'https://my-site.com'],
+            ['#https://example\.com#' => 'https://my-site.com'],
             $this->streamFactory
         );
 
@@ -193,8 +193,8 @@ class RewriteBodyTest extends TestCase
     {
         $middleware = new RewriteBody(
             [
-                'https://example.com' => 'https://my-site.com',
-                'https://cdn.example.com' => 'https://my-site.com/cdn',
+                '#https://example\.com#' => 'https://my-site.com',
+                '#https://cdn\.example\.com#' => 'https://my-site.com/cdn',
             ],
             $this->streamFactory
         );
@@ -218,7 +218,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_handles_xml_content(): void
     {
         $middleware = new RewriteBody(
-            ['https://example.com' => 'https://my-site.com'],
+            ['#https://example\.com#' => 'https://my-site.com'],
             $this->streamFactory
         );
 
@@ -241,7 +241,7 @@ class RewriteBodyTest extends TestCase
     public function test_it_preserves_response_headers(): void
     {
         $middleware = new RewriteBody(
-            ['https://example.com' => 'https://my-site.com'],
+            ['#https://example\.com#' => 'https://my-site.com'],
             $this->streamFactory
         );
 
@@ -261,7 +261,7 @@ class RewriteBodyTest extends TestCase
 
     public function test_it_works_without_stream_factory(): void
     {
-        $middleware = new RewriteBody(['https://example.com' => 'https://my-site.com']);
+        $middleware = new RewriteBody(['#https://example\.com#' => 'https://my-site.com']);
 
         $request = new ServerRequest('GET', 'https://proxy.com/page');
         $response = (new Response(200))
@@ -276,5 +276,89 @@ class RewriteBodyTest extends TestCase
             '<a href="https://my-site.com">Link</a>',
             (string) $result->getBody()
         );
+    }
+
+    public function test_it_applies_regex_patterns(): void
+    {
+        $middleware = new RewriteBody(
+            ['#https://([a-z]+)\.example\.com#' => 'https://$1.my-site.com']
+        );
+
+        $request = new ServerRequest('GET', 'https://proxy.com/page');
+        $originalBody = '<img src="https://cdn.example.com/img.png"><link href="https://static.example.com/style.css">';
+        $response = (new Response(200))
+            ->withHeader('Content-Type', 'text/html')
+            ->withBody($this->streamFactory->createStream($originalBody));
+
+        $result = $middleware->process($request, function () use ($response) {
+            return $response;
+        });
+
+        $this->assertEquals(
+            '<img src="https://cdn.my-site.com/img.png"><link href="https://static.my-site.com/style.css">',
+            (string) $result->getBody()
+        );
+    }
+
+    public function test_it_applies_regex_with_capture_groups(): void
+    {
+        $middleware = new RewriteBody(
+            ['#/api/v([0-9]+)/#' => '/api/v$1-legacy/']
+        );
+
+        $request = new ServerRequest('GET', 'https://proxy.com/app.js');
+        $originalBody = 'const url1 = "/api/v1/users"; const url2 = "/api/v2/posts";';
+        $response = (new Response(200))
+            ->withHeader('Content-Type', 'application/javascript')
+            ->withBody($this->streamFactory->createStream($originalBody));
+
+        $result = $middleware->process($request, function () use ($response) {
+            return $response;
+        });
+
+        $this->assertEquals(
+            'const url1 = "/api/v1-legacy/users"; const url2 = "/api/v2-legacy/posts";',
+            (string) $result->getBody()
+        );
+    }
+
+    public function test_it_applies_multiple_regex_patterns(): void
+    {
+        $middleware = new RewriteBody([
+            '#https://example\.com#' => 'https://my-site.com',
+            '#https://cdn[0-9]+\.example\.com#' => 'https://cdn.my-site.com',
+        ]);
+
+        $request = new ServerRequest('GET', 'https://proxy.com/page');
+        $originalBody = '<a href="https://example.com">Home</a><img src="https://cdn1.example.com/a.png"><img src="https://cdn2.example.com/b.png">';
+        $response = (new Response(200))
+            ->withHeader('Content-Type', 'text/html')
+            ->withBody($this->streamFactory->createStream($originalBody));
+
+        $result = $middleware->process($request, function () use ($response) {
+            return $response;
+        });
+
+        $this->assertEquals(
+            '<a href="https://my-site.com">Home</a><img src="https://cdn.my-site.com/a.png"><img src="https://cdn.my-site.com/b.png">',
+            (string) $result->getBody()
+        );
+    }
+
+    public function test_it_skips_rewrite_when_replacements_empty(): void
+    {
+        $middleware = new RewriteBody([]);
+
+        $request = new ServerRequest('GET', 'https://proxy.com/page');
+        $originalBody = '<a href="https://example.com">Link</a>';
+        $response = (new Response(200))
+            ->withHeader('Content-Type', 'text/html')
+            ->withBody($this->streamFactory->createStream($originalBody));
+
+        $result = $middleware->process($request, function () use ($response) {
+            return $response;
+        });
+
+        $this->assertEquals($originalBody, (string) $result->getBody());
     }
 }
