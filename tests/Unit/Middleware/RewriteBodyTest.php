@@ -278,7 +278,29 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_applies_regex_patterns(): void
+    public function test_it_applies_regex_patterns_with_slash_delimiter(): void
+    {
+        $middleware = new RewriteBody(
+            ['/https:\/\/([a-z]+)\.example\.com/' => 'https://$1.my-site.com']
+        );
+
+        $request = new ServerRequest('GET', 'https://proxy.com/page');
+        $originalBody = '<img src="https://cdn.example.com/img.png"><link href="https://static.example.com/style.css">';
+        $response = (new Response(200))
+            ->withHeader('Content-Type', 'text/html')
+            ->withBody($this->streamFactory->createStream($originalBody));
+
+        $result = $middleware->process($request, function () use ($response) {
+            return $response;
+        });
+
+        $this->assertEquals(
+            '<img src="https://cdn.my-site.com/img.png"><link href="https://static.my-site.com/style.css">',
+            (string) $result->getBody()
+        );
+    }
+
+    public function test_it_applies_regex_patterns_with_hash_delimiter(): void
     {
         $middleware = new RewriteBody(
             ['#https://([a-z]+)\.example\.com#' => 'https://$1.my-site.com']
