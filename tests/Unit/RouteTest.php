@@ -4,8 +4,8 @@ namespace ReverseProxy\Tests\Unit;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 use ReverseProxy\Route;
 
@@ -126,7 +126,7 @@ class RouteTest extends TestCase
     {
         $middleware = new class implements MiddlewareInterface
         {
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request->withHeader('X-Test', 'value'));
             }
@@ -142,7 +142,7 @@ class RouteTest extends TestCase
     {
         $middleware = new class implements MiddlewareInterface
         {
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request->withHeader('X-Test', 'value'));
             }
@@ -245,7 +245,7 @@ class RouteTest extends TestCase
         {
             public $priority = 10;
 
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request);
             }
@@ -255,7 +255,7 @@ class RouteTest extends TestCase
         {
             public $priority = -100;
 
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request);
             }
@@ -276,7 +276,7 @@ class RouteTest extends TestCase
         {
             public $priority = -50;
 
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request);
             }
@@ -284,7 +284,7 @@ class RouteTest extends TestCase
 
         $withoutPriority = new class implements MiddlewareInterface
         {
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request);
             }
@@ -305,7 +305,7 @@ class RouteTest extends TestCase
         {
             public $priority = -100;
 
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request);
             }
@@ -332,7 +332,7 @@ class RouteTest extends TestCase
 
             public $name = 'first';
 
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request);
             }
@@ -344,7 +344,7 @@ class RouteTest extends TestCase
 
             public $name = 'second';
 
-            public function process(RequestInterface $request, callable $next): ResponseInterface
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request);
             }

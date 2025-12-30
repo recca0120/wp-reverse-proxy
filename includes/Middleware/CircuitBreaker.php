@@ -4,8 +4,8 @@ namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\SimpleCache\CacheInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 use ReverseProxy\WordPress\TransientCache;

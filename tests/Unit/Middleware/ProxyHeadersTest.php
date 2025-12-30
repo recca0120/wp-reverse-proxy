@@ -247,5 +247,4 @@ class ProxyHeadersTest extends TestCase
             return new Response(200);
         });
     }
-
 }

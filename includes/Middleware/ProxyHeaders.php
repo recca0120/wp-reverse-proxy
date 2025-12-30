@@ -21,14 +21,15 @@ class ProxyHeaders implements MiddlewareInterface
     private $options;
 
     /**
-     * @param array<string, mixed> $options {
-     *     @type string $clientIp  Override client IP
-     *     @type string $host      Override host
-     *     @type string $scheme    Override scheme (http/https)
-     *     @type string $port      Override port
-     *     @type array  $headers   Only include these headers
-     *     @type array  $except    Exclude these headers
-     * }
+     * @param  array<string, mixed>  $options  {
+     *
+     * @type string $clientIp  Override client IP
+     * @type string $host      Override host
+     * @type string $scheme    Override scheme (http/https)
+     * @type string $port      Override port
+     * @type array $headers   Only include these headers
+     * @type array $except    Exclude these headers
+     *             }
      */
     public function __construct(array $options = [])
     {
@@ -61,7 +62,7 @@ class ProxyHeaders implements MiddlewareInterface
     }
 
     /**
-     * @param array<string, mixed> $serverParams
+     * @param  array<string, mixed>  $serverParams
      */
     private function detectScheme(array $serverParams): string
     {
@@ -73,7 +74,7 @@ class ProxyHeaders implements MiddlewareInterface
     }
 
     /**
-     * @param array<string, string> $headers
+     * @param  array<string, string>  $headers
      * @return array<string, string>
      */
     private function filterHeaders(array $headers): array

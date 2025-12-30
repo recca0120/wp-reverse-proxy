@@ -2,8 +2,8 @@
 
 namespace ReverseProxy\Middleware;
 
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
 class RequestId implements MiddlewareInterface

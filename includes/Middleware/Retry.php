@@ -3,8 +3,8 @@
 namespace ReverseProxy\Middleware;
 
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
 class Retry implements MiddlewareInterface
