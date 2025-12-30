@@ -3,7 +3,7 @@
 namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\SimpleCache\CacheInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
@@ -41,7 +41,7 @@ class RateLimiting implements MiddlewareInterface
         $this->cache = $cache ?? new TransientCache('rp_rate_');
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $key = $this->generateKey($request);
         $data = $this->getRateLimitData($key);
@@ -77,7 +77,7 @@ class RateLimiting implements MiddlewareInterface
         return $this->addRateLimitHeaders($response, $remaining, $resetTime);
     }
 
-    private function generateKey(RequestInterface $request): string
+    private function generateKey(ServerRequestInterface $request): string
     {
         if ($this->keyGenerator !== null) {
             return ($this->keyGenerator)($request);

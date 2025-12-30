@@ -4,7 +4,7 @@ namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
@@ -13,7 +13,7 @@ class ErrorHandling implements MiddlewareInterface
     /** @var int */
     public $priority = -100;
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         try {
             return $next($request);

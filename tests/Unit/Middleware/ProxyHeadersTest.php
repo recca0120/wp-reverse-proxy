@@ -177,15 +177,22 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_uses_server_defaults_when_no_args_provided(): void
+    public function test_it_uses_server_params_when_no_options_provided(): void
     {
-        $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
-        $_SERVER['HTTP_HOST'] = 'default-host.com';
-        $_SERVER['HTTPS'] = 'on';
-        $_SERVER['SERVER_PORT'] = '443';
-
         $middleware = new ProxyHeaders;
-        $request = new ServerRequest('GET', 'https://target.example.com/api/users');
+        $request = new ServerRequest(
+            'GET',
+            'https://target.example.com/api/users',
+            [],
+            null,
+            '1.1',
+            [
+                'REMOTE_ADDR' => '10.0.0.1',
+                'HTTP_HOST' => 'default-host.com',
+                'HTTPS' => 'on',
+                'SERVER_PORT' => '443',
+            ]
+        );
 
         $middleware->process($request, function ($req) {
             $this->assertEquals('10.0.0.1', $req->getHeaderLine('X-Real-IP'));
@@ -195,8 +202,6 @@ class ProxyHeadersTest extends TestCase
 
             return new Response(200);
         });
-
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_HOST'], $_SERVER['HTTPS'], $_SERVER['SERVER_PORT']);
     }
 
     public function test_it_only_includes_specified_headers(): void
@@ -243,39 +248,4 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_reads_from_server_request_params(): void
-    {
-        $middleware = new ProxyHeaders;
-        $request = (new ServerRequest('GET', 'https://target.example.com/api/users'))
-            ->withAttribute('serverParams', [
-                'REMOTE_ADDR' => '172.16.0.1',
-                'HTTP_HOST' => 'from-request.com',
-                'HTTPS' => 'on',
-                'SERVER_PORT' => '8443',
-            ]);
-
-        // ServerRequest uses constructor params, so we need to create it properly
-        $request = new ServerRequest(
-            'GET',
-            'https://target.example.com/api/users',
-            [],
-            null,
-            '1.1',
-            [
-                'REMOTE_ADDR' => '172.16.0.1',
-                'HTTP_HOST' => 'from-request.com',
-                'HTTPS' => 'on',
-                'SERVER_PORT' => '8443',
-            ]
-        );
-
-        $middleware->process($request, function ($req) {
-            $this->assertEquals('172.16.0.1', $req->getHeaderLine('X-Real-IP'));
-            $this->assertEquals('from-request.com', $req->getHeaderLine('X-Forwarded-Host'));
-            $this->assertEquals('https', $req->getHeaderLine('X-Forwarded-Proto'));
-            $this->assertEquals('8443', $req->getHeaderLine('X-Forwarded-Port'));
-
-            return new Response(200);
-        });
-    }
 }

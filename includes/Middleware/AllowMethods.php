@@ -3,7 +3,7 @@
 namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
@@ -20,7 +20,7 @@ class AllowMethods implements MiddlewareInterface
         $this->allowedMethods = array_map('strtoupper', $allowedMethods);
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $method = strtoupper($request->getMethod());
 

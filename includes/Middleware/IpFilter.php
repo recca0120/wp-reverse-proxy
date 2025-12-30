@@ -3,7 +3,7 @@
 namespace ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
@@ -48,7 +48,7 @@ class IpFilter implements MiddlewareInterface
         return new self($ips, self::MODE_DENY);
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
 

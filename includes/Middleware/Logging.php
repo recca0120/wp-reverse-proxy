@@ -3,7 +3,7 @@
 namespace ReverseProxy\Middleware;
 
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
@@ -21,7 +21,7 @@ class Logging implements MiddlewareInterface
         $this->logger = $logger;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $this->logger->info('Proxying request', [
             'method' => $request->getMethod(),

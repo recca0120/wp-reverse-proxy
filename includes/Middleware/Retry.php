@@ -3,7 +3,7 @@
 namespace ReverseProxy\Middleware;
 
 use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use ReverseProxy\Contracts\MiddlewareInterface;
 
@@ -36,7 +36,7 @@ class Retry implements MiddlewareInterface
         $this->retryableStatusCodes = $retryableStatusCodes;
     }
 
-    public function process(RequestInterface $request, callable $next): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $method = strtoupper($request->getMethod());
         $canRetry = in_array($method, $this->retryableMethods, true);
