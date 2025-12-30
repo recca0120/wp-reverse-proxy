@@ -167,7 +167,7 @@ class ProxyHeadersTest extends TestCase
         $_SERVER['HTTPS'] = 'on';
         $_SERVER['SERVER_PORT'] = '443';
 
-        $middleware = new ProxyHeaders();
+        $middleware = new ProxyHeaders;
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {

@@ -1,0 +1,83 @@
+<?php
+
+namespace ReverseProxy\Middleware;
+
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
+use ReverseProxy\Contracts\MiddlewareInterface;
+
+class RewriteBody implements MiddlewareInterface
+{
+    /** @var array<string, string> */
+    private $replacements;
+
+    /** @var StreamFactoryInterface */
+    private $streamFactory;
+
+    /** @var array<string> */
+    private static $textContentTypes = [
+        'text/html',
+        'text/css',
+        'text/javascript',
+        'text/xml',
+        'text/plain',
+        'application/json',
+        'application/javascript',
+        'application/x-javascript',
+        'application/xml',
+        'application/xhtml+xml',
+        'application/rss+xml',
+        'application/atom+xml',
+    ];
+
+    /**
+     * @param  array<string, string>  $replacements  Key-value pairs of search => replace
+     */
+    public function __construct(array $replacements, ?StreamFactoryInterface $streamFactory = null)
+    {
+        $this->replacements = $replacements;
+        $this->streamFactory = $streamFactory ?? new Psr17Factory;
+    }
+
+    public function process(RequestInterface $request, callable $next): ResponseInterface
+    {
+        $response = $next($request);
+
+        if (! $this->shouldRewrite($response)) {
+            return $response;
+        }
+
+        $body = (string) $response->getBody();
+        $rewrittenBody = $this->rewrite($body);
+
+        return $response->withBody($this->streamFactory->createStream($rewrittenBody));
+    }
+
+    private function shouldRewrite(ResponseInterface $response): bool
+    {
+        if (empty($this->replacements)) {
+            return false;
+        }
+
+        $contentType = $response->getHeaderLine('Content-Type');
+        if ($contentType === '') {
+            return false;
+        }
+
+        // Extract media type (ignore charset and other parameters)
+        $mediaType = strtolower(trim(explode(';', $contentType)[0]));
+
+        return in_array($mediaType, self::$textContentTypes, true);
+    }
+
+    private function rewrite(string $body): string
+    {
+        return str_replace(
+            array_keys($this->replacements),
+            array_values($this->replacements),
+            $body
+        );
+    }
+}

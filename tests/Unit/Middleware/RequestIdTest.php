@@ -11,6 +11,7 @@ use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 class RequestIdTest extends TestCase
 {
     use AssertionRenames;
+
     public function test_it_generates_request_id_when_not_present()
     {
         $middleware = new RequestId;
