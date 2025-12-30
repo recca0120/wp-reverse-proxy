@@ -9,21 +9,9 @@ use ReverseProxy\Middleware\ProxyHeaders;
 
 class ProxyHeadersTest extends TestCase
 {
-    protected function tearDown(): void
+    public function test_it_sets_x_real_ip_header(): void
     {
-        unset(
-            $_SERVER['REMOTE_ADDR'],
-            $_SERVER['HTTP_HOST'],
-            $_SERVER['SERVER_NAME'],
-            $_SERVER['HTTPS'],
-            $_SERVER['SERVER_PORT']
-        );
-    }
-
-    public function test_it_sets_x_real_ip_header()
-    {
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders('192.168.1.100');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -33,10 +21,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_for_header()
+    public function test_it_sets_x_forwarded_for_header(): void
     {
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders('192.168.1.100');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -46,10 +33,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_appends_to_existing_x_forwarded_for_header()
+    public function test_it_appends_to_existing_x_forwarded_for_header(): void
     {
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders('192.168.1.100');
         $request = (new ServerRequest('GET', 'https://target.example.com/api/users'))
             ->withHeader('X-Forwarded-For', '10.0.0.1, 10.0.0.2');
 
@@ -60,10 +46,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_host_from_server()
+    public function test_it_sets_x_forwarded_host(): void
     {
-        $_SERVER['HTTP_HOST'] = 'my-wordpress.com';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders(null, 'my-wordpress.com');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -73,23 +58,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_host_from_server_name_fallback()
+    public function test_it_sets_x_forwarded_proto_https(): void
     {
-        $_SERVER['SERVER_NAME'] = 'my-wordpress.com';
-        $middleware = new ProxyHeaders;
-        $request = new ServerRequest('GET', 'https://target.example.com/api/users');
-
-        $middleware->process($request, function ($req) {
-            $this->assertEquals('my-wordpress.com', $req->getHeaderLine('X-Forwarded-Host'));
-
-            return new Response(200);
-        });
-    }
-
-    public function test_it_sets_x_forwarded_proto_https()
-    {
-        $_SERVER['HTTPS'] = 'on';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders(null, null, 'https');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -99,10 +70,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_proto_http_when_https_off()
+    public function test_it_sets_x_forwarded_proto_http(): void
     {
-        $_SERVER['HTTPS'] = 'off';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders(null, null, 'http');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -112,10 +82,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_port_from_server()
+    public function test_it_sets_x_forwarded_port(): void
     {
-        $_SERVER['SERVER_PORT'] = '8443';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders(null, null, null, '8443');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -125,50 +94,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_default_port_for_https()
+    public function test_it_sets_forwarded_header(): void
     {
-        $_SERVER['HTTPS'] = 'on';
-        $middleware = new ProxyHeaders;
-        $request = new ServerRequest('GET', 'https://target.example.com/api/users');
-
-        $middleware->process($request, function ($req) {
-            $this->assertEquals('443', $req->getHeaderLine('X-Forwarded-Port'));
-
-            return new Response(200);
-        });
-    }
-
-    public function test_it_sets_default_port_for_http()
-    {
-        $middleware = new ProxyHeaders;
-        $request = new ServerRequest('GET', 'https://target.example.com/api/users');
-
-        $middleware->process($request, function ($req) {
-            $this->assertEquals('80', $req->getHeaderLine('X-Forwarded-Port'));
-
-            return new Response(200);
-        });
-    }
-
-    public function test_it_handles_missing_remote_addr()
-    {
-        $middleware = new ProxyHeaders;
-        $request = new ServerRequest('GET', 'https://target.example.com/api/users');
-
-        $middleware->process($request, function ($req) {
-            $this->assertEquals('', $req->getHeaderLine('X-Real-IP'));
-            $this->assertEquals('', $req->getHeaderLine('X-Forwarded-For'));
-
-            return new Response(200);
-        });
-    }
-
-    public function test_it_sets_forwarded_header()
-    {
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $_SERVER['HTTP_HOST'] = 'my-wordpress.com';
-        $_SERVER['HTTPS'] = 'on';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders('192.168.1.100', 'my-wordpress.com', 'https');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -181,12 +109,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_quotes_ipv6_addresses_in_forwarded_header()
+    public function test_it_quotes_ipv6_addresses_in_forwarded_header(): void
     {
-        $_SERVER['REMOTE_ADDR'] = '2001:db8::1';
-        $_SERVER['HTTP_HOST'] = 'my-wordpress.com';
-        $_SERVER['HTTPS'] = 'on';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders('2001:db8::1', 'my-wordpress.com', 'https');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -199,12 +124,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_appends_to_existing_forwarded_header()
+    public function test_it_appends_to_existing_forwarded_header(): void
     {
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $_SERVER['HTTP_HOST'] = 'my-wordpress.com';
-        $_SERVER['HTTPS'] = 'on';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders('192.168.1.100', 'my-wordpress.com', 'https');
         $request = (new ServerRequest('GET', 'https://target.example.com/api/users'))
             ->withHeader('Forwarded', 'for=10.0.0.1;host=previous.com;proto=http');
 
@@ -218,13 +140,9 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_all_proxy_headers()
+    public function test_it_sets_all_proxy_headers(): void
     {
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
-        $_SERVER['HTTP_HOST'] = 'my-wordpress.com';
-        $_SERVER['HTTPS'] = 'on';
-        $_SERVER['SERVER_PORT'] = '443';
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders('192.168.1.100', 'my-wordpress.com', 'https', '443');
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
@@ -240,5 +158,27 @@ class ProxyHeadersTest extends TestCase
 
             return new Response(200);
         });
+    }
+
+    public function test_it_uses_server_defaults_when_no_args_provided(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
+        $_SERVER['HTTP_HOST'] = 'default-host.com';
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['SERVER_PORT'] = '443';
+
+        $middleware = new ProxyHeaders();
+        $request = new ServerRequest('GET', 'https://target.example.com/api/users');
+
+        $middleware->process($request, function ($req) {
+            $this->assertEquals('10.0.0.1', $req->getHeaderLine('X-Real-IP'));
+            $this->assertEquals('default-host.com', $req->getHeaderLine('X-Forwarded-Host'));
+            $this->assertEquals('https', $req->getHeaderLine('X-Forwarded-Proto'));
+            $this->assertEquals('443', $req->getHeaderLine('X-Forwarded-Port'));
+
+            return new Response(200);
+        });
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_HOST'], $_SERVER['HTTPS'], $_SERVER['SERVER_PORT']);
     }
 }
