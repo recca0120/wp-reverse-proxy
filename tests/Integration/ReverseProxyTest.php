@@ -4,6 +4,7 @@ namespace ReverseProxy\Tests\Integration;
 
 use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use ReverseProxy\Middleware\AllowMethods;
@@ -11,6 +12,7 @@ use ReverseProxy\Middleware\ProxyHeaders;
 use ReverseProxy\Middleware\RewritePath;
 use ReverseProxy\Middleware\SetHost;
 use ReverseProxy\Route;
+use ReverseProxy\Http\ServerRequestFactory;
 use WP_UnitTestCase;
 
 class ReverseProxyTest extends WP_UnitTestCase
@@ -38,6 +40,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_routes');
         remove_all_filters('reverse_proxy_http_client');
         remove_all_filters('reverse_proxy_should_exit');
+        remove_all_filters('reverse_proxy_request');
         parent::tearDown();
     }
 
@@ -106,11 +109,17 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(201, ['Content-Type' => 'application/json'], '{"id":1}'));
 
-        $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_SERVER['CONTENT_TYPE'] = 'application/json';
         $requestBody = '{"name":"John","email":"john@example.com"}';
-        add_filter('reverse_proxy_request_body', function () use ($requestBody) {
-            return $requestBody;
+        $serverParams = [
+            'REQUEST_METHOD' => 'POST',
+            'REQUEST_URI' => '/api/users',
+            'HTTP_HOST' => 'example.org',
+            'CONTENT_TYPE' => 'application/json',
+        ];
+        add_filter('reverse_proxy_request', function () use ($serverParams, $requestBody) {
+            $factory = new ServerRequestFactory(new Psr17Factory);
+
+            return $factory->create($serverParams, $requestBody);
         });
 
         $output = $this->whenRequesting('/api/users');

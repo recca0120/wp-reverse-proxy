@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\WordPress;
+namespace ReverseProxy\Http;
 
 use Nyholm\Psr7\ServerRequest;
 use Nyholm\Psr7\Uri;
@@ -19,25 +19,39 @@ class ServerRequestFactory
 
     public function createFromGlobals(): ServerRequestInterface
     {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $uri = $this->createUri();
-        $headers = $this->getHeaders();
-        $body = $this->getBody($method);
+        return $this->create(
+            $_SERVER,
+            function () {
+                return file_get_contents('php://input') ?: '';
+            }
+        );
+    }
 
-        $request = new ServerRequest($method, $uri, $headers, null, '1.1', $_SERVER);
+    /**
+     * @param  array  $serverParams
+     * @param  string|callable  $body
+     */
+    public function create(array $serverParams, $body = ''): ServerRequestInterface
+    {
+        $method = $serverParams['REQUEST_METHOD'] ?? 'GET';
+        $uri = $this->createUri($serverParams);
+        $headers = $this->getHeaders($serverParams);
+        $bodyContent = $this->resolveBody($method, $body);
 
-        if ($body !== '') {
-            $request = $request->withBody($this->streamFactory->createStream($body));
+        $request = new ServerRequest($method, $uri, $headers, null, '1.1', $serverParams);
+
+        if ($bodyContent !== '') {
+            $request = $request->withBody($this->streamFactory->createStream($bodyContent));
         }
 
         return $request;
     }
 
-    private function createUri(): Uri
+    private function createUri(array $serverParams): Uri
     {
-        $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? 'localhost';
-        $requestUri = $this->normalizeRequestUri($_SERVER['REQUEST_URI'] ?? '/');
+        $scheme = isset($serverParams['HTTPS']) && $serverParams['HTTPS'] !== 'off' ? 'https' : 'http';
+        $host = $serverParams['HTTP_HOST'] ?? $serverParams['SERVER_NAME'] ?? 'localhost';
+        $requestUri = $this->normalizeRequestUri($serverParams['REQUEST_URI'] ?? '/');
 
         return new Uri($scheme.'://'.$host.$requestUri);
     }
@@ -50,11 +64,11 @@ class ServerRequestFactory
         return isset($parts[1]) ? $path.'?'.$parts[1] : $path;
     }
 
-    private function getHeaders(): array
+    private function getHeaders(array $serverParams): array
     {
         $headers = [];
 
-        foreach ($_SERVER as $key => $value) {
+        foreach ($serverParams as $key => $value) {
             if (strpos($key, 'HTTP_') === 0) {
                 // Skip CONTENT_TYPE and CONTENT_LENGTH as they're handled separately
                 if ($key === 'HTTP_CONTENT_TYPE' || $key === 'HTTP_CONTENT_LENGTH') {
@@ -76,18 +90,15 @@ class ServerRequestFactory
         return $headers;
     }
 
-    private function getBody(string $method): string
+    /**
+     * @param  string|callable  $body
+     */
+    private function resolveBody(string $method, $body): string
     {
         if (! in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
             return '';
         }
 
-        // Allow filter for testing
-        $body = apply_filters('reverse_proxy_request_body', null);
-        if ($body !== null) {
-            return $body;
-        }
-
-        return file_get_contents('php://input') ?: '';
+        return is_callable($body) ? $body() : $body;
     }
 }

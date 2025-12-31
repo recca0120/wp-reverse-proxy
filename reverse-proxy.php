@@ -43,9 +43,14 @@ function reverse_proxy_create_proxy()
 
 function reverse_proxy_create_request()
 {
+    $request = apply_filters('reverse_proxy_request', null);
+    if ($request !== null) {
+        return $request;
+    }
+
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
 
-    return (new ReverseProxy\WordPress\ServerRequestFactory($psr17Factory))->createFromGlobals();
+    return (new ReverseProxy\Http\ServerRequestFactory($psr17Factory))->createFromGlobals();
 }
 
 function reverse_proxy_emit_response($response)
