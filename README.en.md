@@ -740,7 +740,7 @@ add_filter('reverse_proxy_routes', function () {
 | `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
 | `reverse_proxy_psr17_factory` | `$factory` | Override PSR-17 HTTP factory |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
-| `reverse_proxy_request_body` | `$body` | Override request body (for testing) |
+| `reverse_proxy_request` | `$request` | Override the entire request object (for testing) |
 | `reverse_proxy_response` | `$response` | Modify response before sending |
 | `reverse_proxy_should_exit` | `$should_exit` | Control exit behavior |
 

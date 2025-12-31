@@ -740,7 +740,7 @@ add_filter('reverse_proxy_routes', function () {
 | `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_psr17_factory` | `$factory` | 覆寫 PSR-17 HTTP 工廠 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |
-| `reverse_proxy_request_body` | `$body` | 覆寫請求主體（用於測試） |
+| `reverse_proxy_request` | `$request` | 覆寫整個請求物件（用於測試） |
 | `reverse_proxy_response` | `$response` | 在發送前修改回應 |
 | `reverse_proxy_should_exit` | `$should_exit` | 控制結束行為 |
 
