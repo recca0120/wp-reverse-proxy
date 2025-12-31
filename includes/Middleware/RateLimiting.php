@@ -84,7 +84,9 @@ class RateLimiting implements MiddlewareInterface
         }
 
         // 預設用 IP
-        return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $serverParams = $request->getServerParams();
+
+        return $serverParams['REMOTE_ADDR'] ?? 'unknown';
     }
 
     private function getRateLimitData(string $key): array

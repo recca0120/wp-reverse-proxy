@@ -50,7 +50,8 @@ class IpFilter implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
-        $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+        $serverParams = $request->getServerParams();
+        $clientIp = $serverParams['REMOTE_ADDR'] ?? '';
 
         if (! $this->isAllowed($clientIp)) {
             return $this->createForbiddenResponse();

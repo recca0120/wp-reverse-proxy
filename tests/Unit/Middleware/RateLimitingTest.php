@@ -17,13 +17,11 @@ class RateLimitingTest extends TestCase
     {
         parent::setUp();
         $this->cache = $this->createMock(CacheInterface::class);
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
     }
 
-    protected function tearDown(): void
+    private function createRequest(string $ip = '192.168.1.100'): ServerRequest
     {
-        unset($_SERVER['REMOTE_ADDR']);
-        parent::tearDown();
+        return new ServerRequest('GET', 'https://example.com/api/users', [], null, '1.1', ['REMOTE_ADDR' => $ip]);
     }
 
     public function test_it_allows_request_within_limit()
@@ -32,7 +30,7 @@ class RateLimitingTest extends TestCase
         $this->cache->method('set')->willReturn(true);
 
         $middleware = new RateLimiting(10, 60, null, $this->cache);
-        $request = new ServerRequest('GET', 'https://example.com/api/users');
+        $request = $this->createRequest();
 
         $called = false;
         $response = $middleware->process($request, function ($req) use (&$called) {
@@ -51,7 +49,7 @@ class RateLimitingTest extends TestCase
         $this->cache->method('set')->willReturn(true);
 
         $middleware = new RateLimiting(10, 60, null, $this->cache);
-        $request = new ServerRequest('GET', 'https://example.com/api/users');
+        $request = $this->createRequest();
 
         $response = $middleware->process($request, function ($req) {
             return new Response(200);
@@ -71,7 +69,7 @@ class RateLimitingTest extends TestCase
         $this->cache->method('set')->willReturn(true);
 
         $middleware = new RateLimiting(10, 60, null, $this->cache);
-        $request = new ServerRequest('GET', 'https://example.com/api/users');
+        $request = $this->createRequest();
 
         $called = false;
         $response = $middleware->process($request, function ($req) use (&$called) {
@@ -95,7 +93,7 @@ class RateLimitingTest extends TestCase
         $this->cache->method('set')->willReturn(true);
 
         $middleware = new RateLimiting(10, 60, null, $this->cache);
-        $request = new ServerRequest('GET', 'https://example.com/api/users');
+        $request = $this->createRequest();
 
         $called = false;
         $response = $middleware->process($request, function ($req) use (&$called) {
@@ -118,7 +116,7 @@ class RateLimitingTest extends TestCase
         $middleware = new RateLimiting(10, 60, function ($request) {
             return 'custom-key';
         }, $this->cache);
-        $request = new ServerRequest('GET', 'https://example.com/api/users');
+        $request = $this->createRequest();
 
         $middleware->process($request, function ($req) {
             return new Response(200);
@@ -134,7 +132,7 @@ class RateLimitingTest extends TestCase
         $this->cache->method('set')->willReturn(true);
 
         $middleware = new RateLimiting(10, 60, null, $this->cache);
-        $request = new ServerRequest('GET', 'https://example.com/api/users');
+        $request = $this->createRequest();
 
         $response = $middleware->process($request, function ($req) {
             return new Response(200);
@@ -155,7 +153,7 @@ class RateLimitingTest extends TestCase
         $this->cache->method('set')->willReturn(true);
 
         $middleware = new RateLimiting(10, 60, null, $this->cache);
-        $request = new ServerRequest('GET', 'https://example.com/api/users');
+        $request = $this->createRequest();
 
         $response = $middleware->process($request, function ($req) {
             return new Response(200);
