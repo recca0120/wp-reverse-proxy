@@ -24,6 +24,13 @@ jobs:
       - name: Install dependencies
         run: composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
 
+      - name: Download and run Strauss
+        run: |
+          mkdir -p bin
+          curl -o bin/strauss.phar -L https://github.com/BrianHenryIE/strauss/releases/latest/download/strauss.phar
+          php bin/strauss.phar --updateCallSites=includes,.
+          composer dump-autoload --no-dev --optimize
+
       - name: Create plugin directory
         run: |
           mkdir -p build/reverse-proxy
@@ -43,7 +50,8 @@ jobs:
             --exclude='*.md' \
             --exclude='coverage' \
             --exclude='.phpunit.cache' \
-            --exclude='.phpunit.result.cache'
+            --exclude='.phpunit.result.cache' \
+            --exclude='vendor'
 
           # Keep LICENSE and essential files
           cp LICENSE build/reverse-proxy/ 2>/dev/null || true
