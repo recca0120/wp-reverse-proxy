@@ -84,7 +84,7 @@ class ProxyHeaders implements MiddlewareInterface
 
         return array_filter(
             $headers,
-            function ($name) use ($allowedHeaders, $exceptHeaders) {
+            function ($name) use ($allowedHeaders, $exceptHeaders): bool {
                 return in_array($name, $allowedHeaders, true)
                     && ! in_array($name, $exceptHeaders, true);
             },
@@ -106,9 +106,11 @@ class ProxyHeaders implements MiddlewareInterface
                 ? 'for="['.$clientIp.']"'
                 : 'for='.$clientIp;
         }
+
         if ($host !== '') {
             $parts[] = 'host='.$host;
         }
+
         if ($scheme !== '') {
             $parts[] = 'proto='.$scheme;
         }
@@ -130,6 +132,6 @@ class ProxyHeaders implements MiddlewareInterface
             return $existing ?: $clientIp;
         }
 
-        return "{$existing}, {$clientIp}";
+        return sprintf('%s, %s', $existing, $clientIp);
     }
 }

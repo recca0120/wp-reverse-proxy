@@ -25,7 +25,7 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
-function reverse_proxy_create_proxy()
+function reverse_proxy_create_proxy(): \ReverseProxy\ReverseProxy
 {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
     $httpClient = new ReverseProxy\Http\FilteringClient(
@@ -53,20 +53,21 @@ function reverse_proxy_create_request()
     return (new ReverseProxy\Http\ServerRequestFactory($psr17Factory))->createFromGlobals();
 }
 
-function reverse_proxy_emit_response($response)
+function reverse_proxy_emit_response($response): void
 {
     if (! headers_sent()) {
         http_response_code($response->getStatusCode());
         foreach ($response->getHeaders() as $name => $values) {
             foreach ($values as $value) {
-                header("{$name}: {$value}", false);
+                header(sprintf('%s: %s', $name, $value), false);
             }
         }
     }
+
     echo $response->getBody();
 }
 
-function reverse_proxy_send_response($response)
+function reverse_proxy_send_response($response): void
 {
     $response = apply_filters('reverse_proxy_response', $response);
     reverse_proxy_emit_response($response);
@@ -76,7 +77,7 @@ function reverse_proxy_send_response($response)
     }
 }
 
-function reverse_proxy_handle()
+function reverse_proxy_handle(): void
 {
     $proxy = reverse_proxy_create_proxy();
     $request = reverse_proxy_create_request();
@@ -88,7 +89,7 @@ function reverse_proxy_handle()
         if ($response !== null) {
             reverse_proxy_send_response($response);
         }
-    } catch (ReverseProxy\Exceptions\FallbackException $e) {
+    } catch (ReverseProxy\Exceptions\FallbackException $fallbackException) {
         // Let WordPress handle the request
         return;
     }

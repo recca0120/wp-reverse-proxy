@@ -21,7 +21,7 @@ trait ParsesResponse
     {
         $lowerName = strtolower($name);
 
-        foreach ($headers as $key => $value) {
+        foreach (array_keys($headers) as $key) {
             if (strtolower($key) === $lowerName) {
                 return $key;
             }

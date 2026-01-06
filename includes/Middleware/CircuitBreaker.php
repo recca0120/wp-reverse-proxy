@@ -81,9 +81,9 @@ class CircuitBreaker implements MiddlewareInterface
             }
 
             return $response;
-        } catch (ClientExceptionInterface $e) {
+        } catch (ClientExceptionInterface $clientException) {
             $this->recordFailure();
-            throw $e;
+            throw $clientException;
         }
     }
 

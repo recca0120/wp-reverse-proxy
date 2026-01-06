@@ -132,7 +132,7 @@ class TransientCache implements CacheInterface
      * @param  string  $key
      * @return string
      */
-    private function prefixKey($key)
+    private function prefixKey(string $key): string
     {
         return $this->prefix.$key;
     }
@@ -154,13 +154,13 @@ class TransientCache implements CacheInterface
         return (int) $ttl;
     }
 
-    private function loadKeys()
+    private function loadKeys(): void
     {
         $keys = get_option($this->prefix.'_keys', []);
         $this->keys = is_array($keys) ? $keys : [];
     }
 
-    private function saveKeys()
+    private function saveKeys(): void
     {
         update_option($this->prefix.'_keys', $this->keys);
     }
@@ -168,7 +168,7 @@ class TransientCache implements CacheInterface
     /**
      * @param  string  $key
      */
-    private function trackKey($key)
+    private function trackKey($key): void
     {
         if (! in_array($key, $this->keys, true)) {
             $this->keys[] = $key;
@@ -179,7 +179,7 @@ class TransientCache implements CacheInterface
     /**
      * @param  string  $key
      */
-    private function untrackKey($key)
+    private function untrackKey($key): void
     {
         $index = array_search($key, $this->keys, true);
         if ($index !== false) {

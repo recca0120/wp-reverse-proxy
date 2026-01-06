@@ -21,7 +21,7 @@ class ServerRequestFactory
     {
         return $this->create(
             $_SERVER,
-            function () {
+            function (): string {
                 return file_get_contents('php://input') ?: '';
             }
         );
@@ -74,10 +74,12 @@ class ServerRequestFactory
                 if ($key === 'HTTP_CONTENT_TYPE' || $key === 'HTTP_CONTENT_LENGTH') {
                     continue;
                 }
+
                 // Skip empty values
                 if ($value === '' || $value === null) {
                     continue;
                 }
+
                 $name = str_replace('_', '-', substr($key, 5));
                 $headers[$name] = $value;
             } elseif ($key === 'CONTENT_TYPE' && $value) {

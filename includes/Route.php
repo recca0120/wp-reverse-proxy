@@ -65,7 +65,7 @@ class Route
 
     private function sortByPriority(array $middlewares): array
     {
-        usort($middlewares, function ($a, $b) {
+        usort($middlewares, function ($a, $b): int {
             $priorityA = $this->getPriority($a);
             $priorityB = $this->getPriority($b);
 
@@ -107,7 +107,7 @@ class Route
     private function matchesMethod(string $method): bool
     {
         // Empty methods array means match all methods
-        if (empty($this->methods)) {
+        if ($this->methods === []) {
             return true;
         }
 

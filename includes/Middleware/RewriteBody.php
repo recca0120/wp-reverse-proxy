@@ -59,7 +59,7 @@ class RewriteBody implements MiddlewareInterface
 
     private function shouldRewrite(ResponseInterface $response): bool
     {
-        if (empty($this->replacements)) {
+        if ($this->replacements === []) {
             return false;
         }
 

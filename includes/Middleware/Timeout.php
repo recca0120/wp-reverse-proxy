@@ -31,13 +31,13 @@ class Timeout implements MiddlewareInterface
 
         try {
             return $next($request);
-        } catch (ClientExceptionInterface $e) {
+        } catch (ClientExceptionInterface $clientException) {
             // 檢查是否為超時錯誤
-            if ($this->isTimeoutException($e)) {
+            if ($this->isTimeoutException($clientException)) {
                 return $this->createTimeoutResponse();
             }
 
-            throw $e;
+            throw $clientException;
         }
     }
 
