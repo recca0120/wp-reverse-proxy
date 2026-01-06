@@ -61,7 +61,37 @@ jobs:
           mkdir -p bin
           curl -o bin/strauss.phar -L https://github.com/BrianHenryIE/strauss/releases/latest/download/strauss.phar
           php bin/strauss.phar --updateCallSites=includes,reverse-proxy.php
-          composer dump-autoload --no-dev --optimize
+
+      - name: Verify production autoloader works
+        run: |
+          php -r "
+            require_once 'vendor-prefixed/autoload.php';
+            // Register PSR-4 autoloader for ReverseProxy namespace
+            spl_autoload_register(function (\$class) {
+              \$prefix = 'ReverseProxy\\\\';
+              \$baseDir = __DIR__ . '/includes/';
+              \$len = strlen(\$prefix);
+              if (strncmp(\$prefix, \$class, \$len) !== 0) return;
+              \$file = \$baseDir . str_replace('\\\\', '/', substr(\$class, \$len)) . '.php';
+              if (file_exists(\$file)) require \$file;
+            });
+            // Verify classes can be loaded
+            \$classes = [
+              'ReverseProxy\\\\ReverseProxy',
+              'ReverseProxy\\\\Route',
+              'ReverseProxy\\\\Http\\\\FilteringClient',
+              'ReverseProxy\\\\Http\\\\CurlClient',
+              'ReverseProxy\\\\Vendor\\\\Psr\\\\Http\\\\Client\\\\ClientInterface',
+            ];
+            foreach (\$classes as \$class) {
+              if (!class_exists(\$class) && !interface_exists(\$class)) {
+                echo \"FAILED: \$class not found\\n\";
+                exit(1);
+              }
+              echo \"OK: \$class\\n\";
+            }
+            echo \"All classes loaded successfully!\\n\";
+          "
 
       - name: Create production plugin directory
         run: |
