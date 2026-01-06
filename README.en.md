@@ -29,7 +29,9 @@ A WordPress plugin that proxies specific URL paths to external backend servers.
 ### Download from GitHub Releases (Recommended)
 
 1. Go to the [Releases page](https://github.com/recca0120/wp-reverse-proxy/releases)
-2. Download the latest `reverse-proxy.zip`
+2. Download the appropriate version:
+   - **`reverse-proxy.zip`** - Production (recommended, uses prefixed namespaces to avoid conflicts)
+   - **`reverse-proxy-dev.zip`** - Development (original namespaces, easier for custom middleware development)
 3. In WordPress admin → Plugins → Add New → Upload Plugin
 4. Upload the zip file and activate
 
@@ -44,6 +46,21 @@ composer require recca0120/wp-reverse-proxy
 1. Clone the project to `/wp-content/plugins/wp-reverse-proxy/`
 2. Run `composer install` in the plugin directory
 3. Activate the plugin in WordPress admin
+
+## Production vs Development
+
+This plugin uses [Strauss](https://github.com/BrianHenryIE/strauss) to prefix third-party dependency namespaces, preventing conflicts with other WordPress plugins.
+
+| Version | Source | Namespace | Use Case |
+|---------|--------|-----------|----------|
+| **Production** | GitHub Releases ZIP | `ReverseProxy\Vendor\*` | General use |
+| **Development** | Git clone + composer | Original namespace (e.g., `Psr\*`) | Development/Contributing |
+
+**Why Strauss?**
+
+When two WordPress plugins use Composer with the same dependency but different versions, conflicts occur. Strauss prefixes third-party package namespaces (e.g., `Psr\Http\Message` → `ReverseProxy\Vendor\Psr\Http\Message`), ensuring each plugin uses isolated dependencies.
+
+> **Note**: If you need to write custom middleware using PSR interfaces, see the namespace notes in [Custom Middleware](#custom-middleware) section.
 
 ## Usage
 
@@ -592,10 +609,21 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 
 For reusable middleware classes:
 
+> **Namespace Note**
+>
+> PSR interface namespaces differ between production and development versions:
+>
+> | Version | Namespace |
+> |---------|-----------|
+> | Production | `ReverseProxy\Vendor\Psr\Http\Message\*` |
+> | Development | `Psr\Http\Message\*` |
+>
+> Examples below use **production** namespaces. For development, replace `ReverseProxy\Vendor\Psr\*` with `Psr\*`.
+
 ```php
 use ReverseProxy\Contracts\MiddlewareInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\ResponseInterface;
+use ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
+use ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
 
 class AddAuthHeader implements MiddlewareInterface
 {
@@ -615,6 +643,17 @@ class AddAuthHeader implements MiddlewareInterface
 // Usage
 $route = (new Route('/api/*', 'https://backend.example.com'))
     ->middleware(new AddAuthHeader('my-secret-token'));
+```
+
+**Alternative: Use Closures (No PSR interface import needed)**
+
+To avoid namespace differences, use closures:
+
+```php
+$route = (new Route('/api/*', 'https://backend.example.com'))
+    ->middleware(function ($request, $next) {
+        return $next($request->withHeader('Authorization', 'Bearer my-secret-token'));
+    });
 ```
 
 ### Middleware Examples
@@ -678,8 +717,9 @@ Middlewares can define a `$priority` property to control execution order (lower 
 
 ```php
 use ReverseProxy\Contracts\MiddlewareInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\ResponseInterface;
+// Production uses ReverseProxy\Vendor\Psr\*, Development uses Psr\*
+use ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
+use ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
 
 class AuthMiddleware implements MiddlewareInterface
 {

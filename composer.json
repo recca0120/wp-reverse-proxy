@@ -36,5 +36,15 @@
     },
     "scripts": {
         "test": "phpunit"
+    },
+    "extra": {
+        "strauss": {
+            "target_directory": "vendor-prefixed",
+            "namespace_prefix": "ReverseProxy\\Vendor\\",
+            "classmap_prefix": "ReverseProxy_Vendor_",
+            "constant_prefix": "REVERSE_PROXY_VENDOR_",
+            "delete_vendor_packages": false,
+            "delete_vendor_files": false
+        }
     }
 }

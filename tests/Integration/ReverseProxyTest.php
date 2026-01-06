@@ -7,12 +7,12 @@ use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
+use ReverseProxy\Http\ServerRequestFactory;
 use ReverseProxy\Middleware\AllowMethods;
 use ReverseProxy\Middleware\ProxyHeaders;
 use ReverseProxy\Middleware\RewritePath;
 use ReverseProxy\Middleware\SetHost;
 use ReverseProxy\Route;
-use ReverseProxy\Http\ServerRequestFactory;
 use WP_UnitTestCase;
 
 class ReverseProxyTest extends WP_UnitTestCase
