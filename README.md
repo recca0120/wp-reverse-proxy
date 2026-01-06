@@ -45,6 +45,21 @@ composer require recca0120/wp-reverse-proxy
 2. 在外掛目錄執行 `composer install`
 3. 在 WordPress 後台啟用外掛
 
+## 正式版 vs 開發版
+
+本外掛使用 [Strauss](https://github.com/BrianHenryIE/strauss) 來處理第三方依賴的 namespace，避免與其他 WordPress 外掛的依賴衝突。
+
+| 版本 | 來源 | Namespace | 適用情境 |
+|------|------|-----------|----------|
+| **正式版** | GitHub Releases ZIP | `ReverseProxy\Vendor\*` | 一般使用 |
+| **開發版** | Git clone + composer | 原始 namespace（如 `Psr\*`） | 開發/貢獻 |
+
+**為什麼需要 Strauss？**
+
+如果兩個 WordPress 外掛都使用 Composer 且依賴同一個套件的不同版本，會發生衝突。Strauss 將第三方套件的 namespace 加上前綴（如 `Psr\Http\Message` → `ReverseProxy\Vendor\Psr\Http\Message`），確保每個外掛使用獨立的依賴。
+
+> **注意**：如果你要撰寫自訂中介層並使用 PSR interface，請參考[自訂中介層](#自訂中介層)章節的 namespace 說明。
+
 ## 使用方式
 
 ### 基本設定
@@ -592,10 +607,21 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 
 建立可重複使用的中介層類別：
 
+> **Namespace 注意事項**
+>
+> PSR interface 的 namespace 在正式版和開發版不同：
+>
+> | 版本 | Namespace |
+> |------|-----------|
+> | 正式版 | `ReverseProxy\Vendor\Psr\Http\Message\*` |
+> | 開發版 | `Psr\Http\Message\*` |
+>
+> 以下範例以**正式版**為主。如果是開發版，請將 `ReverseProxy\Vendor\Psr\*` 改為 `Psr\*`。
+
 ```php
 use ReverseProxy\Contracts\MiddlewareInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\ResponseInterface;
+use ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
+use ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
 
 class AddAuthHeader implements MiddlewareInterface
 {
@@ -615,6 +641,17 @@ class AddAuthHeader implements MiddlewareInterface
 // 使用方式
 $route = (new Route('/api/*', 'https://backend.example.com'))
     ->middleware(new AddAuthHeader('my-secret-token'));
+```
+
+**替代方案：使用閉包（無需 import PSR interface）**
+
+如果不想處理 namespace 差異，可以使用閉包：
+
+```php
+$route = (new Route('/api/*', 'https://backend.example.com'))
+    ->middleware(function ($request, $next) {
+        return $next($request->withHeader('Authorization', 'Bearer my-secret-token'));
+    });
 ```
 
 ### 中介層範例
@@ -678,8 +715,9 @@ Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Resp
 
 ```php
 use ReverseProxy\Contracts\MiddlewareInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\ResponseInterface;
+// 正式版使用 ReverseProxy\Vendor\Psr\*，開發版使用 Psr\*
+use ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
+use ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
 
 class AuthMiddleware implements MiddlewareInterface
 {
