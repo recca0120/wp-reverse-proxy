@@ -23,8 +23,7 @@ define('REVERSE_PROXY_PLUGIN_URL', plugin_dir_url(__FILE__));
 // Load Composer autoloader (prefer vendor-prefixed for release builds)
 if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php';
-}
-if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
+} elseif (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
