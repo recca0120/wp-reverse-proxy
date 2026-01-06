@@ -29,7 +29,9 @@
 ### 從 GitHub Releases 下載（推薦）
 
 1. 前往 [Releases 頁面](https://github.com/recca0120/wp-reverse-proxy/releases)
-2. 下載最新版本的 `reverse-proxy.zip`
+2. 下載適合的版本：
+   - **`reverse-proxy.zip`** - 正式版（推薦，使用 prefixed namespace 避免衝突）
+   - **`reverse-proxy-dev.zip`** - 開發版（原始 namespace，方便開發自訂中介層）
 3. 在 WordPress 後台 → 外掛 → 安裝外掛 → 上傳外掛
 4. 上傳 zip 檔案並啟用
 
