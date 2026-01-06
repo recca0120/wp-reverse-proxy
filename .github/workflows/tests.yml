@@ -39,7 +39,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
+      # For PHP < 8.2, we need to downgrade the code first using Rector
+      - name: Setup PHP 8.2 for Rector
+        if: ${{ matrix.php < '8.2' }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl
+
+      - name: Install Rector
+        if: ${{ matrix.php < '8.2' }}
+        run: composer require --dev rector/rector --no-interaction
+
+      - name: Downgrade code with Rector
+        if: ${{ matrix.php < '8.2' }}
+        run: |
+          RECTOR_PHP82=${{ matrix.php < '8.2' && 'true' || 'false' }} \
+          RECTOR_PHP81=${{ matrix.php < '8.1' && 'true' || 'false' }} \
+          RECTOR_PHP80=${{ matrix.php < '8.0' && 'true' || 'false' }} \
+          RECTOR_PHP74=${{ matrix.php < '7.4' && 'true' || 'false' }} \
+          RECTOR_PHP73=${{ matrix.php < '7.3' && 'true' || 'false' }} \
+          RECTOR_PHP72=${{ matrix.php < '7.2' && 'true' || 'false' }} \
+          ./vendor/bin/rector process --no-diffs
+          rm -rf vendor composer.lock
+
+      - name: Setup PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
