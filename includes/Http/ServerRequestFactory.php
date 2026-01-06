@@ -28,7 +28,6 @@ class ServerRequestFactory
     }
 
     /**
-     * @param  array  $serverParams
      * @param  string|callable  $body
      */
     public function create(array $serverParams, $body = ''): ServerRequestInterface
