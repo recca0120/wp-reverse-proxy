@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
 
+$phpVersion = getenv('RECTOR_TARGET_PHP') ?: '8.2';
+
 return RectorConfig::configure()
     ->withPaths([
         __DIR__.'/includes',
@@ -11,10 +13,10 @@ return RectorConfig::configure()
         __DIR__.'/reverse-proxy.php',
     ])
     ->withDowngradeSets(
-        php82: getenv('RECTOR_PHP82') === 'true',
-        php81: getenv('RECTOR_PHP81') === 'true',
-        php80: getenv('RECTOR_PHP80') === 'true',
-        php74: getenv('RECTOR_PHP74') === 'true',
-        php73: getenv('RECTOR_PHP73') === 'true',
-        php72: getenv('RECTOR_PHP72') === 'true',
+        php82: $phpVersion === '8.2',
+        php81: $phpVersion === '8.1',
+        php80: $phpVersion === '8.0',
+        php74: $phpVersion === '7.4',
+        php73: $phpVersion === '7.3',
+        php72: $phpVersion === '7.2',
     );

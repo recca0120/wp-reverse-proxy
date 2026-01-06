@@ -54,13 +54,7 @@ jobs:
       - name: Downgrade code with Rector
         if: ${{ matrix.php < '8.2' }}
         run: |
-          RECTOR_PHP82=${{ matrix.php < '8.2' && 'true' || 'false' }} \
-          RECTOR_PHP81=${{ matrix.php < '8.1' && 'true' || 'false' }} \
-          RECTOR_PHP80=${{ matrix.php < '8.0' && 'true' || 'false' }} \
-          RECTOR_PHP74=${{ matrix.php < '7.4' && 'true' || 'false' }} \
-          RECTOR_PHP73=${{ matrix.php < '7.3' && 'true' || 'false' }} \
-          RECTOR_PHP72=${{ matrix.php < '7.2' && 'true' || 'false' }} \
-          ./vendor/bin/rector process --no-diffs
+          RECTOR_TARGET_PHP=${{ matrix.php }} ./vendor/bin/rector process --no-diffs
           rm -rf vendor composer.lock
 
       - name: Setup PHP ${{ matrix.php }}
