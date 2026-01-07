@@ -32,12 +32,11 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
 function reverse_proxy_create_proxy()
 {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
-    $httpClient = new Recca0120\ReverseProxy\Http\Decorator\SanitizingClient(
-        apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]))
-    );
+    $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
 
     $proxy = new Recca0120\ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
     $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
+        new Recca0120\ReverseProxy\Middleware\SanitizeHeaders,
         new Recca0120\ReverseProxy\Middleware\ErrorHandling,
         new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger),
     ]));

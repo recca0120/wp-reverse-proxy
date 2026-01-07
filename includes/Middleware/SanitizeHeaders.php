@@ -1,12 +1,12 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Http\Decorator;
+namespace Recca0120\ReverseProxy\Middleware;
 
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 
-class SanitizingClient implements ClientInterface
+class SanitizeHeaders implements MiddlewareInterface
 {
     /**
      * Headers that should not be forwarded (hop-by-hop headers).
@@ -24,23 +24,18 @@ class SanitizingClient implements ClientInterface
         'upgrade',
     ];
 
-    /** @var ClientInterface */
-    private $client;
+    /** @var int */
+    public $priority = -1000;
 
-    public function __construct(ClientInterface $client)
-    {
-        $this->client = $client;
-    }
-
-    public function sendRequest(RequestInterface $request): ResponseInterface
+    public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $request = $this->removeBrotliEncoding($request);
-        $response = $this->client->sendRequest($request);
+        $response = $next($request);
 
         return $this->removeHopByHopHeaders($response);
     }
 
-    private function removeBrotliEncoding(RequestInterface $request): RequestInterface
+    private function removeBrotliEncoding(ServerRequestInterface $request): ServerRequestInterface
     {
         $encoding = $request->getHeaderLine('Accept-Encoding');
 
