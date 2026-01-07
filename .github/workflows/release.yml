@@ -22,7 +22,7 @@ jobs:
           extensions: mbstring, intl
 
       - name: Install dependencies
-        run: composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
+        run: composer install --prefer-dist --no-progress --optimize-autoloader
 
       # === Development Version (original namespaces) ===
       - name: Create dev plugin directory
@@ -62,36 +62,8 @@ jobs:
           curl -o bin/strauss.phar -L https://github.com/BrianHenryIE/strauss/releases/latest/download/strauss.phar
           php bin/strauss.phar --updateCallSites=includes,reverse-proxy.php
 
-      - name: Verify production autoloader works
-        run: |
-          php -r "
-            require_once 'vendor-prefixed/autoload.php';
-            // Register PSR-4 autoloader for ReverseProxy namespace
-            spl_autoload_register(function (\$class) {
-              \$prefix = 'Recca0120\\ReverseProxy\\\\';
-              \$baseDir = __DIR__ . '/includes/';
-              \$len = strlen(\$prefix);
-              if (strncmp(\$prefix, \$class, \$len) !== 0) return;
-              \$file = \$baseDir . str_replace('\\\\', '/', substr(\$class, \$len)) . '.php';
-              if (file_exists(\$file)) require \$file;
-            });
-            // Verify classes can be loaded
-            \$classes = [
-              'Recca0120\\ReverseProxy\\\\ReverseProxy',
-              'Recca0120\\ReverseProxy\\\\Route',
-              'Recca0120\\ReverseProxy\\\\Http\\\\Decorator\\\\SanitizingClient',
-              'Recca0120\\ReverseProxy\\\\Http\\\\CurlClient',
-              'Recca0120\\ReverseProxy\\\\Vendor\\\\Psr\\\\Http\\\\Client\\\\ClientInterface',
-            ];
-            foreach (\$classes as \$class) {
-              if (!class_exists(\$class) && !interface_exists(\$class)) {
-                echo \"FAILED: \$class not found\\n\";
-                exit(1);
-              }
-              echo \"OK: \$class\\n\";
-            }
-            echo \"All classes loaded successfully!\\n\";
-          "
+      - name: Run tests
+        run: DB_ENGINE=sqlite vendor/bin/phpunit
 
       - name: Create production plugin directory
         run: |
