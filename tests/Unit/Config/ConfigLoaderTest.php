@@ -3,6 +3,8 @@
 namespace Recca0120\ReverseProxy\Tests\Unit\Config;
 
 use InvalidArgumentException;
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Config\ConfigLoader;
@@ -15,6 +17,8 @@ use Recca0120\ReverseProxy\Route;
 
 class ConfigLoaderTest extends TestCase
 {
+    use MockeryPHPUnitIntegration;
+
     /** @var string */
     private $fixturesPath;
 
@@ -282,7 +286,7 @@ class ConfigLoaderTest extends TestCase
         $loader->loadFromFile($filePath);
     }
 
-    public function test_uses_cache_when_available(): void
+    public function test_uses_cache_when_mtime_matches(): void
     {
         $filePath = $this->fixturesPath.'/routes.json';
         file_put_contents($filePath, json_encode([
@@ -291,12 +295,13 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
+        $mtime = filemtime($filePath);
         $cachedRoutes = [new Route('/cached/*', 'https://cached.example.com')];
 
-        $cache = $this->createMock(CacheInterface::class);
-        $cache->expects($this->once())
-            ->method('get')
-            ->willReturn($cachedRoutes);
+        $cache = Mockery::mock(CacheInterface::class);
+        $cache->shouldReceive('get')
+            ->once()
+            ->andReturn(['mtime' => $mtime, 'data' => $cachedRoutes]);
 
         $loader = $this->createConfigLoader($cache);
         $routes = $loader->loadFromFile($filePath);
@@ -304,7 +309,7 @@ class ConfigLoaderTest extends TestCase
         $this->assertSame($cachedRoutes, $routes);
     }
 
-    public function test_invalidates_cache_when_file_modified(): void
+    public function test_invalidates_cache_when_mtime_differs(): void
     {
         $filePath = $this->fixturesPath.'/routes.json';
         file_put_contents($filePath, json_encode([
@@ -313,12 +318,35 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $cache = $this->createMock(CacheInterface::class);
-        $cache->expects($this->once())
-            ->method('get')
-            ->willReturn(null);
-        $cache->expects($this->once())
-            ->method('set');
+        $oldMtime = filemtime($filePath) - 100; // Simulate old mtime
+        $cachedRoutes = [new Route('/cached/*', 'https://cached.example.com')];
+
+        $cache = Mockery::mock(CacheInterface::class);
+        $cache->shouldReceive('get')
+            ->once()
+            ->andReturn(['mtime' => $oldMtime, 'data' => $cachedRoutes]);
+        $cache->shouldReceive('set')->once();
+
+        $loader = $this->createConfigLoader($cache);
+        $routes = $loader->loadFromFile($filePath);
+
+        // Should load fresh data, not cached
+        $this->assertCount(1, $routes);
+        $this->assertEquals('api.example.com', $routes[0]->getTargetHost());
+    }
+
+    public function test_stores_cache_when_not_cached(): void
+    {
+        $filePath = $this->fixturesPath.'/routes.json';
+        file_put_contents($filePath, json_encode([
+            'routes' => [
+                ['path' => '/api/*', 'target' => 'https://api.example.com'],
+            ],
+        ]));
+
+        $cache = Mockery::mock(CacheInterface::class);
+        $cache->shouldReceive('get')->once()->andReturnNull();
+        $cache->shouldReceive('set')->once();
 
         $loader = $this->createConfigLoader($cache);
         $routes = $loader->loadFromFile($filePath);

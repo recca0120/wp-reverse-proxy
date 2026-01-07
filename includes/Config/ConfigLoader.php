@@ -18,22 +18,17 @@ class ConfigLoader
     /** @var CacheInterface|null */
     private $cache;
 
-    /** @var int */
-    private $cacheTtl;
-
     /**
      * @param  array<ConfigLoaderInterface>  $loaders
      */
     public function __construct(
         array $loaders,
         MiddlewareFactory $middlewareFactory,
-        ?CacheInterface $cache = null,
-        int $cacheTtl = 3600
+        ?CacheInterface $cache = null
     ) {
         $this->loaders = $loaders;
         $this->middlewareFactory = $middlewareFactory;
         $this->cache = $cache;
-        $this->cacheTtl = $cacheTtl;
     }
 
     /**
@@ -97,7 +92,7 @@ class ConfigLoader
      */
     public function loadFromFile(string $file): array
     {
-        return $this->remember($this->getCacheKey($file), function () use ($file) {
+        return $this->remember($file, function () use ($file) {
             $config = $this->loadConfig($file);
             if (empty($config) || ! isset($config['routes'])) {
                 return [];
@@ -109,27 +104,31 @@ class ConfigLoader
 
     /**
      * Get value from cache or execute callback and store result.
+     * Uses file modification time for cache invalidation.
      *
      * @template T
      *
      * @param  callable(): T  $callback
      * @return T
      */
-    private function remember(string $key, callable $callback)
+    private function remember(string $file, callable $callback)
     {
         if ($this->cache === null) {
             return $callback();
         }
 
+        $key = $this->getCacheKey($file);
+        $mtime = file_exists($file) ? filemtime($file) : 0;
+
         $cached = $this->cache->get($key);
-        if ($cached !== null) {
-            return $cached;
+        if ($cached !== null && isset($cached['mtime']) && $cached['mtime'] === $mtime) {
+            return $cached['data'];
         }
 
-        $value = $callback();
-        $this->cache->set($key, $value, $this->cacheTtl);
+        $data = $callback();
+        $this->cache->set($key, ['mtime' => $mtime, 'data' => $data]);
 
-        return $value;
+        return $data;
     }
 
     /**
@@ -254,8 +253,6 @@ class ConfigLoader
      */
     private function getCacheKey(string $file): string
     {
-        $mtime = file_exists($file) ? filemtime($file) : 0;
-
-        return 'route_config_'.md5($file.'_'.$mtime);
+        return 'route_config_'.md5($file);
     }
 }
