@@ -21,7 +21,6 @@ use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
-use ReflectionClass;
 
 class MiddlewareFactory
 {
@@ -104,7 +103,7 @@ class MiddlewareFactory
     {
         $aliases = [];
         foreach ($classes as $class) {
-            $shortName = (new ReflectionClass($class))->getShortName();
+            $shortName = substr(strrchr($class, '\\'), 1) ?: $class;
             $aliases[$shortName] = $class;
         }
 
