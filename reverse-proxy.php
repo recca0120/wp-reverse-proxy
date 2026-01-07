@@ -79,11 +79,37 @@ function reverse_proxy_send_response($response)
     }
 }
 
+function reverse_proxy_load_config_routes()
+{
+    $configLoader = apply_filters('reverse_proxy_config_loader', null);
+
+    if ($configLoader === null) {
+        $configLoader = new Recca0120\ReverseProxy\Config\ConfigLoader(
+            [
+                new Recca0120\ReverseProxy\Config\Loaders\JsonLoader,
+                new Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader,
+            ],
+            new Recca0120\ReverseProxy\Config\MiddlewareFactory,
+            apply_filters('reverse_proxy_config_cache', null)
+        );
+    }
+
+    $directory = apply_filters('reverse_proxy_config_directory', WPMU_PLUGIN_DIR);
+    $pattern = apply_filters('reverse_proxy_config_pattern', '*.routes.*');
+
+    return $configLoader->loadFromDirectory($directory, $pattern);
+}
+
 function reverse_proxy_handle()
 {
     $proxy = reverse_proxy_create_proxy();
     $request = reverse_proxy_create_request();
-    $routes = apply_filters('reverse_proxy_routes', []);
+
+    // Load routes from config files (JSON/PHP)
+    $configRoutes = reverse_proxy_load_config_routes();
+
+    // Merge with routes from filter hook (for programmatic routes)
+    $routes = apply_filters('reverse_proxy_routes', $configRoutes);
 
     try {
         $response = $proxy->handle($request, $routes);
