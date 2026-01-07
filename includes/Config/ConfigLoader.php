@@ -43,14 +43,7 @@ class ConfigLoader
      */
     public function loadFromDirectory(string $directory, string $pattern = '*.routes.*'): array
     {
-        if (! is_dir($directory)) {
-            return [];
-        }
-
-        $files = $this->globFiles($directory, $pattern);
-        if (empty($files)) {
-            return [];
-        }
+        $files = is_dir($directory) ? $this->globFiles($directory, $pattern) : [];
 
         $routes = [];
         foreach ($files as $file) {
@@ -201,7 +194,7 @@ class ConfigLoader
      */
     private function buildPath(array $config): string
     {
-        if (! isset($config['methods']) || ! is_array($config['methods'])) {
+        if (empty($config['methods'])) {
             return $config['path'];
         }
 

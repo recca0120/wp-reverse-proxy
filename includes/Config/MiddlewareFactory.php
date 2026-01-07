@@ -137,6 +137,13 @@ class MiddlewareFactory
         return ['name' => $name, 'args' => $args];
     }
 
+    /** @var array<string, mixed> */
+    private static $castMap = [
+        'true' => true,
+        'false' => false,
+        'null' => null,
+    ];
+
     /**
      * Cast string value to appropriate type.
      *
@@ -144,20 +151,12 @@ class MiddlewareFactory
      */
     private function castValue(string $value)
     {
+        if (array_key_exists($value, self::$castMap)) {
+            return self::$castMap[$value];
+        }
+
         if (is_numeric($value)) {
             return strpos($value, '.') !== false ? (float) $value : (int) $value;
-        }
-
-        if ($value === 'true') {
-            return true;
-        }
-
-        if ($value === 'false') {
-            return false;
-        }
-
-        if ($value === 'null') {
-            return null;
         }
 
         return $value;
