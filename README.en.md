@@ -172,9 +172,9 @@ return [
             'methods' => ['GET', 'POST'],
             'middlewares' => [
                 'ProxyHeaders',
-                ['SetHost', 'api.example.com'],
-                ['Timeout', 30],
-                ['name' => 'RateLimiting', 'options' => ['limit' => 100, 'window' => 60]],
+                'SetHost' => 'api.example.com',      // Key-Value format
+                'Timeout' => 30,
+                'RateLimiting' => ['limit' => 100, 'window' => 60],
             ],
         ],
         [
@@ -192,22 +192,29 @@ Multiple formats supported, can be mixed:
 | Format | Description | Example |
 |--------|-------------|---------|
 | String | Middleware without arguments | `"ProxyHeaders"` |
-| Colon format | `name:param` (Laravel-style) | `"SetHost:api.example.com"` |
+| Colon format | `name:param` | `"SetHost:api.example.com"` |
 | Colon multi-params | `name:param1,param2` | `"RateLimiting:100,60"` |
 | Pipe string | Multiple middlewares with `\|` | `"ProxyHeaders\|Timeout:30"` |
 | Array | `[name, args...]` | `["SetHost", "api.example.com"]` |
+| Key-Value | `name => param` | `"SetHost" => "api.example.com"` |
 | Object | Full format | `{ "name": "RateLimiting", "options": {...} }` |
 
 **Equivalent examples:**
 
 ```php
-// The following three are equivalent
+// The following are all equivalent
 'middlewares' => 'ProxyHeaders|SetHost:api.example.com|Timeout:30'
 
 'middlewares' => [
     'ProxyHeaders',
     'SetHost:api.example.com',
     'Timeout:30',
+]
+
+'middlewares' => [
+    'ProxyHeaders',
+    'SetHost' => 'api.example.com',
+    'Timeout' => 30,
 ]
 
 'middlewares' => [

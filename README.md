@@ -172,9 +172,9 @@ return [
             'methods' => ['GET', 'POST'],
             'middlewares' => [
                 'ProxyHeaders',
-                ['SetHost', 'api.example.com'],
-                ['Timeout', 30],
-                ['name' => 'RateLimiting', 'options' => ['limit' => 100, 'window' => 60]],
+                'SetHost' => 'api.example.com',      // Key-Value 格式
+                'Timeout' => 30,
+                'RateLimiting' => ['limit' => 100, 'window' => 60],
             ],
         ],
         [
@@ -192,22 +192,30 @@ return [
 | 格式 | 說明 | 範例 |
 |------|------|------|
 | 字串 | 無參數中介層 | `"ProxyHeaders"` |
-| 冒號格式 | `名稱:參數` (類似 Laravel) | `"SetHost:api.example.com"` |
+| 冒號格式 | `名稱:參數` | `"SetHost:api.example.com"` |
 | 冒號多參數 | `名稱:參數1,參數2` | `"RateLimiting:100,60"` |
 | Pipe 字串 | 多個中介層用 `\|` 分隔 | `"ProxyHeaders\|Timeout:30"` |
 | 陣列 | `[名稱, 參數...]` | `["SetHost", "api.example.com"]` |
+| Key-Value | `名稱 => 參數` | `"SetHost" => "api.example.com"` |
 | 物件 | 完整格式 | `{ "name": "RateLimiting", "options": {...} }` |
 
 **範例對照：**
 
 ```php
-// 以下三種寫法等效
+// 以下四種寫法等效
 'middlewares' => 'ProxyHeaders|SetHost:api.example.com|Timeout:30'
 
 'middlewares' => [
     'ProxyHeaders',
     'SetHost:api.example.com',
     'Timeout:30',
+]
+
+// Key-Value 格式
+'middlewares' => [
+    'ProxyHeaders',
+    'SetHost' => 'api.example.com',
+    'Timeout' => 30,
 ]
 
 'middlewares' => [
