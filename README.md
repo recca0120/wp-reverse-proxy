@@ -64,13 +64,13 @@ composer require recca0120/wp-reverse-proxy
 
 ### 方式一：配置檔（推薦）
 
-在 `wp-content/reverse-proxy-routes/` 目錄建立 JSON 或 PHP 配置檔：
+在 `wp-content/reverse-proxy-routes/` 目錄建立 JSON、YAML 或 PHP 配置檔：
 
 ```
 wp-content/
 ├── reverse-proxy-routes/    # 路由配置目錄
 │   ├── api.json
-│   ├── legacy.json
+│   ├── legacy.yaml
 │   └── internal.php
 ├── plugins/
 └── uploads/
@@ -88,6 +88,13 @@ wp-content/
 }
 ```
 
+**YAML 格式** (`legacy.yaml`)：
+```yaml
+routes:
+  - path: /legacy/*
+    target: https://legacy.example.com
+```
+
 **PHP 格式** (`internal.php`)：
 ```php
 <?php
@@ -101,7 +108,7 @@ return [
 ];
 ```
 
-外掛會自動載入目錄下所有 `.json` 和 `.php` 檔案。
+外掛會自動載入目錄下所有 `.json`、`.yaml`、`.yml` 和 `.php` 檔案。
 
 #### 完整配置範例
 
@@ -126,6 +133,32 @@ return [
     }
   ]
 }
+```
+
+**YAML 格式（支援 Anchors & Aliases）：**
+```yaml
+# 使用 anchors 定義共用設定
+defaults: &defaults
+  middlewares:
+    - ProxyHeaders
+    - SetHost: api.example.com
+
+routes:
+  - path: /api/v2/*
+    target: https://api-v2.example.com
+    methods: [GET, POST]
+    middlewares:
+      - ProxyHeaders
+      - SetHost: api.example.com
+      - Timeout: 30
+      - name: RateLimiting
+        options:
+          limit: 100
+          window: 60
+
+  - path: /legacy/*
+    target: https://legacy.example.com
+    <<: *defaults  # 合併共用設定
 ```
 
 **PHP 格式：**
@@ -238,7 +271,7 @@ add_filter('reverse_proxy_config_directory', function () {
     return WP_CONTENT_DIR . '/my-proxy-routes';
 });
 
-// 變更檔案匹配模式（預設 *.{json,php}）
+// 變更檔案匹配模式（預設 *.{json,yaml,yml,php}）
 add_filter('reverse_proxy_config_pattern', function () {
     return '*.routes.json';
 });
@@ -999,7 +1032,7 @@ add_filter('reverse_proxy_routes', function () {
 | `reverse_proxy_config_loader` | `$loader` | 覆寫配置載入器 |
 | `reverse_proxy_middleware_factory` | `$factory` | 自訂中介層工廠（可註冊自訂別名） |
 | `reverse_proxy_config_directory` | `$directory` | 配置檔目錄（預設 `WP_CONTENT_DIR/reverse-proxy-routes`） |
-| `reverse_proxy_config_pattern` | `$pattern` | 配置檔匹配模式（預設 `*.{json,php}`） |
+| `reverse_proxy_config_pattern` | `$pattern` | 配置檔匹配模式（預設 `*.{json,yaml,yml,php}`） |
 | `reverse_proxy_config_cache` | `$cache` | PSR-16 快取實例（用於快取配置） |
 | `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_psr17_factory` | `$factory` | 覆寫 PSR-17 HTTP 工廠 |

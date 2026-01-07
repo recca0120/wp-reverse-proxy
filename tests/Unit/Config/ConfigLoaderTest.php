@@ -8,6 +8,7 @@ use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Config\ConfigLoader;
 use Recca0120\ReverseProxy\Config\Loaders\JsonLoader;
 use Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader;
+use Recca0120\ReverseProxy\Config\Loaders\YamlLoader;
 use Recca0120\ReverseProxy\Config\MiddlewareFactory;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Route;
@@ -38,7 +39,7 @@ class ConfigLoaderTest extends TestCase
     private function createConfigLoader(?CacheInterface $cache = null): ConfigLoader
     {
         return new ConfigLoader(
-            [new JsonLoader, new PhpArrayLoader],
+            [new JsonLoader, new YamlLoader, new PhpArrayLoader],
             new MiddlewareFactory,
             $cache
         );
@@ -61,6 +62,47 @@ class ConfigLoaderTest extends TestCase
 
         $this->assertCount(1, $routes);
         $this->assertInstanceOf(Route::class, $routes[0]);
+    }
+
+    public function test_load_routes_from_yaml_file(): void
+    {
+        $filePath = $this->fixturesPath.'/routes.yaml';
+        file_put_contents($filePath, <<<'YAML'
+routes:
+  - path: /api/*
+    target: https://api.example.com
+YAML);
+
+        $loader = $this->createConfigLoader();
+        $routes = $loader->loadFromFile($filePath);
+
+        $this->assertCount(1, $routes);
+        $this->assertInstanceOf(Route::class, $routes[0]);
+    }
+
+    public function test_load_routes_from_yaml_file_with_anchors(): void
+    {
+        $filePath = $this->fixturesPath.'/routes.yaml';
+        file_put_contents($filePath, <<<'YAML'
+defaults: &defaults
+  middlewares:
+    - ProxyHeaders
+
+routes:
+  - path: /api/*
+    target: https://api.example.com
+    <<: *defaults
+  - path: /web/*
+    target: https://web.example.com
+    <<: *defaults
+YAML);
+
+        $loader = $this->createConfigLoader();
+        $routes = $loader->loadFromFile($filePath);
+
+        $this->assertCount(2, $routes);
+        $this->assertCount(1, $routes[0]->getMiddlewares());
+        $this->assertCount(1, $routes[1]->getMiddlewares());
     }
 
     public function test_load_routes_from_php_file(): void

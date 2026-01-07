@@ -92,6 +92,7 @@ function reverse_proxy_load_config_routes()
         $configLoader = new Recca0120\ReverseProxy\Config\ConfigLoader(
             [
                 new Recca0120\ReverseProxy\Config\Loaders\JsonLoader,
+                new Recca0120\ReverseProxy\Config\Loaders\YamlLoader,
                 new Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader,
             ],
             $middlewareFactory,
@@ -100,7 +101,7 @@ function reverse_proxy_load_config_routes()
     }
 
     $directory = apply_filters('reverse_proxy_config_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
-    $pattern = apply_filters('reverse_proxy_config_pattern', '*.{json,php}');
+    $pattern = apply_filters('reverse_proxy_config_pattern', '*.{json,yaml,yml,php}');
 
     return $configLoader->loadFromDirectory($directory, $pattern);
 }
