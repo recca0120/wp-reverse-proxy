@@ -1,12 +1,12 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Http;
+namespace Recca0120\ReverseProxy\Tests\Unit\Http;
 
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
-use ReverseProxy\Http\FilteringClient;
+use Recca0120\ReverseProxy\Http\FilteringClient;
 
 class FilteringClientTest extends TestCase
 {

@@ -53,12 +53,12 @@ composer require recca0120/wp-reverse-proxy
 
 | 版本 | 來源 | Namespace | 適用情境 |
 |------|------|-----------|----------|
-| **正式版** | GitHub Releases ZIP | `ReverseProxy\Vendor\*` | 一般使用 |
+| **正式版** | GitHub Releases ZIP | `Recca0120\ReverseProxy\Vendor\*` | 一般使用 |
 | **開發版** | Git clone + composer | 原始 namespace（如 `Psr\*`） | 開發/貢獻 |
 
 **為什麼需要 Strauss？**
 
-如果兩個 WordPress 外掛都使用 Composer 且依賴同一個套件的不同版本，會發生衝突。Strauss 將第三方套件的 namespace 加上前綴（如 `Psr\Http\Message` → `ReverseProxy\Vendor\Psr\Http\Message`），確保每個外掛使用獨立的依賴。
+如果兩個 WordPress 外掛都使用 Composer 且依賴同一個套件的不同版本，會發生衝突。Strauss 將第三方套件的 namespace 加上前綴（如 `Psr\Http\Message` → `Recca0120\ReverseProxy\Vendor\Psr\Http\Message`），確保每個外掛使用獨立的依賴。
 
 > **注意**：如果你要撰寫自訂中介層並使用 PSR interface，請參考[自訂中介層](#自訂中介層)章節的 namespace 說明。
 
@@ -75,7 +75,7 @@ composer require recca0120/wp-reverse-proxy
  * Description: Custom reverse proxy routes configuration
  */
 
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -103,7 +103,7 @@ add_filter('reverse_proxy_routes', function () {
 路由依序匹配（第一個符合的優先）：
 
 ```php
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -118,10 +118,10 @@ add_filter('reverse_proxy_routes', function () {
 ### 搭配中介層
 
 ```php
-use ReverseProxy\Route;
-use ReverseProxy\Middleware\ProxyHeaders;
-use ReverseProxy\Middleware\SetHost;
-use ReverseProxy\Middleware\RewritePath;
+use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
+use Recca0120\ReverseProxy\Middleware\SetHost;
+use Recca0120\ReverseProxy\Middleware\RewritePath;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -167,7 +167,7 @@ new Route('GET|POST|PUT|DELETE /api/*', 'https://backend.example.com');
 將不同 HTTP 方法導向不同後端：
 
 ```php
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -186,7 +186,7 @@ add_filter('reverse_proxy_routes', function () {
 為轉發請求新增標準代理標頭：
 
 ```php
-use ReverseProxy\Middleware\ProxyHeaders;
+use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 
 new Route('/api/*', 'https://backend.example.com', [
     new ProxyHeaders(),
@@ -228,7 +228,7 @@ new ProxyHeaders([
 設定自訂 Host 標頭：
 
 ```php
-use ReverseProxy\Middleware\SetHost;
+use Recca0120\ReverseProxy\Middleware\SetHost;
 
 new Route('/api/*', 'https://127.0.0.1:8080', [
     new SetHost('api.example.com'),
@@ -240,7 +240,7 @@ new Route('/api/*', 'https://127.0.0.1:8080', [
 重寫請求路徑，使用 Route 的萬用字元捕獲值：
 
 ```php
-use ReverseProxy\Middleware\RewritePath;
+use Recca0120\ReverseProxy\Middleware\RewritePath;
 
 // /api/v1/users → /v1/users
 new Route('/api/v1/*', 'https://backend.example.com', [
@@ -265,7 +265,7 @@ new Route('/api/*/posts/*', 'https://backend.example.com', [
 使用正規表示式重寫回應內容：
 
 ```php
-use ReverseProxy\Middleware\RewriteBody;
+use Recca0120\ReverseProxy\Middleware\RewriteBody;
 
 // 將後端 URL 替換為前端 URL
 new Route('/api/*', 'https://backend.example.com', [
@@ -295,7 +295,7 @@ new Route('/api/*', 'https://backend.example.com', [
 限制允許的 HTTP 方法，其他方法回傳 405 Method Not Allowed：
 
 ```php
-use ReverseProxy\Middleware\AllowMethods;
+use Recca0120\ReverseProxy\Middleware\AllowMethods;
 
 new Route('/api/*', 'https://backend.example.com', [
     new AllowMethods(['GET', 'POST']),
@@ -319,7 +319,7 @@ new Route('/api/*', 'https://backend.example.com', [
 處理跨域資源共享（CORS）：
 
 ```php
-use ReverseProxy\Middleware\Cors;
+use Recca0120\ReverseProxy\Middleware\Cors;
 
 // 基本用法：允許特定來源
 new Route('/api/*', 'https://backend.example.com', [
@@ -354,7 +354,7 @@ new Route('/api/*', 'https://backend.example.com', [
 產生或傳遞請求追蹤 ID：
 
 ```php
-use ReverseProxy\Middleware\RequestId;
+use Recca0120\ReverseProxy\Middleware\RequestId;
 
 // 使用預設標頭名稱 X-Request-ID
 new Route('/api/*', 'https://backend.example.com', [
@@ -377,7 +377,7 @@ new Route('/api/*', 'https://backend.example.com', [
 IP 白名單/黑名單過濾：
 
 ```php
-use ReverseProxy\Middleware\IpFilter;
+use Recca0120\ReverseProxy\Middleware\IpFilter;
 
 // 白名單模式：只允許指定 IP
 new Route('/api/*', 'https://backend.example.com', [
@@ -405,7 +405,7 @@ new Route('/api/*', 'https://backend.example.com', [
 請求限流：
 
 ```php
-use ReverseProxy\Middleware\RateLimiting;
+use Recca0120\ReverseProxy\Middleware\RateLimiting;
 
 // 每分鐘最多 60 個請求
 new Route('/api/*', 'https://backend.example.com', [
@@ -435,7 +435,7 @@ new Route('/api/*', 'https://backend.example.com', [
 回應快取：
 
 ```php
-use ReverseProxy\Middleware\Caching;
+use Recca0120\ReverseProxy\Middleware\Caching;
 
 // 快取 5 分鐘
 new Route('/api/*', 'https://backend.example.com', [
@@ -460,7 +460,7 @@ new Route('/api/*', 'https://backend.example.com', [
 失敗自動重試：
 
 ```php
-use ReverseProxy\Middleware\Retry;
+use Recca0120\ReverseProxy\Middleware\Retry;
 
 // 最多重試 3 次
 new Route('/api/*', 'https://backend.example.com', [
@@ -487,7 +487,7 @@ new Route('/api/*', 'https://backend.example.com', [
 熔斷器模式：
 
 ```php
-use ReverseProxy\Middleware\CircuitBreaker;
+use Recca0120\ReverseProxy\Middleware\CircuitBreaker;
 
 new Route('/api/*', 'https://backend.example.com', [
     new CircuitBreaker(
@@ -509,7 +509,7 @@ new Route('/api/*', 'https://backend.example.com', [
 請求超時控制：
 
 ```php
-use ReverseProxy\Middleware\Timeout;
+use Recca0120\ReverseProxy\Middleware\Timeout;
 
 // 30 秒超時
 new Route('/api/*', 'https://backend.example.com', [
@@ -532,7 +532,7 @@ new Route('/api/*', 'https://backend.example.com', [
 當後端回傳指定狀態碼時，回退給 WordPress 處理：
 
 ```php
-use ReverseProxy\Middleware\Fallback;
+use Recca0120\ReverseProxy\Middleware\Fallback;
 
 // 404 時回退給 WordPress（預設）
 new Route('/api/*', 'https://backend.example.com', [
@@ -555,7 +555,7 @@ new Route('/api/*', 'https://backend.example.com', [
 捕獲 HTTP 客戶端異常，回傳 502 Bad Gateway：
 
 ```php
-use ReverseProxy\Middleware\ErrorHandling;
+use Recca0120\ReverseProxy\Middleware\ErrorHandling;
 
 new Route('/api/*', 'https://backend.example.com', [
     new ErrorHandling(),
@@ -572,8 +572,8 @@ new Route('/api/*', 'https://backend.example.com', [
 記錄代理請求與回應：
 
 ```php
-use ReverseProxy\Middleware\Logging;
-use ReverseProxy\WordPress\Logger;
+use Recca0120\ReverseProxy\Middleware\Logging;
+use Recca0120\ReverseProxy\WordPress\Logger;
 
 new Route('/api/*', 'https://backend.example.com', [
     new Logging(new Logger()),
@@ -615,15 +615,15 @@ $route = (new Route('/api/*', 'https://backend.example.com'))
 >
 > | 版本 | Namespace |
 > |------|-----------|
-> | 正式版 | `ReverseProxy\Vendor\Psr\Http\Message\*` |
+> | 正式版 | `Recca0120\ReverseProxy\Vendor\Psr\Http\Message\*` |
 > | 開發版 | `Psr\Http\Message\*` |
 >
-> 以下範例以**正式版**為主。如果是開發版，請將 `ReverseProxy\Vendor\Psr\*` 改為 `Psr\*`。
+> 以下範例以**正式版**為主。如果是開發版，請將 `Recca0120\ReverseProxy\Vendor\Psr\*` 改為 `Psr\*`。
 
 ```php
-use ReverseProxy\Contracts\MiddlewareInterface;
-use ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
-use ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
+use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
+use Recca0120\ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
 
 class AddAuthHeader implements MiddlewareInterface
 {
@@ -716,10 +716,10 @@ Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Resp
 中介層可透過 `$priority` 屬性控制執行順序（數字越小越先執行，即越外層）：
 
 ```php
-use ReverseProxy\Contracts\MiddlewareInterface;
-// 正式版使用 ReverseProxy\Vendor\Psr\*，開發版使用 Psr\*
-use ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
-use ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
+use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+// 正式版使用 Recca0120\ReverseProxy\Vendor\Psr\*，開發版使用 Psr\*
+use Recca0120\ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
+use Recca0120\ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
 
 class AuthMiddleware implements MiddlewareInterface
 {
@@ -755,9 +755,9 @@ location ^~ /api/v1 {
 WordPress 對應寫法：
 
 ```php
-use ReverseProxy\Route;
-use ReverseProxy\Middleware\ProxyHeaders;
-use ReverseProxy\Middleware\SetHost;
+use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
+use Recca0120\ReverseProxy\Middleware\SetHost;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -836,7 +836,7 @@ add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
 // 只保留錯誤處理
 add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
     return array_filter($middlewares, function ($m) {
-        return $m instanceof \ReverseProxy\Middleware\ErrorHandling;
+        return $m instanceof \Recca0120\ReverseProxy\Middleware\ErrorHandling;
     });
 });
 
@@ -874,7 +874,7 @@ add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
 ```php
 // 自訂 HTTP 客戶端選項
 add_filter('reverse_proxy_http_client', function () {
-    return new \ReverseProxy\Http\CurlClient([
+    return new \Recca0120\ReverseProxy\Http\CurlClient([
         'timeout' => 60,
         'connect_timeout' => 10,
         'verify' => false,
@@ -945,7 +945,7 @@ Request → plugins_loaded → 符合路由？
 <?php
 // wp-content/mu-plugins/reverse-proxy-early.php
 
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 require_once WP_CONTENT_DIR.'/plugins/reverse-proxy/reverse-proxy.php';
 

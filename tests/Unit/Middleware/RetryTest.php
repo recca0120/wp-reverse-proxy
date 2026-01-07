@@ -1,13 +1,13 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 
 use Http\Client\Exception\NetworkException;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use ReverseProxy\Middleware\Retry;
+use Recca0120\ReverseProxy\Middleware\Retry;
 
 class RetryTest extends TestCase
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\WordPress;
+namespace Recca0120\ReverseProxy\WordPress;
 
 use Psr\Log\AbstractLogger;
 

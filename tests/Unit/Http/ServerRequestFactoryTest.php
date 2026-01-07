@@ -1,10 +1,10 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Http;
+namespace Recca0120\ReverseProxy\Tests\Unit\Http;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
-use ReverseProxy\Http\ServerRequestFactory;
+use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 
 class ServerRequestFactoryTest extends TestCase
 {

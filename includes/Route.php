@@ -1,9 +1,9 @@
 <?php
 
-namespace ReverseProxy;
+namespace Recca0120\ReverseProxy;
 
 use Psr\Http\Message\ServerRequestInterface;
-use ReverseProxy\Contracts\RouteAwareInterface;
+use Recca0120\ReverseProxy\Contracts\RouteAwareInterface;
 
 class Route
 {

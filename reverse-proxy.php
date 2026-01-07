@@ -26,7 +26,7 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php';
     // Register PSR-4 autoloader for ReverseProxy namespace (not included in vendor-prefixed)
     spl_autoload_register(function ($class) {
-        $prefix = 'ReverseProxy\\';
+        $prefix = 'Recca0120\ReverseProxy\\';
         $baseDir = REVERSE_PROXY_PLUGIN_DIR.'includes/';
         $len = strlen($prefix);
         if (strncmp($prefix, $class, $len) !== 0) {
@@ -38,21 +38,21 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
         }
     });
 } elseif (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
-    // Development: load original vendor dependencies (includes ReverseProxy\ namespace)
+    // Development: load original vendor dependencies (includes Recca0120\ReverseProxy\ namespace)
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
 function reverse_proxy_create_proxy()
 {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
-    $httpClient = new ReverseProxy\Http\FilteringClient(
-        apply_filters('reverse_proxy_http_client', new ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]))
+    $httpClient = new Recca0120\ReverseProxy\Http\FilteringClient(
+        apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]))
     );
 
-    $proxy = new ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
+    $proxy = new Recca0120\ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
     $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
-        new ReverseProxy\Middleware\ErrorHandling,
-        new ReverseProxy\Middleware\Logging(new ReverseProxy\WordPress\Logger),
+        new Recca0120\ReverseProxy\Middleware\ErrorHandling,
+        new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger),
     ]));
 
     return $proxy;
@@ -67,7 +67,7 @@ function reverse_proxy_create_request()
 
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
 
-    return (new ReverseProxy\Http\ServerRequestFactory($psr17Factory))->createFromGlobals();
+    return (new Recca0120\ReverseProxy\Http\ServerRequestFactory($psr17Factory))->createFromGlobals();
 }
 
 function reverse_proxy_emit_response($response)
@@ -105,7 +105,7 @@ function reverse_proxy_handle()
         if ($response !== null) {
             reverse_proxy_send_response($response);
         }
-    } catch (ReverseProxy\Exceptions\FallbackException $e) {
+    } catch (Recca0120\ReverseProxy\Exceptions\FallbackException $e) {
         // Let WordPress handle the request
         return;
     }

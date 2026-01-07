@@ -1,13 +1,13 @@
 <?php
 
-namespace ReverseProxy\Http;
+namespace Recca0120\ReverseProxy\Http;
 
 use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use ReverseProxy\Exceptions\NetworkException;
-use ReverseProxy\Http\Concerns\ParsesResponse;
+use Recca0120\ReverseProxy\Exceptions\NetworkException;
+use Recca0120\ReverseProxy\Http\Concerns\ParsesResponse;
 
 class CurlClient implements ClientInterface
 {

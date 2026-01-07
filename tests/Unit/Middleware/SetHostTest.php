@@ -1,11 +1,11 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use ReverseProxy\Middleware\SetHost;
+use Recca0120\ReverseProxy\Middleware\SetHost;
 
 class SetHostTest extends TestCase
 {

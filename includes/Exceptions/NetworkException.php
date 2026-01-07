@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Exceptions;
+namespace Recca0120\ReverseProxy\Exceptions;
 
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;

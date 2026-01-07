@@ -1,12 +1,12 @@
 <?php
 
-namespace ReverseProxy\Middleware;
+namespace Recca0120\ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 
 class ErrorHandling implements MiddlewareInterface
 {

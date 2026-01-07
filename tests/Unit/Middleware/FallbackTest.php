@@ -1,12 +1,12 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use ReverseProxy\Exceptions\FallbackException;
-use ReverseProxy\Middleware\Fallback;
+use Recca0120\ReverseProxy\Exceptions\FallbackException;
+use Recca0120\ReverseProxy\Middleware\Fallback;
 
 class FallbackTest extends TestCase
 {

@@ -53,12 +53,12 @@ This plugin uses [Strauss](https://github.com/BrianHenryIE/strauss) to prefix th
 
 | Version | Source | Namespace | Use Case |
 |---------|--------|-----------|----------|
-| **Production** | GitHub Releases ZIP | `ReverseProxy\Vendor\*` | General use |
+| **Production** | GitHub Releases ZIP | `Recca0120\ReverseProxy\Vendor\*` | General use |
 | **Development** | Git clone + composer | Original namespace (e.g., `Psr\*`) | Development/Contributing |
 
 **Why Strauss?**
 
-When two WordPress plugins use Composer with the same dependency but different versions, conflicts occur. Strauss prefixes third-party package namespaces (e.g., `Psr\Http\Message` → `ReverseProxy\Vendor\Psr\Http\Message`), ensuring each plugin uses isolated dependencies.
+When two WordPress plugins use Composer with the same dependency but different versions, conflicts occur. Strauss prefixes third-party package namespaces (e.g., `Psr\Http\Message` → `Recca0120\ReverseProxy\Vendor\Psr\Http\Message`), ensuring each plugin uses isolated dependencies.
 
 > **Note**: If you need to write custom middleware using PSR interfaces, see the namespace notes in [Custom Middleware](#custom-middleware) section.
 
@@ -75,7 +75,7 @@ Create a configuration file at `wp-content/mu-plugins/reverse-proxy-config.php`:
  * Description: Custom reverse proxy routes configuration
  */
 
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -103,7 +103,7 @@ add_filter('reverse_proxy_routes', function () {
 Routes are matched in order (first match wins):
 
 ```php
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -118,10 +118,10 @@ add_filter('reverse_proxy_routes', function () {
 ### With Middlewares
 
 ```php
-use ReverseProxy\Route;
-use ReverseProxy\Middleware\ProxyHeaders;
-use ReverseProxy\Middleware\SetHost;
-use ReverseProxy\Middleware\RewritePath;
+use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
+use Recca0120\ReverseProxy\Middleware\SetHost;
+use Recca0120\ReverseProxy\Middleware\RewritePath;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -167,7 +167,7 @@ new Route('GET|POST|PUT|DELETE /api/*', 'https://backend.example.com');
 Route different HTTP methods to different backends:
 
 ```php
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -186,7 +186,7 @@ add_filter('reverse_proxy_routes', function () {
 Adds standard proxy headers to forwarded requests:
 
 ```php
-use ReverseProxy\Middleware\ProxyHeaders;
+use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 
 new Route('/api/*', 'https://backend.example.com', [
     new ProxyHeaders(),
@@ -228,7 +228,7 @@ new ProxyHeaders([
 Sets a custom Host header:
 
 ```php
-use ReverseProxy\Middleware\SetHost;
+use Recca0120\ReverseProxy\Middleware\SetHost;
 
 new Route('/api/*', 'https://127.0.0.1:8080', [
     new SetHost('api.example.com'),
@@ -240,7 +240,7 @@ new Route('/api/*', 'https://127.0.0.1:8080', [
 Rewrites the request path using Route's wildcard captures:
 
 ```php
-use ReverseProxy\Middleware\RewritePath;
+use Recca0120\ReverseProxy\Middleware\RewritePath;
 
 // /api/v1/users → /v1/users
 new Route('/api/v1/*', 'https://backend.example.com', [
@@ -265,7 +265,7 @@ new Route('/api/*/posts/*', 'https://backend.example.com', [
 Rewrites response body using regular expressions:
 
 ```php
-use ReverseProxy\Middleware\RewriteBody;
+use Recca0120\ReverseProxy\Middleware\RewriteBody;
 
 // Replace backend URL with frontend URL
 new Route('/api/*', 'https://backend.example.com', [
@@ -295,7 +295,7 @@ Features:
 Restricts allowed HTTP methods and returns 405 Method Not Allowed for others:
 
 ```php
-use ReverseProxy\Middleware\AllowMethods;
+use Recca0120\ReverseProxy\Middleware\AllowMethods;
 
 new Route('/api/*', 'https://backend.example.com', [
     new AllowMethods(['GET', 'POST']),
@@ -319,7 +319,7 @@ Features:
 Handles Cross-Origin Resource Sharing (CORS):
 
 ```php
-use ReverseProxy\Middleware\Cors;
+use Recca0120\ReverseProxy\Middleware\Cors;
 
 // Basic usage: allow specific origins
 new Route('/api/*', 'https://backend.example.com', [
@@ -354,7 +354,7 @@ Features:
 Generates or propagates request tracking ID:
 
 ```php
-use ReverseProxy\Middleware\RequestId;
+use Recca0120\ReverseProxy\Middleware\RequestId;
 
 // Use default header name X-Request-ID
 new Route('/api/*', 'https://backend.example.com', [
@@ -377,7 +377,7 @@ Features:
 IP whitelist/blacklist filtering:
 
 ```php
-use ReverseProxy\Middleware\IpFilter;
+use Recca0120\ReverseProxy\Middleware\IpFilter;
 
 // Whitelist mode: only allow specified IPs
 new Route('/api/*', 'https://backend.example.com', [
@@ -405,7 +405,7 @@ Features:
 Request rate limiting:
 
 ```php
-use ReverseProxy\Middleware\RateLimiting;
+use Recca0120\ReverseProxy\Middleware\RateLimiting;
 
 // 60 requests per minute
 new Route('/api/*', 'https://backend.example.com', [
@@ -435,7 +435,7 @@ Features:
 Response caching:
 
 ```php
-use ReverseProxy\Middleware\Caching;
+use Recca0120\ReverseProxy\Middleware\Caching;
 
 // Cache for 5 minutes
 new Route('/api/*', 'https://backend.example.com', [
@@ -460,7 +460,7 @@ Features:
 Automatic retry on failure:
 
 ```php
-use ReverseProxy\Middleware\Retry;
+use Recca0120\ReverseProxy\Middleware\Retry;
 
 // Retry up to 3 times
 new Route('/api/*', 'https://backend.example.com', [
@@ -487,7 +487,7 @@ Features:
 Circuit breaker pattern:
 
 ```php
-use ReverseProxy\Middleware\CircuitBreaker;
+use Recca0120\ReverseProxy\Middleware\CircuitBreaker;
 
 new Route('/api/*', 'https://backend.example.com', [
     new CircuitBreaker(
@@ -509,7 +509,7 @@ Features:
 Request timeout control:
 
 ```php
-use ReverseProxy\Middleware\Timeout;
+use Recca0120\ReverseProxy\Middleware\Timeout;
 
 // 30 second timeout
 new Route('/api/*', 'https://backend.example.com', [
@@ -532,7 +532,7 @@ Features:
 Fall back to WordPress when backend returns specified status codes:
 
 ```php
-use ReverseProxy\Middleware\Fallback;
+use Recca0120\ReverseProxy\Middleware\Fallback;
 
 // Fallback on 404 (default)
 new Route('/api/*', 'https://backend.example.com', [
@@ -555,7 +555,7 @@ Features:
 Catches HTTP client exceptions and returns 502 Bad Gateway:
 
 ```php
-use ReverseProxy\Middleware\ErrorHandling;
+use Recca0120\ReverseProxy\Middleware\ErrorHandling;
 
 new Route('/api/*', 'https://backend.example.com', [
     new ErrorHandling(),
@@ -572,8 +572,8 @@ Features:
 Logs proxy requests and responses:
 
 ```php
-use ReverseProxy\Middleware\Logging;
-use ReverseProxy\WordPress\Logger;
+use Recca0120\ReverseProxy\Middleware\Logging;
+use Recca0120\ReverseProxy\WordPress\Logger;
 
 new Route('/api/*', 'https://backend.example.com', [
     new Logging(new Logger()),
@@ -615,15 +615,15 @@ For reusable middleware classes:
 >
 > | Version | Namespace |
 > |---------|-----------|
-> | Production | `ReverseProxy\Vendor\Psr\Http\Message\*` |
+> | Production | `Recca0120\ReverseProxy\Vendor\Psr\Http\Message\*` |
 > | Development | `Psr\Http\Message\*` |
 >
-> Examples below use **production** namespaces. For development, replace `ReverseProxy\Vendor\Psr\*` with `Psr\*`.
+> Examples below use **production** namespaces. For development, replace `Recca0120\ReverseProxy\Vendor\Psr\*` with `Psr\*`.
 
 ```php
-use ReverseProxy\Contracts\MiddlewareInterface;
-use ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
-use ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
+use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
+use Recca0120\ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
 
 class AddAuthHeader implements MiddlewareInterface
 {
@@ -716,10 +716,10 @@ Request → [MW1 → [MW2 → [MW3 → Proxy] ← MW3] ← MW2] ← MW1 → Resp
 Middlewares can define a `$priority` property to control execution order (lower numbers execute first, i.e., outermost layer):
 
 ```php
-use ReverseProxy\Contracts\MiddlewareInterface;
-// Production uses ReverseProxy\Vendor\Psr\*, Development uses Psr\*
-use ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
-use ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
+use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+// Production uses Recca0120\ReverseProxy\Vendor\Psr\*, Development uses Psr\*
+use Recca0120\ReverseProxy\Vendor\Psr\Http\Message\ServerRequestInterface;
+use Recca0120\ReverseProxy\Vendor\Psr\Http\Message\ResponseInterface;
 
 class AuthMiddleware implements MiddlewareInterface
 {
@@ -755,9 +755,9 @@ location ^~ /api/v1 {
 WordPress equivalent:
 
 ```php
-use ReverseProxy\Route;
-use ReverseProxy\Middleware\ProxyHeaders;
-use ReverseProxy\Middleware\SetHost;
+use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
+use Recca0120\ReverseProxy\Middleware\SetHost;
 
 add_filter('reverse_proxy_routes', function () {
     return [
@@ -836,7 +836,7 @@ add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
 // Keep only error handling
 add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
     return array_filter($middlewares, function ($m) {
-        return $m instanceof \ReverseProxy\Middleware\ErrorHandling;
+        return $m instanceof \Recca0120\ReverseProxy\Middleware\ErrorHandling;
     });
 });
 
@@ -874,7 +874,7 @@ The plugin uses the following default options for reverse proxying:
 ```php
 // Customize HTTP client options
 add_filter('reverse_proxy_http_client', function () {
-    return new \ReverseProxy\Http\CurlClient([
+    return new \Recca0120\ReverseProxy\Http\CurlClient([
         'timeout' => 60,
         'connect_timeout' => 10,
         'verify' => false,
@@ -945,7 +945,7 @@ If you don't need other WordPress plugin features, execute directly in mu-plugin
 <?php
 // wp-content/mu-plugins/reverse-proxy-early.php
 
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 require_once WP_CONTENT_DIR.'/plugins/reverse-proxy/reverse-proxy.php';
 

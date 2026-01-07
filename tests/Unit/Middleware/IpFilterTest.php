@@ -1,11 +1,11 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use ReverseProxy\Middleware\IpFilter;
+use Recca0120\ReverseProxy\Middleware\IpFilter;
 
 class IpFilterTest extends TestCase
 {

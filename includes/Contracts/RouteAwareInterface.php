@@ -1,8 +1,8 @@
 <?php
 
-namespace ReverseProxy\Contracts;
+namespace Recca0120\ReverseProxy\Contracts;
 
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Route;
 
 interface RouteAwareInterface
 {

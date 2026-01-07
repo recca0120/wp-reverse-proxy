@@ -68,7 +68,7 @@ jobs:
             require_once 'vendor-prefixed/autoload.php';
             // Register PSR-4 autoloader for ReverseProxy namespace
             spl_autoload_register(function (\$class) {
-              \$prefix = 'ReverseProxy\\\\';
+              \$prefix = 'Recca0120\\ReverseProxy\\\\';
               \$baseDir = __DIR__ . '/includes/';
               \$len = strlen(\$prefix);
               if (strncmp(\$prefix, \$class, \$len) !== 0) return;
@@ -77,11 +77,11 @@ jobs:
             });
             // Verify classes can be loaded
             \$classes = [
-              'ReverseProxy\\\\ReverseProxy',
-              'ReverseProxy\\\\Route',
-              'ReverseProxy\\\\Http\\\\FilteringClient',
-              'ReverseProxy\\\\Http\\\\CurlClient',
-              'ReverseProxy\\\\Vendor\\\\Psr\\\\Http\\\\Client\\\\ClientInterface',
+              'Recca0120\\ReverseProxy\\\\ReverseProxy',
+              'Recca0120\\ReverseProxy\\\\Route',
+              'Recca0120\\ReverseProxy\\\\Http\\\\FilteringClient',
+              'Recca0120\\ReverseProxy\\\\Http\\\\CurlClient',
+              'Recca0120\\ReverseProxy\\\\Vendor\\\\Psr\\\\Http\\\\Client\\\\ClientInterface',
             ];
             foreach (\$classes as \$class) {
               if (!class_exists(\$class) && !interface_exists(\$class)) {

@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Contracts;
+namespace Recca0120\ReverseProxy\Contracts;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

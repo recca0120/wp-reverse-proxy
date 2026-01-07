@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\NetworkExceptionInterface;
 use Psr\Http\Message\RequestInterface;
-use ReverseProxy\Middleware\ErrorHandling;
+use Recca0120\ReverseProxy\Middleware\ErrorHandling;
 
 class ErrorHandlingTest extends TestCase
 {
