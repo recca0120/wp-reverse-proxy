@@ -51,10 +51,16 @@ class MiddlewareFactory
     /**
      * Create a middleware instance from configuration.
      *
-     * @param  array{name: string, args?: array, options?: mixed}  $config
+     * Supported formats:
+     * - String: "ProxyHeaders"
+     * - Array shorthand: ["SetHost", "api.example.com"]
+     * - Full object: ["name" => "SetHost", "options" => "api.example.com"]
+     *
+     * @param  string|array  $config
      */
-    public function create(array $config): MiddlewareInterface
+    public function create($config): MiddlewareInterface
     {
+        $config = $this->normalizeConfig($config);
         $name = $config['name'];
         $aliases = $this->getAliases();
         $class = $aliases[$name] ?? $name;
@@ -66,6 +72,31 @@ class MiddlewareFactory
         $args = $this->resolveArguments($config);
 
         return new $class(...$args);
+    }
+
+    /**
+     * Normalize config to standard format.
+     *
+     * @param  string|array  $config
+     * @return array{name: string, args?: array, options?: mixed}
+     */
+    private function normalizeConfig($config): array
+    {
+        // String format: "ProxyHeaders"
+        if (is_string($config)) {
+            return ['name' => $config];
+        }
+
+        // Already standard format: ["name" => "...", ...]
+        if (isset($config['name'])) {
+            return $config;
+        }
+
+        // Array shorthand: ["SetHost", "api.example.com"] or ["SetHost", ["option" => "value"]]
+        $name = array_shift($config);
+        $args = array_values($config);
+
+        return empty($args) ? ['name' => $name] : ['name' => $name, 'args' => $args];
     }
 
     /**

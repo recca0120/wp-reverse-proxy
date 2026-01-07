@@ -107,4 +107,41 @@ class MiddlewareFactoryTest extends TestCase
         $this->assertArrayHasKey('RewritePath', $aliases);
         $this->assertArrayHasKey('Timeout', $aliases);
     }
+
+    public function test_create_middleware_from_string_format(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create('ProxyHeaders');
+
+        $this->assertInstanceOf(ProxyHeaders::class, $middleware);
+    }
+
+    public function test_create_middleware_from_array_format_with_single_arg(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create(['SetHost', 'api.example.com']);
+
+        $this->assertInstanceOf(SetHost::class, $middleware);
+    }
+
+    public function test_create_middleware_from_array_format_with_options_object(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create(['ProxyHeaders', ['clientIp' => '192.168.1.1']]);
+
+        $this->assertInstanceOf(ProxyHeaders::class, $middleware);
+    }
+
+    public function test_create_middleware_from_array_format_with_multiple_args(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        // Timeout accepts single int, but testing the args spread mechanism
+        $middleware = $factory->create(['Timeout', 30]);
+
+        $this->assertInstanceOf(Timeout::class, $middleware);
+    }
 }

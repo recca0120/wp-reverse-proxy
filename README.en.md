@@ -107,6 +107,7 @@ The plugin automatically loads all `.json` and `.php` files from the directory.
 
 #### Full Configuration Example
 
+**JSON format:**
 ```json
 {
   "routes": [
@@ -115,9 +116,9 @@ The plugin automatically loads all `.json` and `.php` files from the directory.
       "target": "https://api-v2.example.com",
       "methods": ["GET", "POST"],
       "middlewares": [
-        { "name": "ProxyHeaders" },
-        { "name": "SetHost", "args": ["api.example.com"] },
-        { "name": "Timeout", "options": 30 },
+        "ProxyHeaders",
+        ["SetHost", "api.example.com"],
+        ["Timeout", 30],
         { "name": "RateLimiting", "options": { "limit": 100, "window": 60 } }
       ]
     },
@@ -129,7 +130,41 @@ The plugin automatically loads all `.json` and `.php` files from the directory.
 }
 ```
 
+**PHP format:**
+```php
+<?php
+return [
+    'routes' => [
+        [
+            'path' => '/api/v2/*',
+            'target' => 'https://api-v2.example.com',
+            'methods' => ['GET', 'POST'],
+            'middlewares' => [
+                'ProxyHeaders',
+                ['SetHost', 'api.example.com'],
+                ['Timeout', 30],
+                ['name' => 'RateLimiting', 'options' => ['limit' => 100, 'window' => 60]],
+            ],
+        ],
+        [
+            'path' => '/legacy/*',
+            'target' => 'https://legacy.example.com',
+        ],
+    ],
+];
+```
+
 #### Middleware Configuration Format
+
+Three formats supported, can be mixed:
+
+| Format | Description | Example |
+|--------|-------------|---------|
+| String | Middleware without arguments | `"ProxyHeaders"` |
+| Array | `[name, args...]` | `["SetHost", "api.example.com"]` |
+| Object | Full format | `{ "name": "RateLimiting", "options": {...} }` |
+
+**Object format fields:**
 
 | Field | Description | Example |
 |-------|-------------|---------|

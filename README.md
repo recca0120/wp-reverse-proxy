@@ -107,6 +107,7 @@ return [
 
 #### 完整配置範例
 
+**JSON 格式：**
 ```json
 {
   "routes": [
@@ -115,9 +116,9 @@ return [
       "target": "https://api-v2.example.com",
       "methods": ["GET", "POST"],
       "middlewares": [
-        { "name": "ProxyHeaders" },
-        { "name": "SetHost", "args": ["api.example.com"] },
-        { "name": "Timeout", "options": 30 },
+        "ProxyHeaders",
+        ["SetHost", "api.example.com"],
+        ["Timeout", 30],
         { "name": "RateLimiting", "options": { "limit": 100, "window": 60 } }
       ]
     },
@@ -129,7 +130,41 @@ return [
 }
 ```
 
+**PHP 格式：**
+```php
+<?php
+return [
+    'routes' => [
+        [
+            'path' => '/api/v2/*',
+            'target' => 'https://api-v2.example.com',
+            'methods' => ['GET', 'POST'],
+            'middlewares' => [
+                'ProxyHeaders',
+                ['SetHost', 'api.example.com'],
+                ['Timeout', 30],
+                ['name' => 'RateLimiting', 'options' => ['limit' => 100, 'window' => 60]],
+            ],
+        ],
+        [
+            'path' => '/legacy/*',
+            'target' => 'https://legacy.example.com',
+        ],
+    ],
+];
+```
+
 #### 中介層配置格式
+
+支援三種格式，可混合使用：
+
+| 格式 | 說明 | 範例 |
+|------|------|------|
+| 字串 | 無參數中介層 | `"ProxyHeaders"` |
+| 陣列 | `[名稱, 參數...]` | `["SetHost", "api.example.com"]` |
+| 物件 | 完整格式 | `{ "name": "RateLimiting", "options": {...} }` |
+
+**物件格式欄位：**
 
 | 欄位 | 說明 | 範例 |
 |------|------|------|
