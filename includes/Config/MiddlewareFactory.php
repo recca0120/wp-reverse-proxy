@@ -153,11 +153,38 @@ class MiddlewareFactory
             return $config;
         }
 
+        // YAML key-value format: ["SetHost" => "api.example.com"] or ["Timeout" => 30]
+        if ($this->isYamlKeyValueFormat($config)) {
+            $name = array_key_first($config);
+            $value = $config[$name];
+
+            return is_array($value)
+                ? ['name' => $name, 'options' => $value]
+                : ['name' => $name, 'args' => [$value]];
+        }
+
         // Array shorthand: ["SetHost", "api.example.com"] or ["SetHost", ["option" => "value"]]
         $name = array_shift($config);
         $args = array_values($config);
 
         return empty($args) ? ['name' => $name] : ['name' => $name, 'args' => $args];
+    }
+
+    /**
+     * Check if config is YAML key-value format.
+     *
+     * YAML key-value format: single element array with string key
+     * e.g., ["SetHost" => "api.example.com"] or ["Timeout" => 30]
+     */
+    private function isYamlKeyValueFormat(array $config): bool
+    {
+        if (count($config) !== 1) {
+            return false;
+        }
+
+        $key = array_key_first($config);
+
+        return is_string($key) && ! is_numeric($key);
     }
 
     /**

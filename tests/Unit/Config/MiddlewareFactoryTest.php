@@ -288,4 +288,51 @@ class MiddlewareFactoryTest extends TestCase
 
         $this->assertSame($factory, $result);
     }
+
+    public function test_create_middleware_from_yaml_key_value_format(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        // YAML format: "SetHost: api.example.com" parses to ['SetHost' => 'api.example.com']
+        $middleware = $factory->create(['SetHost' => 'api.example.com']);
+
+        $this->assertInstanceOf(SetHost::class, $middleware);
+    }
+
+    public function test_create_middleware_from_yaml_key_value_format_with_array_options(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        // YAML format with options
+        $middleware = $factory->create(['ProxyHeaders' => ['clientIp' => '192.168.1.1']]);
+
+        $this->assertInstanceOf(ProxyHeaders::class, $middleware);
+    }
+
+    public function test_create_middleware_from_yaml_key_value_format_with_numeric_value(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        // YAML format: "Timeout: 30" parses to ['Timeout' => 30]
+        $middleware = $factory->create(['Timeout' => 30]);
+
+        $this->assertInstanceOf(Timeout::class, $middleware);
+    }
+
+    public function test_create_many_with_yaml_key_value_format(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        // Mixed formats including YAML key-value
+        $middlewares = $factory->createMany([
+            'ProxyHeaders',
+            ['SetHost' => 'api.example.com'],
+            ['Timeout' => 30],
+        ]);
+
+        $this->assertCount(3, $middlewares);
+        $this->assertInstanceOf(ProxyHeaders::class, $middlewares[0]);
+        $this->assertInstanceOf(SetHost::class, $middlewares[1]);
+        $this->assertInstanceOf(Timeout::class, $middlewares[2]);
+    }
 }
