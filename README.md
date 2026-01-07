@@ -66,9 +66,19 @@ composer require recca0120/wp-reverse-proxy
 
 ### 方式一：配置檔（推薦）
 
-在 `wp-content/mu-plugins/` 目錄建立 JSON 或 PHP 配置檔：
+在 `wp-content/reverse-proxy-routes/` 目錄建立 JSON 或 PHP 配置檔：
 
-**JSON 格式** (`api.routes.json`)：
+```
+wp-content/
+├── reverse-proxy-routes/    # 路由配置目錄
+│   ├── api.json
+│   ├── legacy.json
+│   └── internal.php
+├── plugins/
+└── uploads/
+```
+
+**JSON 格式** (`api.json`)：
 ```json
 {
   "routes": [
@@ -80,25 +90,20 @@ composer require recca0120/wp-reverse-proxy
 }
 ```
 
-**PHP 格式** (`api.routes.php`)：
+**PHP 格式** (`internal.php`)：
 ```php
 <?php
 return [
     'routes' => [
         [
-            'path' => '/api/*',
-            'target' => 'https://api.example.com',
+            'path' => '/internal/*',
+            'target' => 'https://internal.example.com',
         ],
     ],
 ];
 ```
 
-#### 配置檔命名規則
-
-- `*.routes.json` - JSON 格式
-- `*.routes.php` - PHP 格式
-
-外掛會自動載入 mu-plugins 目錄下所有符合 `*.routes.*` 的檔案。
+外掛會自動載入目錄下所有 `.json` 和 `.php` 檔案。
 
 #### 完整配置範例
 
@@ -135,17 +140,43 @@ return [
 **可用的中介層別名：**
 `ProxyHeaders`, `SetHost`, `RewritePath`, `RewriteBody`, `AllowMethods`, `Cors`, `IpFilter`, `RateLimiting`, `Caching`, `RequestId`, `Retry`, `CircuitBreaker`, `Timeout`, `Fallback`, `Logging`, `ErrorHandling`, `SanitizeHeaders`
 
+#### 註冊自訂中介層別名
+
+```php
+// mu-plugins/reverse-proxy.php
+add_filter('reverse_proxy_middleware_factory', function ($factory) {
+    $factory->registerAlias('MyAuth', MyAuthMiddleware::class);
+    $factory->registerAlias('CustomCache', MyCacheMiddleware::class);
+    return $factory;
+});
+```
+
+然後在配置檔中使用：
+
+```json
+{
+  "routes": [{
+    "path": "/api/*",
+    "target": "https://api.example.com",
+    "middlewares": [
+      { "name": "MyAuth" },
+      { "name": "CustomCache", "options": { "ttl": 300 } }
+    ]
+  }]
+}
+```
+
 #### 自訂配置目錄
 
 ```php
 // 變更配置檔目錄
 add_filter('reverse_proxy_config_directory', function () {
-    return WP_CONTENT_DIR . '/proxy-config';
+    return WP_CONTENT_DIR . '/my-proxy-routes';
 });
 
-// 變更檔案匹配模式
+// 變更檔案匹配模式（預設 *.{json,php}）
 add_filter('reverse_proxy_config_pattern', function () {
-    return '*.proxy.json';
+    return '*.routes.json';
 });
 ```
 
@@ -881,8 +912,9 @@ add_filter('reverse_proxy_routes', function () {
 | `reverse_proxy_action_hook` | `$hook` | 設定觸發的 action hook（預設 `plugins_loaded`） |
 | `reverse_proxy_routes` | `$routes` | 設定代理路由 |
 | `reverse_proxy_config_loader` | `$loader` | 覆寫配置載入器 |
-| `reverse_proxy_config_directory` | `$directory` | 配置檔目錄（預設 `WPMU_PLUGIN_DIR`） |
-| `reverse_proxy_config_pattern` | `$pattern` | 配置檔匹配模式（預設 `*.routes.*`） |
+| `reverse_proxy_middleware_factory` | `$factory` | 自訂中介層工廠（可註冊自訂別名） |
+| `reverse_proxy_config_directory` | `$directory` | 配置檔目錄（預設 `WP_CONTENT_DIR/reverse-proxy-routes`） |
+| `reverse_proxy_config_pattern` | `$pattern` | 配置檔匹配模式（預設 `*.{json,php}`） |
 | `reverse_proxy_config_cache` | `$cache` | PSR-16 快取實例（用於快取配置） |
 | `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_psr17_factory` | `$factory` | 覆寫 PSR-17 HTTP 工廠 |

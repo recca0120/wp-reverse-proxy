@@ -47,8 +47,8 @@ class ConfigLoader
             return [];
         }
 
-        $files = glob($directory.'/'.$pattern);
-        if ($files === false || empty($files)) {
+        $files = $this->globFiles($directory, $pattern);
+        if (empty($files)) {
             return [];
         }
 
@@ -58,6 +58,43 @@ class ConfigLoader
         }
 
         return $routes;
+    }
+
+    /**
+     * Get files matching pattern with brace expansion support.
+     *
+     * @return array<string>
+     */
+    private function globFiles(string $directory, string $pattern): array
+    {
+        $fullPattern = $directory.'/'.$pattern;
+
+        // Try GLOB_BRACE if available and pattern uses brace syntax
+        if (defined('GLOB_BRACE') && strpos($pattern, '{') !== false) {
+            return $this->safeGlob($fullPattern, GLOB_BRACE);
+        }
+
+        // Manual brace expansion fallback
+        if (preg_match('/\{([^}]+)\}/', $pattern, $matches)) {
+            $files = [];
+            foreach (explode(',', $matches[1]) as $alt) {
+                $files = array_merge($files, $this->safeGlob(str_replace($matches[0], $alt, $fullPattern)));
+            }
+
+            return array_unique($files);
+        }
+
+        return $this->safeGlob($fullPattern);
+    }
+
+    /**
+     * Safe glob wrapper that always returns an array.
+     *
+     * @return array<string>
+     */
+    private function safeGlob(string $pattern, int $flags = 0): array
+    {
+        return glob($pattern, $flags) ?: [];
     }
 
     /**
@@ -138,13 +175,7 @@ class ConfigLoader
      */
     private function createRoutes(array $routeConfigs): array
     {
-        $routes = [];
-
-        foreach ($routeConfigs as $config) {
-            $routes[] = $this->createRoute($config);
-        }
-
-        return $routes;
+        return array_map([$this, 'createRoute'], $routeConfigs);
     }
 
     /**
@@ -187,13 +218,7 @@ class ConfigLoader
      */
     private function createMiddlewares(array $middlewareConfigs): array
     {
-        $middlewares = [];
-
-        foreach ($middlewareConfigs as $config) {
-            $middlewares[] = $this->middlewareFactory->create($config);
-        }
-
-        return $middlewares;
+        return array_map([$this->middlewareFactory, 'create'], $middlewareConfigs);
     }
 
     /**
@@ -205,11 +230,11 @@ class ConfigLoader
      */
     private function validateRoute(array $config): void
     {
-        if (! isset($config['path']) || empty($config['path'])) {
+        if (empty($config['path'])) {
             throw new InvalidArgumentException('Route configuration must have a "path" field');
         }
 
-        if (! isset($config['target']) || empty($config['target'])) {
+        if (empty($config['target'])) {
             throw new InvalidArgumentException('Route configuration must have a "target" field');
         }
 

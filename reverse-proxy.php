@@ -84,18 +84,23 @@ function reverse_proxy_load_config_routes()
     $configLoader = apply_filters('reverse_proxy_config_loader', null);
 
     if ($configLoader === null) {
+        $middlewareFactory = apply_filters(
+            'reverse_proxy_middleware_factory',
+            new Recca0120\ReverseProxy\Config\MiddlewareFactory
+        );
+
         $configLoader = new Recca0120\ReverseProxy\Config\ConfigLoader(
             [
                 new Recca0120\ReverseProxy\Config\Loaders\JsonLoader,
                 new Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader,
             ],
-            new Recca0120\ReverseProxy\Config\MiddlewareFactory,
+            $middlewareFactory,
             apply_filters('reverse_proxy_config_cache', null)
         );
     }
 
-    $directory = apply_filters('reverse_proxy_config_directory', WPMU_PLUGIN_DIR);
-    $pattern = apply_filters('reverse_proxy_config_pattern', '*.routes.*');
+    $directory = apply_filters('reverse_proxy_config_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
+    $pattern = apply_filters('reverse_proxy_config_pattern', '*.{json,php}');
 
     return $configLoader->loadFromDirectory($directory, $pattern);
 }

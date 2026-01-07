@@ -66,9 +66,19 @@ When two WordPress plugins use Composer with the same dependency but different v
 
 ### Option 1: Config Files (Recommended)
 
-Create JSON or PHP config files in `wp-content/mu-plugins/` directory:
+Create JSON or PHP config files in `wp-content/reverse-proxy-routes/` directory:
 
-**JSON format** (`api.routes.json`):
+```
+wp-content/
+├── reverse-proxy-routes/    # Route config directory
+│   ├── api.json
+│   ├── legacy.json
+│   └── internal.php
+├── plugins/
+└── uploads/
+```
+
+**JSON format** (`api.json`):
 ```json
 {
   "routes": [
@@ -80,25 +90,20 @@ Create JSON or PHP config files in `wp-content/mu-plugins/` directory:
 }
 ```
 
-**PHP format** (`api.routes.php`):
+**PHP format** (`internal.php`):
 ```php
 <?php
 return [
     'routes' => [
         [
-            'path' => '/api/*',
-            'target' => 'https://api.example.com',
+            'path' => '/internal/*',
+            'target' => 'https://internal.example.com',
         ],
     ],
 ];
 ```
 
-#### Config File Naming
-
-- `*.routes.json` - JSON format
-- `*.routes.php` - PHP format
-
-The plugin automatically loads all files matching `*.routes.*` from the mu-plugins directory.
+The plugin automatically loads all `.json` and `.php` files from the directory.
 
 #### Full Configuration Example
 
@@ -135,17 +140,43 @@ The plugin automatically loads all files matching `*.routes.*` from the mu-plugi
 **Available middleware aliases:**
 `ProxyHeaders`, `SetHost`, `RewritePath`, `RewriteBody`, `AllowMethods`, `Cors`, `IpFilter`, `RateLimiting`, `Caching`, `RequestId`, `Retry`, `CircuitBreaker`, `Timeout`, `Fallback`, `Logging`, `ErrorHandling`, `SanitizeHeaders`
 
+#### Register Custom Middleware Aliases
+
+```php
+// mu-plugins/reverse-proxy.php
+add_filter('reverse_proxy_middleware_factory', function ($factory) {
+    $factory->registerAlias('MyAuth', MyAuthMiddleware::class);
+    $factory->registerAlias('CustomCache', MyCacheMiddleware::class);
+    return $factory;
+});
+```
+
+Then use in config files:
+
+```json
+{
+  "routes": [{
+    "path": "/api/*",
+    "target": "https://api.example.com",
+    "middlewares": [
+      { "name": "MyAuth" },
+      { "name": "CustomCache", "options": { "ttl": 300 } }
+    ]
+  }]
+}
+```
+
 #### Custom Config Directory
 
 ```php
 // Change config directory
 add_filter('reverse_proxy_config_directory', function () {
-    return WP_CONTENT_DIR . '/proxy-config';
+    return WP_CONTENT_DIR . '/my-proxy-routes';
 });
 
-// Change file pattern
+// Change file pattern (default *.{json,php})
 add_filter('reverse_proxy_config_pattern', function () {
-    return '*.proxy.json';
+    return '*.routes.json';
 });
 ```
 
@@ -881,8 +912,9 @@ add_filter('reverse_proxy_routes', function () {
 | `reverse_proxy_action_hook` | `$hook` | Set the trigger action hook (default `plugins_loaded`) |
 | `reverse_proxy_routes` | `$routes` | Configure proxy routes |
 | `reverse_proxy_config_loader` | `$loader` | Override config loader |
-| `reverse_proxy_config_directory` | `$directory` | Config file directory (default `WPMU_PLUGIN_DIR`) |
-| `reverse_proxy_config_pattern` | `$pattern` | Config file pattern (default `*.routes.*`) |
+| `reverse_proxy_middleware_factory` | `$factory` | Customize middleware factory (register custom aliases) |
+| `reverse_proxy_config_directory` | `$directory` | Config file directory (default `WP_CONTENT_DIR/reverse-proxy-routes`) |
+| `reverse_proxy_config_pattern` | `$pattern` | Config file pattern (default `*.{json,php}`) |
 | `reverse_proxy_config_cache` | `$cache` | PSR-16 cache instance (for caching config) |
 | `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
 | `reverse_proxy_psr17_factory` | `$factory` | Override PSR-17 HTTP factory |

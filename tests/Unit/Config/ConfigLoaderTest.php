@@ -325,4 +325,49 @@ class ConfigLoaderTest extends TestCase
 
         rmdir($emptyDir);
     }
+
+    public function test_load_routes_with_brace_expansion_pattern(): void
+    {
+        file_put_contents($this->fixturesPath.'/api.json', json_encode([
+            'routes' => [
+                ['path' => '/api/*', 'target' => 'https://api.example.com'],
+            ],
+        ]));
+
+        file_put_contents($this->fixturesPath.'/web.php', '<?php return [
+            "routes" => [
+                ["path" => "/web/*", "target" => "https://web.example.com"],
+            ],
+        ];');
+
+        // Should not match .txt files
+        file_put_contents($this->fixturesPath.'/ignore.txt', 'should be ignored');
+
+        $loader = $this->createConfigLoader();
+        $routes = $loader->loadFromDirectory($this->fixturesPath, '*.{json,php}');
+
+        $this->assertCount(2, $routes);
+    }
+
+    public function test_brace_expansion_fallback_without_glob_brace(): void
+    {
+        file_put_contents($this->fixturesPath.'/first.json', json_encode([
+            'routes' => [
+                ['path' => '/first/*', 'target' => 'https://first.example.com'],
+            ],
+        ]));
+
+        file_put_contents($this->fixturesPath.'/second.php', '<?php return [
+            "routes" => [
+                ["path" => "/second/*", "target" => "https://second.example.com"],
+            ],
+        ];');
+
+        $loader = $this->createConfigLoader();
+
+        // Test that brace expansion pattern works
+        $routes = $loader->loadFromDirectory($this->fixturesPath, '*.{json,php}');
+
+        $this->assertCount(2, $routes);
+    }
 }
