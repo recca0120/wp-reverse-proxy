@@ -26,23 +26,30 @@ class MiddlewareFactory
 {
     /** @var array<class-string<MiddlewareInterface>> */
     private static $defaultMiddlewares = [
-        ProxyHeaders::class,
-        SetHost::class,
-        RewritePath::class,
-        RewriteBody::class,
         AllowMethods::class,
-        Cors::class,
-        IpFilter::class,
-        RateLimiting::class,
         Caching::class,
+        CircuitBreaker::class,
+        Cors::class,
+        ErrorHandling::class,
+        Fallback::class,
+        IpFilter::class,
+        Logging::class,
+        ProxyHeaders::class,
+        RateLimiting::class,
         RequestId::class,
         Retry::class,
-        CircuitBreaker::class,
-        Timeout::class,
-        Fallback::class,
-        Logging::class,
-        ErrorHandling::class,
+        RewriteBody::class,
+        RewritePath::class,
         SanitizeHeaders::class,
+        SetHost::class,
+        Timeout::class,
+    ];
+
+    /** @var array<string, mixed> */
+    private static $castMap = [
+        'true' => true,
+        'false' => false,
+        'null' => null,
     ];
 
     /** @var array<string, class-string<MiddlewareInterface>>|null */
@@ -94,6 +101,41 @@ class MiddlewareFactory
     }
 
     /**
+     * Register a custom alias.
+     *
+     * @param  string|array<string, class-string<MiddlewareInterface>>  $alias
+     * @param  class-string<MiddlewareInterface>|null  $class
+     */
+    public function registerAlias($alias, ?string $class = null): self
+    {
+        $this->getAliases();
+
+        if (is_array($alias)) {
+            foreach ($alias as $name => $middlewareClass) {
+                $this->aliases[$name] = $middlewareClass;
+            }
+        } else {
+            $this->aliases[$alias] = $class;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get all registered aliases.
+     *
+     * @return array<string, class-string<MiddlewareInterface>>
+     */
+    public function getAliases(): array
+    {
+        if ($this->aliases === null) {
+            $this->aliases = $this->buildAliases(self::$defaultMiddlewares);
+        }
+
+        return $this->aliases;
+    }
+
+    /**
      * Normalize config to standard format.
      *
      * @param  string|array  $config
@@ -137,13 +179,6 @@ class MiddlewareFactory
         return ['name' => $name, 'args' => $args];
     }
 
-    /** @var array<string, mixed> */
-    private static $castMap = [
-        'true' => true,
-        'false' => false,
-        'null' => null,
-    ];
-
     /**
      * Cast string value to appropriate type.
      *
@@ -160,31 +195,6 @@ class MiddlewareFactory
         }
 
         return $value;
-    }
-
-    /**
-     * Register a custom alias.
-     *
-     * @param  class-string<MiddlewareInterface>  $class
-     */
-    public function registerAlias(string $alias, string $class): void
-    {
-        $this->getAliases();
-        $this->aliases[$alias] = $class;
-    }
-
-    /**
-     * Get all registered aliases.
-     *
-     * @return array<string, class-string<MiddlewareInterface>>
-     */
-    public function getAliases(): array
-    {
-        if ($this->aliases === null) {
-            $this->aliases = $this->buildAliases(self::$defaultMiddlewares);
-        }
-
-        return $this->aliases;
     }
 
     /**

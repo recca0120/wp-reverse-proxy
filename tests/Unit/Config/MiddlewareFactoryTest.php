@@ -238,4 +238,54 @@ class MiddlewareFactoryTest extends TestCase
 
         $this->assertInstanceOf(IpFilter::class, $middleware);
     }
+
+    public function test_register_alias_returns_self_for_chaining(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $result = $factory->registerAlias('CustomAlias', ProxyHeaders::class);
+
+        $this->assertSame($factory, $result);
+    }
+
+    public function test_register_alias_chaining(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $factory->registerAlias('Alias1', ProxyHeaders::class)
+            ->registerAlias('Alias2', SetHost::class);
+
+        $aliases = $factory->getAliases();
+
+        $this->assertArrayHasKey('Alias1', $aliases);
+        $this->assertArrayHasKey('Alias2', $aliases);
+    }
+
+    public function test_register_alias_with_array(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $factory->registerAlias([
+            'MyProxy' => ProxyHeaders::class,
+            'MyHost' => SetHost::class,
+        ]);
+
+        $aliases = $factory->getAliases();
+
+        $this->assertArrayHasKey('MyProxy', $aliases);
+        $this->assertArrayHasKey('MyHost', $aliases);
+        $this->assertEquals(ProxyHeaders::class, $aliases['MyProxy']);
+        $this->assertEquals(SetHost::class, $aliases['MyHost']);
+    }
+
+    public function test_register_alias_with_array_returns_self(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $result = $factory->registerAlias([
+            'MyProxy' => ProxyHeaders::class,
+        ]);
+
+        $this->assertSame($factory, $result);
+    }
 }
