@@ -87,18 +87,17 @@ class ConfigLoader
      */
     private function remember(string $key, callable $callback)
     {
-        if ($this->cache !== null) {
-            $cached = $this->cache->get($key);
-            if ($cached !== null) {
-                return $cached;
-            }
+        if ($this->cache === null) {
+            return $callback();
+        }
+
+        $cached = $this->cache->get($key);
+        if ($cached !== null) {
+            return $cached;
         }
 
         $value = $callback();
-
-        if ($this->cache !== null) {
-            $this->cache->set($key, $value, $this->cacheTtl);
-        }
+        $this->cache->set($key, $value, $this->cacheTtl);
 
         return $value;
     }
@@ -108,9 +107,11 @@ class ConfigLoader
      */
     public function clearCache(): void
     {
-        if ($this->cache !== null) {
-            $this->cache->clear();
+        if ($this->cache === null) {
+            return;
         }
+
+        $this->cache->clear();
     }
 
     /**
@@ -169,15 +170,13 @@ class ConfigLoader
      */
     private function buildPath(array $config): string
     {
-        $path = $config['path'];
-
-        if (isset($config['methods']) && is_array($config['methods'])) {
-            $methods = implode('|', array_map('strtoupper', $config['methods']));
-
-            return "{$methods} {$path}";
+        if (! isset($config['methods']) || ! is_array($config['methods'])) {
+            return $config['path'];
         }
 
-        return $path;
+        $methods = implode('|', array_map('strtoupper', $config['methods']));
+
+        return "{$methods} {$config['path']}";
     }
 
     /**
