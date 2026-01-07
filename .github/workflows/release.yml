@@ -36,6 +36,7 @@ jobs:
           rsync -av --progress . build/reverse-proxy-dev \
             --exclude='.git' \
             --exclude='.github' \
+            --exclude='.wordpress-test' \
             --exclude='bin' \
             --exclude='build' \
             --exclude='tests' \
@@ -79,6 +80,7 @@ jobs:
           rsync -av --progress . build/reverse-proxy \
             --exclude='.git' \
             --exclude='.github' \
+            --exclude='.wordpress-test' \
             --exclude='bin' \
             --exclude='build' \
             --exclude='tests' \
