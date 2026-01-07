@@ -1,14 +1,14 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Tests\Unit\Http;
+namespace Recca0120\ReverseProxy\Tests\Unit\Http\Decorator;
 
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
-use Recca0120\ReverseProxy\Http\FilteringClient;
+use Recca0120\ReverseProxy\Http\Decorator\SanitizingClient;
 
-class FilteringClientTest extends TestCase
+class SanitizingClientTest extends TestCase
 {
     public function test_it_sends_request_to_underlying_client()
     {
@@ -17,7 +17,7 @@ class FilteringClientTest extends TestCase
             ->method('sendRequest')
             ->willReturn(new Response(200, [], 'response body'));
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $response = $client->sendRequest(new Request('GET', 'http://example.com'));
 
         $this->assertEquals(200, $response->getStatusCode());
@@ -35,7 +35,7 @@ class FilteringClientTest extends TestCase
                 return new Response(200);
             });
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $client->sendRequest(new Request('GET', 'http://example.com', [
             'Accept-Encoding' => 'gzip, deflate, br',
         ]));
@@ -54,7 +54,7 @@ class FilteringClientTest extends TestCase
                 return new Response(200);
             });
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $client->sendRequest(new Request('GET', 'http://example.com', [
             'Accept-Encoding' => 'br',
         ]));
@@ -73,7 +73,7 @@ class FilteringClientTest extends TestCase
                 return new Response(200);
             });
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $client->sendRequest(new Request('GET', 'http://example.com', [
             'Accept-Encoding' => 'br, gzip, deflate',
         ]));
@@ -92,7 +92,7 @@ class FilteringClientTest extends TestCase
                 return new Response(200);
             });
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $client->sendRequest(new Request('GET', 'http://example.com', [
             'Accept-Encoding' => 'gzip, br, deflate',
         ]));
@@ -111,7 +111,7 @@ class FilteringClientTest extends TestCase
                 return new Response(200);
             });
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $client->sendRequest(new Request('GET', 'http://example.com', [
             'Accept-Encoding' => 'gzip, deflate',
         ]));
@@ -130,7 +130,7 @@ class FilteringClientTest extends TestCase
                 return new Response(200);
             });
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $client->sendRequest(new Request('GET', 'http://example.com'));
 
         $this->assertFalse($capturedRequest->hasHeader('Accept-Encoding'));
@@ -147,7 +147,7 @@ class FilteringClientTest extends TestCase
                 'Keep-Alive' => 'timeout=5',
             ]));
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $response = $client->sendRequest(new Request('GET', 'http://example.com'));
 
         $this->assertTrue($response->hasHeader('Content-Type'));
@@ -171,7 +171,7 @@ class FilteringClientTest extends TestCase
                 'Upgrade' => 'websocket',
             ]));
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $response = $client->sendRequest(new Request('GET', 'http://example.com'));
 
         $this->assertEmpty($response->getHeaders());
@@ -188,7 +188,7 @@ class FilteringClientTest extends TestCase
                 'X-Custom-Header' => 'custom-value',
             ]));
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $response = $client->sendRequest(new Request('GET', 'http://example.com'));
 
         $this->assertEquals('text/html', $response->getHeaderLine('Content-Type'));
@@ -207,7 +207,7 @@ class FilteringClientTest extends TestCase
                 'Keep-Alive' => 'timeout=5',
             ]));
 
-        $client = new FilteringClient($mockClient);
+        $client = new SanitizingClient($mockClient);
         $response = $client->sendRequest(new Request('GET', 'http://example.com'));
 
         $this->assertEmpty($response->getHeaders());

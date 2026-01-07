@@ -45,7 +45,7 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
 function reverse_proxy_create_proxy()
 {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
-    $httpClient = new Recca0120\ReverseProxy\Http\FilteringClient(
+    $httpClient = new Recca0120\ReverseProxy\Http\Decorator\SanitizingClient(
         apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]))
     );
 

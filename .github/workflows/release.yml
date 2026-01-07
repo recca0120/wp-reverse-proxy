@@ -79,7 +79,7 @@ jobs:
             \$classes = [
               'Recca0120\\ReverseProxy\\\\ReverseProxy',
               'Recca0120\\ReverseProxy\\\\Route',
-              'Recca0120\\ReverseProxy\\\\Http\\\\FilteringClient',
+              'Recca0120\\ReverseProxy\\\\Http\\\\Decorator\\\\SanitizingClient',
               'Recca0120\\ReverseProxy\\\\Http\\\\CurlClient',
               'Recca0120\\ReverseProxy\\\\Vendor\\\\Psr\\\\Http\\\\Client\\\\ClientInterface',
             ];
