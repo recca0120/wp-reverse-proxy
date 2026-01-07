@@ -12,10 +12,7 @@ class YamlLoaderTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->fixturesPath = __DIR__.'/../../../fixtures/config';
-        if (! is_dir($this->fixturesPath)) {
-            mkdir($this->fixturesPath, 0755, true);
-        }
+        $this->fixturesPath = __DIR__.'/../../../fixtures/config/yaml';
     }
 
     public function test_supports_yaml_extension(): void
@@ -45,45 +42,20 @@ class YamlLoaderTest extends TestCase
 
     public function test_load_valid_yaml_file(): void
     {
-        $filePath = $this->fixturesPath.'/valid-routes.yaml';
-        $yaml = "routes:\n  - path: /api/*\n    target: https://api.example.com\n";
-        file_put_contents($filePath, $yaml);
-
         $loader = new YamlLoader;
-        $result = $loader->load($filePath);
+        $result = $loader->load($this->fixturesPath.'/valid-routes.yaml');
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('routes', $result);
         $this->assertCount(1, $result['routes']);
         $this->assertEquals('/api/*', $result['routes'][0]['path']);
         $this->assertEquals('https://api.example.com', $result['routes'][0]['target']);
-
-        unlink($filePath);
     }
 
     public function test_load_yaml_with_anchors_and_aliases(): void
     {
-        $filePath = $this->fixturesPath.'/anchors-routes.yaml';
-        $yaml = implode("\n", [
-            'defaults: &defaults',
-            '  timeout: 30',
-            '  retries: 3',
-            '',
-            'routes:',
-            '  - path: /api/*',
-            '    target: https://api.example.com',
-            '    options:',
-            '      <<: *defaults',
-            '  - path: /backend/*',
-            '    target: https://backend.example.com',
-            '    options:',
-            '      <<: *defaults',
-            '      timeout: 60',
-        ]);
-        file_put_contents($filePath, $yaml);
-
         $loader = new YamlLoader;
-        $result = $loader->load($filePath);
+        $result = $loader->load($this->fixturesPath.'/anchors-routes.yaml');
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('routes', $result);
@@ -96,23 +68,15 @@ class YamlLoaderTest extends TestCase
         // Second route should have overridden timeout
         $this->assertEquals(60, $result['routes'][1]['options']['timeout']);
         $this->assertEquals(3, $result['routes'][1]['options']['retries']);
-
-        unlink($filePath);
     }
 
     public function test_load_returns_empty_array_for_invalid_yaml(): void
     {
-        $filePath = $this->fixturesPath.'/invalid.yaml';
-        $yaml = "invalid: yaml: content:\n  - [unclosed bracket\n";
-        file_put_contents($filePath, $yaml);
-
         $loader = new YamlLoader;
-        $result = $loader->load($filePath);
+        $result = $loader->load($this->fixturesPath.'/invalid.yaml');
 
         $this->assertIsArray($result);
         $this->assertEmpty($result);
-
-        unlink($filePath);
     }
 
     public function test_load_returns_empty_array_for_nonexistent_file(): void
@@ -126,15 +90,10 @@ class YamlLoaderTest extends TestCase
 
     public function test_load_returns_empty_array_for_empty_file(): void
     {
-        $filePath = $this->fixturesPath.'/empty.yaml';
-        file_put_contents($filePath, '');
-
         $loader = new YamlLoader;
-        $result = $loader->load($filePath);
+        $result = $loader->load($this->fixturesPath.'/empty.yaml');
 
         $this->assertIsArray($result);
         $this->assertEmpty($result);
-
-        unlink($filePath);
     }
 }
