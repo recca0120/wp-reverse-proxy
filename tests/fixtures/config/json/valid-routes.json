@@ -1,0 +1,8 @@
+{
+  "routes": [
+    {
+      "path": "/api/*",
+      "target": "https://api.example.com"
+    }
+  ]
+}

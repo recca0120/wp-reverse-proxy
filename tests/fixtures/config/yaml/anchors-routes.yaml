@@ -1,0 +1,14 @@
+defaults: &defaults
+  timeout: 30
+  retries: 3
+
+routes:
+  - path: /api/*
+    target: https://api.example.com
+    options:
+      <<: *defaults
+  - path: /backend/*
+    target: https://backend.example.com
+    options:
+      <<: *defaults
+      timeout: 60
