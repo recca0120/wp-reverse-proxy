@@ -46,11 +46,8 @@ class YamlLoaderTest extends TestCase
     public function test_load_valid_yaml_file(): void
     {
         $filePath = $this->fixturesPath.'/valid-routes.yaml';
-        file_put_contents($filePath, <<<'YAML'
-routes:
-  - path: /api/*
-    target: https://api.example.com
-YAML);
+        $yaml = "routes:\n  - path: /api/*\n    target: https://api.example.com\n";
+        file_put_contents($filePath, $yaml);
 
         $loader = new YamlLoader;
         $result = $loader->load($filePath);
@@ -67,22 +64,23 @@ YAML);
     public function test_load_yaml_with_anchors_and_aliases(): void
     {
         $filePath = $this->fixturesPath.'/anchors-routes.yaml';
-        file_put_contents($filePath, <<<'YAML'
-defaults: &defaults
-  timeout: 30
-  retries: 3
-
-routes:
-  - path: /api/*
-    target: https://api.example.com
-    options:
-      <<: *defaults
-  - path: /backend/*
-    target: https://backend.example.com
-    options:
-      <<: *defaults
-      timeout: 60
-YAML);
+        $yaml = implode("\n", [
+            'defaults: &defaults',
+            '  timeout: 30',
+            '  retries: 3',
+            '',
+            'routes:',
+            '  - path: /api/*',
+            '    target: https://api.example.com',
+            '    options:',
+            '      <<: *defaults',
+            '  - path: /backend/*',
+            '    target: https://backend.example.com',
+            '    options:',
+            '      <<: *defaults',
+            '      timeout: 60',
+        ]);
+        file_put_contents($filePath, $yaml);
 
         $loader = new YamlLoader;
         $result = $loader->load($filePath);
@@ -105,10 +103,8 @@ YAML);
     public function test_load_returns_empty_array_for_invalid_yaml(): void
     {
         $filePath = $this->fixturesPath.'/invalid.yaml';
-        file_put_contents($filePath, <<<'YAML'
-invalid: yaml: content:
-  - [unclosed bracket
-YAML);
+        $yaml = "invalid: yaml: content:\n  - [unclosed bracket\n";
+        file_put_contents($filePath, $yaml);
 
         $loader = new YamlLoader;
         $result = $loader->load($filePath);
