@@ -2,9 +2,9 @@
 
 namespace Recca0120\ReverseProxy\Config\Loaders;
 
-use Recca0120\ReverseProxy\Config\Contracts\LoaderInterface;
+use Recca0120\ReverseProxy\Contracts\ConfigLoaderInterface;
 
-abstract class AbstractLoader implements LoaderInterface
+abstract class AbstractLoader implements ConfigLoaderInterface
 {
     /**
      * Load configuration from file.

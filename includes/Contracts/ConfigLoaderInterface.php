@@ -1,8 +1,8 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Config\Contracts;
+namespace Recca0120\ReverseProxy\Contracts;
 
-interface LoaderInterface
+interface ConfigLoaderInterface
 {
     /**
      * Check if this loader supports the given file.
