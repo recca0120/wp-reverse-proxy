@@ -4,7 +4,6 @@ namespace Recca0120\ReverseProxy\Tests\Unit\Config;
 
 use InvalidArgumentException;
 use Mockery;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Config\ConfigLoader;
@@ -17,8 +16,6 @@ use Recca0120\ReverseProxy\Route;
 
 class ConfigLoaderTest extends TestCase
 {
-    use MockeryPHPUnitIntegration;
-
     /** @var string */
     private $fixturesPath;
 
@@ -32,6 +29,8 @@ class ConfigLoaderTest extends TestCase
 
     protected function tearDown(): void
     {
+        Mockery::close();
+
         $files = glob($this->fixturesPath.'/*');
         foreach ($files as $file) {
             if (is_file($file)) {
