@@ -19,7 +19,10 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, intl
+          extensions: mbstring, intl, pdo_sqlite
+
+      - name: Setup WordPress test environment
+        run: ./bin/install-wp-tests.sh sqlite
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --optimize-autoloader
@@ -63,7 +66,10 @@ jobs:
           php bin/strauss.phar --updateCallSites=includes,reverse-proxy.php
 
       - name: Run tests
-        run: DB_ENGINE=sqlite vendor/bin/phpunit
+        env:
+          DB_ENGINE: sqlite
+          WP_CORE_DIR: ${{ github.workspace }}/.wordpress-test/wordpress
+        run: vendor/bin/phpunit
 
       - name: Create production plugin directory
         run: |
