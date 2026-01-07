@@ -24,50 +24,16 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
 
-      # === Development Version (original namespaces) ===
-      - name: Create dev plugin directory
-        run: |
-          mkdir -p build/reverse-proxy-dev
-
-          # Copy plugin files with vendor (exclude dev files)
-          rsync -av --progress . build/reverse-proxy-dev \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='.wordpress-test' \
-            --exclude='bin' \
-            --exclude='build' \
-            --exclude='tests' \
-            --exclude='phpunit.xml' \
-            --exclude='phpunit.xml.dist' \
-            --exclude='.gitignore' \
-            --exclude='composer.json' \
-            --exclude='composer.lock' \
-            --exclude='*.md' \
-            --exclude='coverage' \
-            --exclude='.phpunit.cache' \
-            --exclude='.phpunit.result.cache'
-
-          # Keep LICENSE and essential files
-          cp LICENSE build/reverse-proxy-dev/ 2>/dev/null || true
-          cp README.md build/reverse-proxy-dev/ 2>/dev/null || true
-
-      - name: Create dev ZIP archive
-        run: |
-          cd build
-          zip -r reverse-proxy-dev.zip reverse-proxy-dev
-
-      # === Production Version (prefixed namespaces) ===
       - name: Download and run Strauss
         run: |
           mkdir -p bin
           curl -o bin/strauss.phar -L https://github.com/BrianHenryIE/strauss/releases/latest/download/strauss.phar
           php bin/strauss.phar --updateCallSites=includes,reverse-proxy.php
 
-      - name: Create production plugin directory
+      - name: Create plugin directory
         run: |
           mkdir -p build/reverse-proxy
 
-          # Copy plugin files (exclude dev files and original vendor)
           rsync -av --progress . build/reverse-proxy \
             --exclude='.git' \
             --exclude='.github' \
@@ -86,21 +52,17 @@ jobs:
             --exclude='.phpunit.result.cache' \
             --exclude='vendor'
 
-          # Keep LICENSE and essential files
           cp LICENSE build/reverse-proxy/ 2>/dev/null || true
           cp README.md build/reverse-proxy/ 2>/dev/null || true
 
-      - name: Create production ZIP archive
+      - name: Create ZIP archive
         run: |
           cd build
           zip -r reverse-proxy.zip reverse-proxy
 
-      # === Upload both versions ===
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            build/reverse-proxy.zip
-            build/reverse-proxy-dev.zip
+          files: build/reverse-proxy.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
