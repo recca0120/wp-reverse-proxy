@@ -10,11 +10,12 @@ use Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader;
 use Recca0120\ReverseProxy\Config\MiddlewareFactory;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Route;
-use Recca0120\ReverseProxy\Vendor\Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\CacheInterface;
 
 class ConfigLoaderTest extends TestCase
 {
-    private string $fixturesPath;
+    /** @var string */
+    private $fixturesPath;
 
     protected function setUp(): void
     {

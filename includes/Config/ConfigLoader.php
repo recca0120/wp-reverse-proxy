@@ -5,7 +5,7 @@ namespace Recca0120\ReverseProxy\Config;
 use InvalidArgumentException;
 use Recca0120\ReverseProxy\Config\Contracts\LoaderInterface;
 use Recca0120\ReverseProxy\Route;
-use Recca0120\ReverseProxy\Vendor\Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\CacheInterface;
 
 class ConfigLoader
 {

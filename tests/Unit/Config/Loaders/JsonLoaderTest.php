@@ -7,7 +7,8 @@ use Recca0120\ReverseProxy\Config\Loaders\JsonLoader;
 
 class JsonLoaderTest extends TestCase
 {
-    private string $fixturesPath;
+    /** @var string */
+    private $fixturesPath;
 
     protected function setUp(): void
     {
