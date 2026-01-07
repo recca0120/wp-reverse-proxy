@@ -200,8 +200,17 @@ Multiple formats supported, can be mixed:
 ```php
 // mu-plugins/reverse-proxy.php
 add_filter('reverse_proxy_middleware_factory', function ($factory) {
-    $factory->registerAlias('MyAuth', MyAuthMiddleware::class);
-    $factory->registerAlias('CustomCache', MyCacheMiddleware::class);
+    // Option 1: Register one by one (supports method chaining)
+    $factory->registerAlias('MyAuth', MyAuthMiddleware::class)
+        ->registerAlias('CustomCache', MyCacheMiddleware::class);
+
+    // Option 2: Batch registration (array format)
+    $factory->registerAlias([
+        'MyAuth' => MyAuthMiddleware::class,
+        'CustomCache' => MyCacheMiddleware::class,
+        'RateLimit' => MyRateLimitMiddleware::class,
+    ]);
+
     return $factory;
 });
 ```

@@ -200,8 +200,17 @@ return [
 ```php
 // mu-plugins/reverse-proxy.php
 add_filter('reverse_proxy_middleware_factory', function ($factory) {
-    $factory->registerAlias('MyAuth', MyAuthMiddleware::class);
-    $factory->registerAlias('CustomCache', MyCacheMiddleware::class);
+    // 方式一：逐一註冊（支援鏈式呼叫）
+    $factory->registerAlias('MyAuth', MyAuthMiddleware::class)
+        ->registerAlias('CustomCache', MyCacheMiddleware::class);
+
+    // 方式二：批次註冊（陣列格式）
+    $factory->registerAlias([
+        'MyAuth' => MyAuthMiddleware::class,
+        'CustomCache' => MyCacheMiddleware::class,
+        'RateLimit' => MyRateLimitMiddleware::class,
+    ]);
+
     return $factory;
 });
 ```
