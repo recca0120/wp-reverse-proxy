@@ -52,7 +52,7 @@ class MiddlewareFactory
      * Create a middleware instance from configuration.
      *
      * Supported formats:
-     * - String: "ProxyHeaders"
+     * - String: "ProxyHeaders" or "SetHost:api.example.com"
      * - Array shorthand: ["SetHost", "api.example.com"]
      * - Full object: ["name" => "SetHost", "options" => "api.example.com"]
      *
@@ -75,6 +75,25 @@ class MiddlewareFactory
     }
 
     /**
+     * Create multiple middleware instances.
+     *
+     * Supported formats:
+     * - Pipe-separated string: "ProxyHeaders|SetHost:api.example.com|Timeout:30"
+     * - Array of configs: ["ProxyHeaders", "SetHost:api.example.com", ["Timeout", 30]]
+     *
+     * @param  string|array  $configs
+     * @return array<MiddlewareInterface>
+     */
+    public function createMany($configs): array
+    {
+        if (is_string($configs)) {
+            $configs = explode('|', $configs);
+        }
+
+        return array_map([$this, 'create'], $configs);
+    }
+
+    /**
      * Normalize config to standard format.
      *
      * @param  string|array  $config
@@ -82,9 +101,9 @@ class MiddlewareFactory
      */
     private function normalizeConfig($config): array
     {
-        // String format: "ProxyHeaders"
+        // String format: "ProxyHeaders" or "SetHost:api.example.com"
         if (is_string($config)) {
-            return ['name' => $config];
+            return $this->parseStringConfig($config);
         }
 
         // Already standard format: ["name" => "...", ...]
@@ -97,6 +116,51 @@ class MiddlewareFactory
         $args = array_values($config);
 
         return empty($args) ? ['name' => $name] : ['name' => $name, 'args' => $args];
+    }
+
+    /**
+     * Parse string config format.
+     *
+     * @return array{name: string, args?: array}
+     */
+    private function parseStringConfig(string $config): array
+    {
+        // No colon means no parameters
+        if (strpos($config, ':') === false) {
+            return ['name' => $config];
+        }
+
+        // Split by first colon: "SetHost:api.example.com" or "RateLimiting:100,60"
+        [$name, $params] = explode(':', $config, 2);
+        $args = array_map([$this, 'castValue'], explode(',', $params));
+
+        return ['name' => $name, 'args' => $args];
+    }
+
+    /**
+     * Cast string value to appropriate type.
+     *
+     * @return mixed
+     */
+    private function castValue(string $value)
+    {
+        if (is_numeric($value)) {
+            return strpos($value, '.') !== false ? (float) $value : (int) $value;
+        }
+
+        if ($value === 'true') {
+            return true;
+        }
+
+        if ($value === 'false') {
+            return false;
+        }
+
+        if ($value === 'null') {
+            return null;
+        }
+
+        return $value;
     }
 
     /**

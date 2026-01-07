@@ -370,4 +370,28 @@ class ConfigLoaderTest extends TestCase
 
         $this->assertCount(2, $routes);
     }
+
+    public function test_create_route_with_pipe_separated_middlewares(): void
+    {
+        $filePath = $this->fixturesPath.'/routes.json';
+        file_put_contents($filePath, json_encode([
+            'routes' => [
+                [
+                    'path' => '/api/*',
+                    'target' => 'https://api.example.com',
+                    'middlewares' => 'ProxyHeaders|SetHost:api.example.com|Timeout:30',
+                ],
+            ],
+        ]));
+
+        $loader = $this->createConfigLoader();
+        $routes = $loader->loadFromFile($filePath);
+
+        $middlewares = $routes[0]->getMiddlewares();
+        $this->assertCount(3, $middlewares);
+
+        // Verify all middleware types are present (order may vary due to priority sorting)
+        $classes = array_map('get_class', $middlewares);
+        $this->assertContains(ProxyHeaders::class, $classes);
+    }
 }

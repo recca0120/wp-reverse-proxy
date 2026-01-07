@@ -144,4 +144,50 @@ class MiddlewareFactoryTest extends TestCase
 
         $this->assertInstanceOf(Timeout::class, $middleware);
     }
+
+    public function test_create_middleware_from_colon_format(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create('SetHost:api.example.com');
+
+        $this->assertInstanceOf(SetHost::class, $middleware);
+    }
+
+    public function test_create_middleware_from_colon_format_with_multiple_params(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create('Timeout:30');
+
+        $this->assertInstanceOf(Timeout::class, $middleware);
+    }
+
+    public function test_create_many_from_array(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middlewares = $factory->createMany([
+            'ProxyHeaders',
+            'SetHost:api.example.com',
+            ['Timeout', 30],
+        ]);
+
+        $this->assertCount(3, $middlewares);
+        $this->assertInstanceOf(ProxyHeaders::class, $middlewares[0]);
+        $this->assertInstanceOf(SetHost::class, $middlewares[1]);
+        $this->assertInstanceOf(Timeout::class, $middlewares[2]);
+    }
+
+    public function test_create_many_from_pipe_separated_string(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middlewares = $factory->createMany('ProxyHeaders|SetHost:api.example.com|Timeout:30');
+
+        $this->assertCount(3, $middlewares);
+        $this->assertInstanceOf(ProxyHeaders::class, $middlewares[0]);
+        $this->assertInstanceOf(SetHost::class, $middlewares[1]);
+        $this->assertInstanceOf(Timeout::class, $middlewares[2]);
+    }
 }

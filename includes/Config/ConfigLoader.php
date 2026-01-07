@@ -213,12 +213,12 @@ class ConfigLoader
     /**
      * Create middleware instances from configuration.
      *
-     * @param  array<array<string, mixed>>  $middlewareConfigs
+     * @param  string|array  $middlewareConfigs
      * @return array<mixed>
      */
-    private function createMiddlewares(array $middlewareConfigs): array
+    private function createMiddlewares($middlewareConfigs): array
     {
-        return array_map([$this->middlewareFactory, 'create'], $middlewareConfigs);
+        return $this->middlewareFactory->createMany($middlewareConfigs);
     }
 
     /**
