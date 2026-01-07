@@ -1,12 +1,12 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
-use ReverseProxy\Middleware\Caching;
+use Recca0120\ReverseProxy\Middleware\Caching;
 
 class CachingTest extends TestCase
 {

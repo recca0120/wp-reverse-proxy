@@ -1,14 +1,14 @@
 <?php
 
-namespace ReverseProxy\Middleware;
+namespace Recca0120\ReverseProxy\Middleware;
 
 use Nyholm\Psr7\Response;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\SimpleCache\CacheInterface;
-use ReverseProxy\Contracts\MiddlewareInterface;
-use ReverseProxy\WordPress\TransientCache;
+use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\WordPress\TransientCache;
 
 class CircuitBreaker implements MiddlewareInterface
 {

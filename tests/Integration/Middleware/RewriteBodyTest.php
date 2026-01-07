@@ -1,12 +1,12 @@
 <?php
 
-namespace ReverseProxy\Tests\Integration\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Integration\Middleware;
 
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
-use ReverseProxy\Middleware\RewriteBody;
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Middleware\RewriteBody;
+use Recca0120\ReverseProxy\Route;
 use WP_UnitTestCase;
 
 class RewriteBodyTest extends WP_UnitTestCase

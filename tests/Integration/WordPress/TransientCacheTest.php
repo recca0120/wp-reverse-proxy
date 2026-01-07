@@ -1,9 +1,9 @@
 <?php
 
-namespace ReverseProxy\Tests\Integration\WordPress;
+namespace Recca0120\ReverseProxy\Tests\Integration\WordPress;
 
 use Psr\SimpleCache\CacheInterface;
-use ReverseProxy\WordPress\TransientCache;
+use Recca0120\ReverseProxy\WordPress\TransientCache;
 use WP_UnitTestCase;
 
 class TransientCacheTest extends WP_UnitTestCase

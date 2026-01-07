@@ -22,7 +22,7 @@ jobs:
           extensions: mbstring, intl
 
       - name: Install dependencies
-        run: composer install --no-dev --prefer-dist --no-progress --optimize-autoloader
+        run: composer install --prefer-dist --no-progress --optimize-autoloader
 
       # === Development Version (original namespaces) ===
       - name: Create dev plugin directory
@@ -61,7 +61,9 @@ jobs:
           mkdir -p bin
           curl -o bin/strauss.phar -L https://github.com/BrianHenryIE/strauss/releases/latest/download/strauss.phar
           php bin/strauss.phar --updateCallSites=includes,reverse-proxy.php
-          composer dump-autoload --no-dev --optimize
+
+      - name: Run tests
+        run: DB_ENGINE=sqlite vendor/bin/phpunit
 
       - name: Create production plugin directory
         run: |

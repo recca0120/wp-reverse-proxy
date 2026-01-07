@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy;
+namespace Recca0120\ReverseProxy;
 
 use Nyholm\Psr7\Uri;
 use Psr\Http\Client\ClientInterface;
@@ -9,7 +9,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 
 class ReverseProxy
 {

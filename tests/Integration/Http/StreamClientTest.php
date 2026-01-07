@@ -1,10 +1,10 @@
 <?php
 
-namespace ReverseProxy\Tests\Integration\Http;
+namespace Recca0120\ReverseProxy\Tests\Integration\Http;
 
 use Nyholm\Psr7\Request;
-use ReverseProxy\Exceptions\NetworkException;
-use ReverseProxy\Http\StreamClient;
+use Recca0120\ReverseProxy\Exceptions\NetworkException;
+use Recca0120\ReverseProxy\Http\StreamClient;
 
 class StreamClientTest extends HttpClientTestCase
 {

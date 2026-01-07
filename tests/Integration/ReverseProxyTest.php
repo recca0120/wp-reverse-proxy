@@ -1,18 +1,18 @@
 <?php
 
-namespace ReverseProxy\Tests\Integration;
+namespace Recca0120\ReverseProxy\Tests\Integration;
 
 use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
-use ReverseProxy\Http\ServerRequestFactory;
-use ReverseProxy\Middleware\AllowMethods;
-use ReverseProxy\Middleware\ProxyHeaders;
-use ReverseProxy\Middleware\RewritePath;
-use ReverseProxy\Middleware\SetHost;
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Http\ServerRequestFactory;
+use Recca0120\ReverseProxy\Middleware\AllowMethods;
+use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
+use Recca0120\ReverseProxy\Middleware\RewritePath;
+use Recca0120\ReverseProxy\Middleware\SetHost;
+use Recca0120\ReverseProxy\Route;
 use WP_UnitTestCase;
 
 class ReverseProxyTest extends WP_UnitTestCase

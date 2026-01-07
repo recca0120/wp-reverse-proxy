@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Tests\Integration\Http;
+namespace Recca0120\ReverseProxy\Tests\Integration\Http;
 
 use PHPUnit\Framework\TestCase;
 

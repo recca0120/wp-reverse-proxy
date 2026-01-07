@@ -1,13 +1,13 @@
 <?php
 
-namespace ReverseProxy\Tests\Integration\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Integration\Middleware;
 
 use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
-use ReverseProxy\Middleware\Timeout;
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Middleware\Timeout;
+use Recca0120\ReverseProxy\Route;
 use WP_UnitTestCase;
 
 class TimeoutTest extends WP_UnitTestCase

@@ -26,12 +26,12 @@
     },
     "autoload": {
         "psr-4": {
-            "ReverseProxy\\": "includes/"
+            "Recca0120\\ReverseProxy\\": "includes/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "ReverseProxy\\Tests\\": "tests/"
+            "Recca0120\\ReverseProxy\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -40,9 +40,9 @@
     "extra": {
         "strauss": {
             "target_directory": "vendor-prefixed",
-            "namespace_prefix": "ReverseProxy\\Vendor\\",
-            "classmap_prefix": "ReverseProxy_Vendor_",
-            "constant_prefix": "REVERSE_PROXY_VENDOR_",
+            "namespace_prefix": "Recca0120\\ReverseProxy\\Vendor\\",
+            "classmap_prefix": "Recca0120_ReverseProxy_Vendor_",
+            "constant_prefix": "RECCA0120_REVERSE_PROXY_VENDOR_",
             "delete_vendor_packages": false,
             "delete_vendor_files": false
         }

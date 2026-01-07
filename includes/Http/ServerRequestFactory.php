@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Http;
+namespace Recca0120\ReverseProxy\Http;
 
 use Nyholm\Psr7\ServerRequest;
 use Nyholm\Psr7\Uri;

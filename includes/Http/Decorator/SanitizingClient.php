@@ -1,12 +1,12 @@
 <?php
 
-namespace ReverseProxy\Http;
+namespace Recca0120\ReverseProxy\Http\Decorator;
 
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
-class FilteringClient implements ClientInterface
+class SanitizingClient implements ClientInterface
 {
     /**
      * Headers that should not be forwarded (hop-by-hop headers).

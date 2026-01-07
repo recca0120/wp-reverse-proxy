@@ -1,6 +1,6 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 
 use Http\Client\Exception\NetworkException;
 use Nyholm\Psr7\Request;
@@ -8,7 +8,7 @@ use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
-use ReverseProxy\Middleware\CircuitBreaker;
+use Recca0120\ReverseProxy\Middleware\CircuitBreaker;
 
 class CircuitBreakerTest extends TestCase
 {

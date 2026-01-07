@@ -1,11 +1,11 @@
 <?php
 
-namespace ReverseProxy\Tests\Integration\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Integration\Middleware;
 
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Response;
-use ReverseProxy\Middleware\RewritePath;
-use ReverseProxy\Route;
+use Recca0120\ReverseProxy\Middleware\RewritePath;
+use Recca0120\ReverseProxy\Route;
 use WP_UnitTestCase;
 
 class RewritePathTest extends WP_UnitTestCase

@@ -1,13 +1,13 @@
 <?php
 
-namespace ReverseProxy\Tests\Unit\Middleware;
+namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
-use ReverseProxy\Middleware\Logging;
+use Recca0120\ReverseProxy\Middleware\Logging;
 
 class LoggingTest extends TestCase
 {
