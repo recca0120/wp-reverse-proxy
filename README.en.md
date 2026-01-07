@@ -64,13 +64,13 @@ When two WordPress plugins use Composer with the same dependency but different v
 
 ### Option 1: Config Files (Recommended)
 
-Create JSON or PHP config files in `wp-content/reverse-proxy-routes/` directory:
+Create JSON, YAML, or PHP config files in `wp-content/reverse-proxy-routes/` directory:
 
 ```
 wp-content/
 ├── reverse-proxy-routes/    # Route config directory
 │   ├── api.json
-│   ├── legacy.json
+│   ├── legacy.yaml
 │   └── internal.php
 ├── plugins/
 └── uploads/
@@ -88,6 +88,13 @@ wp-content/
 }
 ```
 
+**YAML format** (`legacy.yaml`):
+```yaml
+routes:
+  - path: /legacy/*
+    target: https://legacy.example.com
+```
+
 **PHP format** (`internal.php`):
 ```php
 <?php
@@ -101,7 +108,7 @@ return [
 ];
 ```
 
-The plugin automatically loads all `.json` and `.php` files from the directory.
+The plugin automatically loads all `.json`, `.yaml`, `.yml`, and `.php` files from the directory.
 
 #### Full Configuration Example
 
@@ -126,6 +133,32 @@ The plugin automatically loads all `.json` and `.php` files from the directory.
     }
   ]
 }
+```
+
+**YAML format (supports Anchors & Aliases):**
+```yaml
+# Define shared config with anchors
+defaults: &defaults
+  middlewares:
+    - ProxyHeaders
+    - SetHost: api.example.com
+
+routes:
+  - path: /api/v2/*
+    target: https://api-v2.example.com
+    methods: [GET, POST]
+    middlewares:
+      - ProxyHeaders
+      - SetHost: api.example.com
+      - Timeout: 30
+      - name: RateLimiting
+        options:
+          limit: 100
+          window: 60
+
+  - path: /legacy/*
+    target: https://legacy.example.com
+    <<: *defaults  # Merge shared config
 ```
 
 **PHP format:**
@@ -238,7 +271,7 @@ add_filter('reverse_proxy_config_directory', function () {
     return WP_CONTENT_DIR . '/my-proxy-routes';
 });
 
-// Change file pattern (default *.{json,php})
+// Change file pattern (default *.{json,yaml,yml,php})
 add_filter('reverse_proxy_config_pattern', function () {
     return '*.routes.json';
 });
@@ -999,7 +1032,7 @@ add_filter('reverse_proxy_routes', function () {
 | `reverse_proxy_config_loader` | `$loader` | Override config loader |
 | `reverse_proxy_middleware_factory` | `$factory` | Customize middleware factory (register custom aliases) |
 | `reverse_proxy_config_directory` | `$directory` | Config file directory (default `WP_CONTENT_DIR/reverse-proxy-routes`) |
-| `reverse_proxy_config_pattern` | `$pattern` | Config file pattern (default `*.{json,php}`) |
+| `reverse_proxy_config_pattern` | `$pattern` | Config file pattern (default `*.{json,yaml,yml,php}`) |
 | `reverse_proxy_config_cache` | `$cache` | PSR-16 cache instance (for caching config) |
 | `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
 | `reverse_proxy_psr17_factory` | `$factory` | Override PSR-17 HTTP factory |
