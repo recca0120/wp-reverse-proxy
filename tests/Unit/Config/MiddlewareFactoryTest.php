@@ -335,4 +335,52 @@ class MiddlewareFactoryTest extends TestCase
         $this->assertInstanceOf(SetHost::class, $middlewares[1]);
         $this->assertInstanceOf(Timeout::class, $middlewares[2]);
     }
+
+    public function test_create_many_with_php_mixed_array_format(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        // PHP mixed array format
+        $middlewares = $factory->createMany([
+            'ProxyHeaders',
+            'SetHost' => 'api.example.com',
+            'Timeout' => 30,
+        ]);
+
+        $this->assertCount(3, $middlewares);
+        $this->assertInstanceOf(ProxyHeaders::class, $middlewares[0]);
+        $this->assertInstanceOf(SetHost::class, $middlewares[1]);
+        $this->assertInstanceOf(Timeout::class, $middlewares[2]);
+    }
+
+    public function test_create_many_with_php_mixed_array_format_with_array_options(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        // PHP mixed array format with array options
+        $middlewares = $factory->createMany([
+            'ProxyHeaders' => ['clientIp' => '192.168.1.1'],
+            'SetHost' => 'api.example.com',
+        ]);
+
+        $this->assertCount(2, $middlewares);
+        $this->assertInstanceOf(ProxyHeaders::class, $middlewares[0]);
+        $this->assertInstanceOf(SetHost::class, $middlewares[1]);
+    }
+
+    public function test_create_many_preserves_order(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middlewares = $factory->createMany([
+            'SetHost' => 'api.example.com',
+            'ProxyHeaders',
+            'Timeout' => 30,
+        ]);
+
+        $this->assertCount(3, $middlewares);
+        $this->assertInstanceOf(SetHost::class, $middlewares[0]);
+        $this->assertInstanceOf(ProxyHeaders::class, $middlewares[1]);
+        $this->assertInstanceOf(Timeout::class, $middlewares[2]);
+    }
 }

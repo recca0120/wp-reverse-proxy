@@ -87,6 +87,7 @@ class MiddlewareFactory
      * Supported formats:
      * - Pipe-separated string: "ProxyHeaders|SetHost:api.example.com|Timeout:30"
      * - Array of configs: ["ProxyHeaders", "SetHost:api.example.com", ["Timeout", 30]]
+     * - Mixed array: ["ProxyHeaders", "SetHost" => "api.example.com", "Timeout" => 30]
      *
      * @param  string|array  $configs
      * @return array<MiddlewareInterface>
@@ -97,7 +98,17 @@ class MiddlewareFactory
             $configs = explode('|', $configs);
         }
 
-        return array_map([$this, 'create'], $configs);
+        $middlewares = [];
+        foreach ($configs as $key => $value) {
+            // Key-value format: "SetHost" => "api.example.com"
+            if (is_string($key) && ! is_numeric($key)) {
+                $middlewares[] = $this->create([$key => $value]);
+            } else {
+                $middlewares[] = $this->create($value);
+            }
+        }
+
+        return $middlewares;
     }
 
     /**
