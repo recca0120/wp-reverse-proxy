@@ -56,7 +56,7 @@ class FallbackTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new Fallback([404]),
+                new Fallback(404),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(200, [], '{"data":"success"}'));
@@ -70,7 +70,7 @@ class FallbackTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new Fallback([404]),
+                new Fallback(404),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(404, [], '{"error":"Not Found"}'));
@@ -91,7 +91,7 @@ class FallbackTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new Fallback([404, 410, 451]),
+                new Fallback(404, 410, 451),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(410, [], '{"error":"Gone"}'));
@@ -112,7 +112,7 @@ class FallbackTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new Fallback([404]),
+                new Fallback(404),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(500, [], '{"error":"Server Error"}'));
@@ -155,7 +155,7 @@ class FallbackTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new Fallback([404]),
+                new Fallback(404),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(404, [], '{"error":"Not Found"}'));

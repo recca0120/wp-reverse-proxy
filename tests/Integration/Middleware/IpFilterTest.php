@@ -63,7 +63,7 @@ class IpFilterTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                IpFilter::allow(['192.168.1.100', '10.0.0.1']),
+                IpFilter::allow('192.168.1.100', '10.0.0.1'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -81,7 +81,7 @@ class IpFilterTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                IpFilter::allow(['192.168.1.100']),
+                IpFilter::allow('192.168.1.100'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -107,7 +107,7 @@ class IpFilterTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                IpFilter::deny(['192.168.1.100', '10.0.0.1']),
+                IpFilter::deny('192.168.1.100', '10.0.0.1'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -133,7 +133,7 @@ class IpFilterTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                IpFilter::deny(['192.168.1.100']),
+                IpFilter::deny('192.168.1.100'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -151,7 +151,7 @@ class IpFilterTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                IpFilter::allow(['192.168.1.0/24']),
+                IpFilter::allow('192.168.1.0/24'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -169,7 +169,7 @@ class IpFilterTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                IpFilter::allow(['192.168.1.0/24']),
+                IpFilter::allow('192.168.1.0/24'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));

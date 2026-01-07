@@ -487,8 +487,13 @@ new Route('/api/*', 'https://backend.example.com', [
 use Recca0120\ReverseProxy\Middleware\AllowMethods;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new AllowMethods(['GET', 'POST']),
+    new AllowMethods('GET', 'POST'),
 ]);
+```
+
+**配置檔格式：**
+```json
+"middlewares": ["AllowMethods:GET,POST,PUT"]
 ```
 
 功能：
@@ -570,19 +575,30 @@ use Recca0120\ReverseProxy\Middleware\IpFilter;
 
 // 白名單模式：只允許指定 IP
 new Route('/api/*', 'https://backend.example.com', [
-    IpFilter::allow(['192.168.1.100', '10.0.0.1']),
+    IpFilter::allow('192.168.1.100', '10.0.0.1'),
 ]);
 
 // 黑名單模式：封鎖指定 IP
 new Route('/api/*', 'https://backend.example.com', [
-    IpFilter::deny(['192.168.1.100']),
+    IpFilter::deny('192.168.1.100'),
 ]);
 
 // 支援 CIDR 格式
 new Route('/api/*', 'https://backend.example.com', [
-    IpFilter::allow(['192.168.1.0/24', '10.0.0.0/8']),
+    IpFilter::allow('192.168.1.0/24', '10.0.0.0/8'),
 ]);
 ```
+
+**配置檔格式：**
+```json
+"middlewares": [
+  "IpFilter:allow,192.168.1.100,10.0.0.1",
+  "IpFilter:deny,192.168.1.100",
+  "IpFilter:192.168.1.0/24"
+]
+```
+
+> 若省略模式（allow/deny），預設為 `allow`。
 
 功能：
 - 支援白名單（allow）和黑名單（deny）模式
@@ -730,8 +746,13 @@ new Route('/api/*', 'https://backend.example.com', [
 
 // 多個狀態碼
 new Route('/api/*', 'https://backend.example.com', [
-    new Fallback([404, 410]),
+    new Fallback(404, 410, 500),
 ]);
+```
+
+**配置檔格式：**
+```json
+"middlewares": ["Fallback:404,500,502"]
 ```
 
 功能：

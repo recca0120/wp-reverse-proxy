@@ -56,7 +56,7 @@ class AllowMethodsTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new AllowMethods(['GET', 'POST']),
+                new AllowMethods('GET', 'POST'),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(200, [], '{"data":"success"}'));
@@ -72,7 +72,7 @@ class AllowMethodsTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new AllowMethods(['GET', 'POST']),
+                new AllowMethods('GET', 'POST'),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(201, [], '{"id":1}'));
@@ -96,7 +96,7 @@ class AllowMethodsTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new AllowMethods(['GET', 'POST']),
+                new AllowMethods('GET', 'POST'),
             ]),
         ]);
 
@@ -120,7 +120,7 @@ class AllowMethodsTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new AllowMethods(['GET', 'POST']),
+                new AllowMethods('GET', 'POST'),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(200, [], ''));
