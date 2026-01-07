@@ -22,23 +22,10 @@ define('REVERSE_PROXY_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 // Load Composer autoloader
 if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
-    // Production: load prefixed vendor dependencies
+    // Production: load prefixed vendor dependencies (includes Recca0120\ReverseProxy\ namespace)
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php';
-    // Register PSR-4 autoloader for ReverseProxy namespace (not included in vendor-prefixed)
-    spl_autoload_register(function ($class) {
-        $prefix = 'Recca0120\ReverseProxy\\';
-        $baseDir = REVERSE_PROXY_PLUGIN_DIR.'includes/';
-        $len = strlen($prefix);
-        if (strncmp($prefix, $class, $len) !== 0) {
-            return;
-        }
-        $file = $baseDir.str_replace('\\', '/', substr($class, $len)).'.php';
-        if (file_exists($file)) {
-            require $file;
-        }
-    });
 } elseif (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php')) {
-    // Development: load original vendor dependencies (includes Recca0120\ReverseProxy\ namespace)
+    // Development: load original vendor dependencies
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 

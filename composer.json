@@ -44,7 +44,8 @@
             "classmap_prefix": "Recca0120_ReverseProxy_Vendor_",
             "constant_prefix": "RECCA0120_REVERSE_PROXY_VENDOR_",
             "delete_vendor_packages": false,
-            "delete_vendor_files": false
+            "delete_vendor_files": false,
+            "include_root_autoload": true
         }
     }
 }
