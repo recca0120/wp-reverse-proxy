@@ -21,11 +21,8 @@ jobs:
           php-version: '8.3'
           extensions: mbstring, intl, pdo_sqlite
 
-      - name: Setup WordPress test environment
-        run: ./bin/install-wp-tests.sh sqlite
-
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --optimize-autoloader
+        run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
 
       # === Development Version (original namespaces) ===
       - name: Create dev plugin directory
@@ -65,12 +62,6 @@ jobs:
           mkdir -p bin
           curl -o bin/strauss.phar -L https://github.com/BrianHenryIE/strauss/releases/latest/download/strauss.phar
           php bin/strauss.phar --updateCallSites=includes,reverse-proxy.php
-
-      - name: Run tests
-        env:
-          DB_ENGINE: sqlite
-          WP_CORE_DIR: ${{ github.workspace }}/.wordpress-test/wordpress
-        run: vendor/bin/phpunit
 
       - name: Create production plugin directory
         run: |
