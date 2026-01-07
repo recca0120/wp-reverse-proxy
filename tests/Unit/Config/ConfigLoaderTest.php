@@ -4,13 +4,13 @@ namespace Recca0120\ReverseProxy\Tests\Unit\Config;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Config\ConfigLoader;
 use Recca0120\ReverseProxy\Config\Loaders\JsonLoader;
 use Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader;
 use Recca0120\ReverseProxy\Config\MiddlewareFactory;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Route;
-use Psr\SimpleCache\CacheInterface;
 
 class ConfigLoaderTest extends TestCase
 {

@@ -79,9 +79,13 @@ function reverse_proxy_send_response($response)
     }
 }
 
-function reverse_proxy_load_config_routes()
+function reverse_proxy_get_config_loader()
 {
-    $configLoader = apply_filters('reverse_proxy_config_loader', null);
+    static $configLoader = null;
+
+    if ($configLoader === null) {
+        $configLoader = apply_filters('reverse_proxy_config_loader', null);
+    }
 
     if ($configLoader === null) {
         $configLoader = new Recca0120\ReverseProxy\Config\ConfigLoader(
@@ -94,6 +98,12 @@ function reverse_proxy_load_config_routes()
         );
     }
 
+    return $configLoader;
+}
+
+function reverse_proxy_load_config_routes()
+{
+    $configLoader = reverse_proxy_get_config_loader();
     $directory = apply_filters('reverse_proxy_config_directory', WPMU_PLUGIN_DIR);
     $pattern = apply_filters('reverse_proxy_config_pattern', '*.routes.*');
 

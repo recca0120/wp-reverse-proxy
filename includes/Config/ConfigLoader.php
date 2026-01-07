@@ -3,9 +3,9 @@
 namespace Recca0120\ReverseProxy\Config;
 
 use InvalidArgumentException;
+use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Config\Contracts\LoaderInterface;
 use Recca0120\ReverseProxy\Route;
-use Psr\SimpleCache\CacheInterface;
 
 class ConfigLoader
 {
@@ -67,27 +67,40 @@ class ConfigLoader
      */
     public function loadFromFile(string $file): array
     {
-        $cacheKey = $this->getCacheKey($file);
+        return $this->remember($this->getCacheKey($file), function () use ($file) {
+            $config = $this->loadConfig($file);
+            if (empty($config) || ! isset($config['routes'])) {
+                return [];
+            }
 
+            return $this->createRoutes($config['routes']);
+        });
+    }
+
+    /**
+     * Get value from cache or execute callback and store result.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    private function remember(string $key, callable $callback)
+    {
         if ($this->cache !== null) {
-            $cached = $this->cache->get($cacheKey);
+            $cached = $this->cache->get($key);
             if ($cached !== null) {
                 return $cached;
             }
         }
 
-        $config = $this->loadConfig($file);
-        if (empty($config) || ! isset($config['routes'])) {
-            return [];
-        }
-
-        $routes = $this->createRoutes($config['routes']);
+        $value = $callback();
 
         if ($this->cache !== null) {
-            $this->cache->set($cacheKey, $routes, $this->cacheTtl);
+            $this->cache->set($key, $value, $this->cacheTtl);
         }
 
-        return $routes;
+        return $value;
     }
 
     /**

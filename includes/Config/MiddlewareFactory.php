@@ -21,29 +21,33 @@ use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
+use ReflectionClass;
 
 class MiddlewareFactory
 {
-    /** @var array<string, class-string<MiddlewareInterface>> */
-    private $aliases = [
-        'ProxyHeaders' => ProxyHeaders::class,
-        'SetHost' => SetHost::class,
-        'RewritePath' => RewritePath::class,
-        'RewriteBody' => RewriteBody::class,
-        'AllowMethods' => AllowMethods::class,
-        'Cors' => Cors::class,
-        'IpFilter' => IpFilter::class,
-        'RateLimiting' => RateLimiting::class,
-        'Caching' => Caching::class,
-        'RequestId' => RequestId::class,
-        'Retry' => Retry::class,
-        'CircuitBreaker' => CircuitBreaker::class,
-        'Timeout' => Timeout::class,
-        'Fallback' => Fallback::class,
-        'Logging' => Logging::class,
-        'ErrorHandling' => ErrorHandling::class,
-        'SanitizeHeaders' => SanitizeHeaders::class,
+    /** @var array<class-string<MiddlewareInterface>> */
+    private static $defaultMiddlewares = [
+        ProxyHeaders::class,
+        SetHost::class,
+        RewritePath::class,
+        RewriteBody::class,
+        AllowMethods::class,
+        Cors::class,
+        IpFilter::class,
+        RateLimiting::class,
+        Caching::class,
+        RequestId::class,
+        Retry::class,
+        CircuitBreaker::class,
+        Timeout::class,
+        Fallback::class,
+        Logging::class,
+        ErrorHandling::class,
+        SanitizeHeaders::class,
     ];
+
+    /** @var array<string, class-string<MiddlewareInterface>>|null */
+    private $aliases;
 
     /**
      * Create a middleware instance from configuration.
@@ -53,7 +57,8 @@ class MiddlewareFactory
     public function create(array $config): MiddlewareInterface
     {
         $name = $config['name'];
-        $class = $this->aliases[$name] ?? $name;
+        $aliases = $this->getAliases();
+        $class = $aliases[$name] ?? $name;
 
         if (! class_exists($class)) {
             throw new InvalidArgumentException("Unknown middleware: {$name}");
@@ -71,6 +76,7 @@ class MiddlewareFactory
      */
     public function registerAlias(string $alias, string $class): void
     {
+        $this->getAliases();
         $this->aliases[$alias] = $class;
     }
 
@@ -81,11 +87,35 @@ class MiddlewareFactory
      */
     public function getAliases(): array
     {
+        if ($this->aliases === null) {
+            $this->aliases = $this->buildAliases(self::$defaultMiddlewares);
+        }
+
         return $this->aliases;
     }
 
     /**
+     * Build aliases from middleware classes.
+     *
+     * @param  array<class-string<MiddlewareInterface>>  $classes
+     * @return array<string, class-string<MiddlewareInterface>>
+     */
+    private function buildAliases(array $classes): array
+    {
+        $aliases = [];
+        foreach ($classes as $class) {
+            $shortName = (new ReflectionClass($class))->getShortName();
+            $aliases[$shortName] = $class;
+        }
+
+        return $aliases;
+    }
+
+    /**
      * Resolve arguments from config.
+     *
+     * args: positional arguments array, spread into constructor
+     * options: single value or associative array, wrapped and passed to constructor
      *
      * @param  array{name: string, args?: array, options?: mixed}  $config
      * @return array<int, mixed>
@@ -97,9 +127,7 @@ class MiddlewareFactory
         }
 
         if (isset($config['options'])) {
-            $options = $config['options'];
-
-            return is_array($options) ? [$options] : [$options];
+            return [$config['options']];
         }
 
         return [];
