@@ -12,12 +12,10 @@ class AllowMethods implements MiddlewareInterface
     /** @var string[] */
     private $allowedMethods;
 
-    /**
-     * @param  string[]  $allowedMethods
-     */
-    public function __construct(array $allowedMethods)
+    public function __construct(string ...$allowedMethods)
     {
-        $this->allowedMethods = array_map('strtoupper', $allowedMethods);
+        $methods = $allowedMethods ?: ['GET'];
+        $this->allowedMethods = array_map('strtoupper', $methods);
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface

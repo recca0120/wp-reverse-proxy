@@ -20,32 +20,34 @@ class IpFilter implements MiddlewareInterface
     private $mode;
 
     /**
-     * @param  string[]  $ips
+     * @param  string  $modeOrIp  模式 (allow/deny) 或第一個 IP
+     * @param  string  ...$ips  IP 列表
      */
-    public function __construct(array $ips, string $mode = self::MODE_ALLOW)
+    public function __construct(string $modeOrIp = self::MODE_ALLOW, string ...$ips)
     {
+        if (in_array($modeOrIp, [self::MODE_ALLOW, self::MODE_DENY], true)) {
+            $this->mode = $modeOrIp;
+        } else {
+            $this->mode = self::MODE_ALLOW;
+            array_unshift($ips, $modeOrIp);
+        }
         $this->ips = $ips;
-        $this->mode = $mode;
     }
 
     /**
      * 建立白名單過濾器
-     *
-     * @param  string[]  $ips
      */
-    public static function allow(array $ips): self
+    public static function allow(string ...$ips): self
     {
-        return new self($ips, self::MODE_ALLOW);
+        return new self(self::MODE_ALLOW, ...$ips);
     }
 
     /**
      * 建立黑名單過濾器
-     *
-     * @param  string[]  $ips
      */
-    public static function deny(array $ips): self
+    public static function deny(string ...$ips): self
     {
-        return new self($ips, self::MODE_DENY);
+        return new self(self::MODE_DENY, ...$ips);
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface

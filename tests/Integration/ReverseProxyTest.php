@@ -467,7 +467,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new AllowMethods(['GET', 'POST']),
+                new AllowMethods('GET', 'POST'),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"success":true}'));
@@ -483,7 +483,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new AllowMethods(['GET']),
+                new AllowMethods('GET'),
             ]),
         ]);
 

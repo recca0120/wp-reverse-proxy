@@ -6,6 +6,9 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Recca0120\ReverseProxy\Config\MiddlewareFactory;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Middleware\AllowMethods;
+use Recca0120\ReverseProxy\Middleware\Fallback;
+use Recca0120\ReverseProxy\Middleware\IpFilter;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
@@ -189,5 +192,50 @@ class MiddlewareFactoryTest extends TestCase
         $this->assertInstanceOf(ProxyHeaders::class, $middlewares[0]);
         $this->assertInstanceOf(SetHost::class, $middlewares[1]);
         $this->assertInstanceOf(Timeout::class, $middlewares[2]);
+    }
+
+    public function test_create_allow_methods_from_colon_format(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create('AllowMethods:GET,POST,PUT');
+
+        $this->assertInstanceOf(AllowMethods::class, $middleware);
+    }
+
+    public function test_create_fallback_from_colon_format(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create('Fallback:404,500,502');
+
+        $this->assertInstanceOf(Fallback::class, $middleware);
+    }
+
+    public function test_create_ip_filter_from_colon_format_with_mode(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create('IpFilter:allow,192.168.1.1,10.0.0.1');
+
+        $this->assertInstanceOf(IpFilter::class, $middleware);
+    }
+
+    public function test_create_ip_filter_from_colon_format_without_mode(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create('IpFilter:192.168.1.1,10.0.0.1');
+
+        $this->assertInstanceOf(IpFilter::class, $middleware);
+    }
+
+    public function test_create_ip_filter_deny_mode_from_colon_format(): void
+    {
+        $factory = new MiddlewareFactory;
+
+        $middleware = $factory->create('IpFilter:deny,192.168.1.100');
+
+        $this->assertInstanceOf(IpFilter::class, $middleware);
     }
 }

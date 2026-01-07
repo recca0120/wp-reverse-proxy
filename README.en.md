@@ -487,8 +487,13 @@ Restricts allowed HTTP methods and returns 405 Method Not Allowed for others:
 use Recca0120\ReverseProxy\Middleware\AllowMethods;
 
 new Route('/api/*', 'https://backend.example.com', [
-    new AllowMethods(['GET', 'POST']),
+    new AllowMethods('GET', 'POST'),
 ]);
+```
+
+**Config file format:**
+```json
+"middlewares": ["AllowMethods:GET,POST,PUT"]
 ```
 
 Features:
@@ -570,19 +575,30 @@ use Recca0120\ReverseProxy\Middleware\IpFilter;
 
 // Whitelist mode: only allow specified IPs
 new Route('/api/*', 'https://backend.example.com', [
-    IpFilter::allow(['192.168.1.100', '10.0.0.1']),
+    IpFilter::allow('192.168.1.100', '10.0.0.1'),
 ]);
 
 // Blacklist mode: block specified IPs
 new Route('/api/*', 'https://backend.example.com', [
-    IpFilter::deny(['192.168.1.100']),
+    IpFilter::deny('192.168.1.100'),
 ]);
 
 // Support CIDR notation
 new Route('/api/*', 'https://backend.example.com', [
-    IpFilter::allow(['192.168.1.0/24', '10.0.0.0/8']),
+    IpFilter::allow('192.168.1.0/24', '10.0.0.0/8'),
 ]);
 ```
+
+**Config file format:**
+```json
+"middlewares": [
+  "IpFilter:allow,192.168.1.100,10.0.0.1",
+  "IpFilter:deny,192.168.1.100",
+  "IpFilter:192.168.1.0/24"
+]
+```
+
+> If mode (allow/deny) is omitted, defaults to `allow`.
 
 Features:
 - Supports whitelist (allow) and blacklist (deny) modes
@@ -730,8 +746,13 @@ new Route('/api/*', 'https://backend.example.com', [
 
 // Multiple status codes
 new Route('/api/*', 'https://backend.example.com', [
-    new Fallback([404, 410]),
+    new Fallback(404, 410, 500),
 ]);
+```
+
+**Config file format:**
+```json
+"middlewares": ["Fallback:404,500,502"]
 ```
 
 Features:

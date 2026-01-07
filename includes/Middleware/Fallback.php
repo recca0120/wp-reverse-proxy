@@ -16,11 +16,11 @@ class Fallback implements MiddlewareInterface
     private $statusCodes;
 
     /**
-     * @param  int[]  $statusCodes  觸發 fallback 的狀態碼
+     * @param  int  ...$statusCodes  觸發 fallback 的狀態碼
      */
-    public function __construct(array $statusCodes = [404])
+    public function __construct(int ...$statusCodes)
     {
-        $this->statusCodes = $statusCodes;
+        $this->statusCodes = $statusCodes ?: [404];
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
