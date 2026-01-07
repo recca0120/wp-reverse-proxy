@@ -64,7 +64,94 @@ composer require recca0120/wp-reverse-proxy
 
 ## 使用方式
 
-### 基本設定
+### 方式一：配置檔（推薦）
+
+在 `wp-content/mu-plugins/` 目錄建立 JSON 或 PHP 配置檔：
+
+**JSON 格式** (`api.routes.json`)：
+```json
+{
+  "routes": [
+    {
+      "path": "/api/*",
+      "target": "https://api.example.com"
+    }
+  ]
+}
+```
+
+**PHP 格式** (`api.routes.php`)：
+```php
+<?php
+return [
+    'routes' => [
+        [
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+        ],
+    ],
+];
+```
+
+#### 配置檔命名規則
+
+- `*.routes.json` - JSON 格式
+- `*.routes.php` - PHP 格式
+
+外掛會自動載入 mu-plugins 目錄下所有符合 `*.routes.*` 的檔案。
+
+#### 完整配置範例
+
+```json
+{
+  "routes": [
+    {
+      "path": "/api/v2/*",
+      "target": "https://api-v2.example.com",
+      "methods": ["GET", "POST"],
+      "middlewares": [
+        { "name": "ProxyHeaders" },
+        { "name": "SetHost", "args": ["api.example.com"] },
+        { "name": "Timeout", "options": 30 },
+        { "name": "RateLimiting", "options": { "limit": 100, "window": 60 } }
+      ]
+    },
+    {
+      "path": "/legacy/*",
+      "target": "https://legacy.example.com"
+    }
+  ]
+}
+```
+
+#### 中介層配置格式
+
+| 欄位 | 說明 | 範例 |
+|------|------|------|
+| `name` | 中介層名稱（別名或完整類別名） | `"ProxyHeaders"` |
+| `args` | 位置參數陣列 | `["example.com"]` |
+| `options` | 單一值或具名參數 | `30` 或 `{"limit": 100}` |
+
+**可用的中介層別名：**
+`ProxyHeaders`, `SetHost`, `RewritePath`, `RewriteBody`, `AllowMethods`, `Cors`, `IpFilter`, `RateLimiting`, `Caching`, `RequestId`, `Retry`, `CircuitBreaker`, `Timeout`, `Fallback`, `Logging`, `ErrorHandling`, `SanitizeHeaders`
+
+#### 自訂配置目錄
+
+```php
+// 變更配置檔目錄
+add_filter('reverse_proxy_config_directory', function () {
+    return WP_CONTENT_DIR . '/proxy-config';
+});
+
+// 變更檔案匹配模式
+add_filter('reverse_proxy_config_pattern', function () {
+    return '*.proxy.json';
+});
+```
+
+---
+
+### 方式二：PHP Filter Hook
 
 建立設定檔 `wp-content/mu-plugins/reverse-proxy-config.php`：
 
@@ -81,6 +168,22 @@ add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/*', 'https://api.example.com'),
     ];
+});
+```
+
+---
+
+### 混合模式
+
+配置檔和 Filter Hook 可以同時使用。配置檔的路由會先載入，再透過 `reverse_proxy_routes` filter 合併或修改：
+
+```php
+// 在配置檔路由的基礎上新增或修改
+add_filter('reverse_proxy_routes', function ($routes) {
+    // 新增額外路由
+    $routes[] = new Route('/custom/*', 'https://custom.example.com');
+
+    return $routes;
 });
 ```
 
@@ -777,6 +880,10 @@ add_filter('reverse_proxy_routes', function () {
 |------|------|------|
 | `reverse_proxy_action_hook` | `$hook` | 設定觸發的 action hook（預設 `plugins_loaded`） |
 | `reverse_proxy_routes` | `$routes` | 設定代理路由 |
+| `reverse_proxy_config_loader` | `$loader` | 覆寫配置載入器 |
+| `reverse_proxy_config_directory` | `$directory` | 配置檔目錄（預設 `WPMU_PLUGIN_DIR`） |
+| `reverse_proxy_config_pattern` | `$pattern` | 配置檔匹配模式（預設 `*.routes.*`） |
+| `reverse_proxy_config_cache` | `$cache` | PSR-16 快取實例（用於快取配置） |
 | `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_psr17_factory` | `$factory` | 覆寫 PSR-17 HTTP 工廠 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |

@@ -64,7 +64,94 @@ When two WordPress plugins use Composer with the same dependency but different v
 
 ## Usage
 
-### Basic Configuration
+### Option 1: Config Files (Recommended)
+
+Create JSON or PHP config files in `wp-content/mu-plugins/` directory:
+
+**JSON format** (`api.routes.json`):
+```json
+{
+  "routes": [
+    {
+      "path": "/api/*",
+      "target": "https://api.example.com"
+    }
+  ]
+}
+```
+
+**PHP format** (`api.routes.php`):
+```php
+<?php
+return [
+    'routes' => [
+        [
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+        ],
+    ],
+];
+```
+
+#### Config File Naming
+
+- `*.routes.json` - JSON format
+- `*.routes.php` - PHP format
+
+The plugin automatically loads all files matching `*.routes.*` from the mu-plugins directory.
+
+#### Full Configuration Example
+
+```json
+{
+  "routes": [
+    {
+      "path": "/api/v2/*",
+      "target": "https://api-v2.example.com",
+      "methods": ["GET", "POST"],
+      "middlewares": [
+        { "name": "ProxyHeaders" },
+        { "name": "SetHost", "args": ["api.example.com"] },
+        { "name": "Timeout", "options": 30 },
+        { "name": "RateLimiting", "options": { "limit": 100, "window": 60 } }
+      ]
+    },
+    {
+      "path": "/legacy/*",
+      "target": "https://legacy.example.com"
+    }
+  ]
+}
+```
+
+#### Middleware Configuration Format
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `name` | Middleware name (alias or full class name) | `"ProxyHeaders"` |
+| `args` | Positional arguments array | `["example.com"]` |
+| `options` | Single value or named parameters | `30` or `{"limit": 100}` |
+
+**Available middleware aliases:**
+`ProxyHeaders`, `SetHost`, `RewritePath`, `RewriteBody`, `AllowMethods`, `Cors`, `IpFilter`, `RateLimiting`, `Caching`, `RequestId`, `Retry`, `CircuitBreaker`, `Timeout`, `Fallback`, `Logging`, `ErrorHandling`, `SanitizeHeaders`
+
+#### Custom Config Directory
+
+```php
+// Change config directory
+add_filter('reverse_proxy_config_directory', function () {
+    return WP_CONTENT_DIR . '/proxy-config';
+});
+
+// Change file pattern
+add_filter('reverse_proxy_config_pattern', function () {
+    return '*.proxy.json';
+});
+```
+
+---
+
+### Option 2: PHP Filter Hook
 
 Create a configuration file at `wp-content/mu-plugins/reverse-proxy-config.php`:
 
@@ -81,6 +168,22 @@ add_filter('reverse_proxy_routes', function () {
     return [
         new Route('/api/*', 'https://api.example.com'),
     ];
+});
+```
+
+---
+
+### Mixed Mode
+
+Config files and Filter Hooks can be used together. Routes from config files are loaded first, then merged or modified via the `reverse_proxy_routes` filter:
+
+```php
+// Add or modify routes on top of config file routes
+add_filter('reverse_proxy_routes', function ($routes) {
+    // Add additional routes
+    $routes[] = new Route('/custom/*', 'https://custom.example.com');
+
+    return $routes;
 });
 ```
 
@@ -777,6 +880,10 @@ add_filter('reverse_proxy_routes', function () {
 |------|------------|-------------|
 | `reverse_proxy_action_hook` | `$hook` | Set the trigger action hook (default `plugins_loaded`) |
 | `reverse_proxy_routes` | `$routes` | Configure proxy routes |
+| `reverse_proxy_config_loader` | `$loader` | Override config loader |
+| `reverse_proxy_config_directory` | `$directory` | Config file directory (default `WPMU_PLUGIN_DIR`) |
+| `reverse_proxy_config_pattern` | `$pattern` | Config file pattern (default `*.routes.*`) |
+| `reverse_proxy_config_cache` | `$cache` | PSR-16 cache instance (for caching config) |
 | `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
 | `reverse_proxy_psr17_factory` | `$factory` | Override PSR-17 HTTP factory |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
