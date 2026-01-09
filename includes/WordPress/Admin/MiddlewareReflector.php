@@ -357,14 +357,6 @@ class MiddlewareReflector
     }
 
     /**
-     * Map PHP type to UI field type.
-     */
-    private function mapType(string $phpType): string
-    {
-        return self::$typeMap[$phpType] ?? 'text';
-    }
-
-    /**
      * Generate human-readable label from name.
      *
      * Examples:
