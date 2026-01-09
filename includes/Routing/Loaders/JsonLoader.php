@@ -2,11 +2,14 @@
 
 namespace Recca0120\ReverseProxy\Routing\Loaders;
 
-class JsonLoader extends AbstractLoader
+class JsonLoader extends AbstractFileLoader
 {
-    public function supports(string $file): bool
+    /**
+     * @return array<string>
+     */
+    public function getExtensions(): array
     {
-        return pathinfo($file, PATHINFO_EXTENSION) === 'json';
+        return ['json'];
     }
 
     /**

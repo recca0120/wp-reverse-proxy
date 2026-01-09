@@ -4,8 +4,18 @@ namespace Recca0120\ReverseProxy\Routing\Loaders;
 
 use Recca0120\ReverseProxy\Contracts\FileLoaderInterface;
 
-abstract class AbstractLoader implements FileLoaderInterface
+abstract class AbstractFileLoader implements FileLoaderInterface
 {
+    /**
+     * Check if this loader supports the given file.
+     */
+    public function supports(string $file): bool
+    {
+        $extension = pathinfo($file, PATHINFO_EXTENSION);
+
+        return in_array($extension, $this->getExtensions(), true);
+    }
+
     /**
      * Load configuration from file.
      *

@@ -24,9 +24,6 @@ class FileLoader implements RouteLoaderInterface
     /** @var CacheInterface|null */
     private $cache;
 
-    /** @var string */
-    private $pattern;
-
     /**
      * @param array<string> $paths Directories or files to load routes from
      * @param array<FileLoaderInterface>|null $parsers Custom parsers (default: JSON, YAML, PHP)
@@ -35,14 +32,12 @@ class FileLoader implements RouteLoaderInterface
         array $paths,
         ?array $parsers = null,
         ?MiddlewareFactory $middlewareFactory = null,
-        ?CacheInterface $cache = null,
-        string $pattern = '*.{json,yaml,yml,php}'
+        ?CacheInterface $cache = null
     ) {
         $this->paths = $paths;
         $this->parsers = $parsers ?? $this->defaultParsers();
         $this->middlewareFactory = $middlewareFactory ?? new MiddlewareFactory();
         $this->cache = $cache;
-        $this->pattern = $pattern;
     }
 
     /**
@@ -55,7 +50,7 @@ class FileLoader implements RouteLoaderInterface
         $routes = [];
 
         foreach ($this->paths as $path) {
-            $routes = array_merge($routes, $this->loadFromPath($path));
+            array_push($routes, ...$this->loadFromPath($path));
         }
 
         return $routes;
@@ -82,14 +77,33 @@ class FileLoader implements RouteLoaderInterface
      */
     private function loadFromDirectory(string $directory): array
     {
-        $files = $this->globFiles($directory, $this->pattern);
+        $files = $this->globFiles($directory, $this->buildPattern());
         $routes = [];
 
         foreach ($files as $file) {
-            $routes = array_merge($routes, $this->loadFromFile($file));
+            array_push($routes, ...$this->loadFromFile($file));
         }
 
         return $routes;
+    }
+
+    /**
+     * Build glob pattern from parsers' extensions.
+     */
+    private function buildPattern(): string
+    {
+        $extensions = [];
+        foreach ($this->parsers as $parser) {
+            array_push($extensions, ...$parser->getExtensions());
+        }
+
+        $extensions = array_unique($extensions);
+
+        if (count($extensions) === 1) {
+            return '*.' . $extensions[0];
+        }
+
+        return '*.{' . implode(',', $extensions) . '}';
     }
 
     /**
@@ -213,7 +227,7 @@ class FileLoader implements RouteLoaderInterface
         if (preg_match('/\{([^}]+)\}/', $pattern, $matches)) {
             $files = [];
             foreach (explode(',', $matches[1]) as $alt) {
-                $files = array_merge($files, $this->safeGlob(str_replace($matches[0], $alt, $fullPattern)));
+                array_push($files, ...$this->safeGlob(str_replace($matches[0], $alt, $fullPattern)));
             }
 
             return array_unique($files);

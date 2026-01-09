@@ -121,19 +121,19 @@ class FileLoaderTest extends TestCase
 
     public function test_load_routes_from_directory(): void
     {
-        file_put_contents($this->fixturesPath . '/api.routes.json', json_encode([
+        file_put_contents($this->fixturesPath . '/api.json', json_encode([
             'routes' => [
                 ['path' => '/api/*', 'target' => 'https://api.example.com'],
             ],
         ]));
 
-        file_put_contents($this->fixturesPath . '/web.routes.php', '<?php return [
+        file_put_contents($this->fixturesPath . '/web.php', '<?php return [
             "routes" => [
                 ["path" => "/web/*", "target" => "https://web.example.com"],
             ],
         ];');
 
-        $loader = new FileLoader([$this->fixturesPath], null, null, null, '*.routes.*');
+        $loader = new FileLoader([$this->fixturesPath]);
         $routes = $loader->load();
 
         $this->assertCount(2, $routes);
@@ -141,19 +141,19 @@ class FileLoaderTest extends TestCase
 
     public function test_merge_routes_from_multiple_files(): void
     {
-        file_put_contents($this->fixturesPath . '/first.routes.json', json_encode([
+        file_put_contents($this->fixturesPath . '/first.json', json_encode([
             'routes' => [
                 ['path' => '/first/*', 'target' => 'https://first.example.com'],
             ],
         ]));
 
-        file_put_contents($this->fixturesPath . '/second.routes.json', json_encode([
+        file_put_contents($this->fixturesPath . '/second.json', json_encode([
             'routes' => [
                 ['path' => '/second/*', 'target' => 'https://second.example.com'],
             ],
         ]));
 
-        $loader = new FileLoader([$this->fixturesPath], null, null, null, '*.routes.json');
+        $loader = new FileLoader([$this->fixturesPath]);
         $routes = $loader->load();
 
         $this->assertCount(2, $routes);
@@ -364,7 +364,7 @@ class FileLoaderTest extends TestCase
             mkdir($emptyDir, 0755, true);
         }
 
-        $loader = new FileLoader([$emptyDir], null, null, null, '*.routes.*');
+        $loader = new FileLoader([$emptyDir]);
         $routes = $loader->load();
 
         $this->assertIsArray($routes);
@@ -373,7 +373,7 @@ class FileLoaderTest extends TestCase
         rmdir($emptyDir);
     }
 
-    public function test_load_routes_with_brace_expansion_pattern(): void
+    public function test_load_routes_ignores_unsupported_files(): void
     {
         file_put_contents($this->fixturesPath . '/api.json', json_encode([
             'routes' => [
@@ -389,7 +389,7 @@ class FileLoaderTest extends TestCase
 
         file_put_contents($this->fixturesPath . '/ignore.txt', 'should be ignored');
 
-        $loader = new FileLoader([$this->fixturesPath], null, null, null, '*.{json,php}');
+        $loader = new FileLoader([$this->fixturesPath]);
         $routes = $loader->load();
 
         $this->assertCount(2, $routes);
