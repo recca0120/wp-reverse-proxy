@@ -67,11 +67,11 @@ if (isset($_GET['error'])) {
         <table class="wp-list-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th scope="col" class="column-status" style="width: 60px;"><?php esc_html_e('Status', 'reverse-proxy'); ?></th>
+                    <th scope="col" class="column-status"><?php esc_html_e('Status', 'reverse-proxy'); ?></th>
                     <th scope="col" class="column-path"><?php esc_html_e('Path', 'reverse-proxy'); ?></th>
                     <th scope="col" class="column-target"><?php esc_html_e('Target', 'reverse-proxy'); ?></th>
-                    <th scope="col" class="column-methods" style="width: 150px;"><?php esc_html_e('Methods', 'reverse-proxy'); ?></th>
-                    <th scope="col" class="column-actions" style="width: 200px;"><?php esc_html_e('Actions', 'reverse-proxy'); ?></th>
+                    <th scope="col" class="column-methods"><?php esc_html_e('Methods', 'reverse-proxy'); ?></th>
+                    <th scope="col" class="column-actions"><?php esc_html_e('Actions', 'reverse-proxy'); ?></th>
                 </tr>
             </thead>
             <tbody>

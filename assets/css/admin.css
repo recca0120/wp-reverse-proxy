@@ -3,6 +3,18 @@
  */
 
 /* Routes List Table */
+.reverse-proxy-admin .column-status {
+    width: 60px;
+}
+
+.reverse-proxy-admin .column-methods {
+    width: 150px;
+}
+
+.reverse-proxy-admin .column-actions {
+    width: 200px;
+}
+
 .reverse-proxy-admin .status-enabled {
     color: #00a32a;
 }
