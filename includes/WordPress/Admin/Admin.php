@@ -200,20 +200,21 @@ class Admin
 
     private function handleFormDeleteRoute(): void
     {
-        $routeId = sanitize_text_field($_GET['route_id']);
-        $this->verifyFormRequest('_wpnonce', 'delete_route_' . $routeId, 'GET');
-
-        $this->routesPage->deleteRoute($routeId);
-        $this->redirectToRoutesPage('message=deleted');
+        $this->handleFormRouteAction('delete', 'deleteRoute', 'deleted');
     }
 
     private function handleFormToggleRoute(): void
     {
-        $routeId = sanitize_text_field($_GET['route_id']);
-        $this->verifyFormRequest('_wpnonce', 'toggle_route_' . $routeId, 'GET');
+        $this->handleFormRouteAction('toggle', 'toggleRoute', 'toggled');
+    }
 
-        $this->routesPage->toggleRoute($routeId);
-        $this->redirectToRoutesPage('message=toggled');
+    private function handleFormRouteAction(string $action, string $method, string $message): void
+    {
+        $routeId = sanitize_text_field($_GET['route_id']);
+        $this->verifyFormRequest('_wpnonce', $action . '_route_' . $routeId, 'GET');
+
+        $this->routesPage->$method($routeId);
+        $this->redirectToRoutesPage('message=' . $message);
     }
 
     private function verifyFormRequest(string $nonceField, string $nonceAction, string $method = 'POST'): void
