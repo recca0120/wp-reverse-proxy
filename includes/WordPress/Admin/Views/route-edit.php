@@ -125,36 +125,61 @@ echo esc_attr(json_encode($currentMiddlewares));
     background: #f6f7f7;
     border: 1px solid #c3c4c7;
     border-radius: 4px;
-    padding: 12px;
     margin-bottom: 10px;
 }
-.middleware-item .middleware-select {
-    min-width: 200px;
-    margin-right: 10px;
-}
-.middleware-item .middleware-fields {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #dcdcde;
-}
-.middleware-item .middleware-fields:empty {
-    display: none;
-}
-.middleware-item .remove-middleware {
-    color: #b32d2e;
-}
-.middleware-item .remove-middleware:hover {
-    color: #a00;
-    border-color: #a00;
+.middleware-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 8px;
 }
 .middleware-drag-handle {
     cursor: move;
     color: #787c82;
-    margin-right: 8px;
-    vertical-align: middle;
+    flex-shrink: 0;
 }
 .middleware-drag-handle:hover {
     color: #2271b1;
+}
+.middleware-select {
+    flex: 1;
+    max-width: 250px;
+}
+.middleware-header .remove-middleware {
+    margin-left: auto;
+    color: #b32d2e;
+}
+.middleware-header .remove-middleware:hover {
+    color: #a00;
+    border-color: #a00;
+}
+.middleware-body {
+    padding: 0 12px 12px;
+    border-top: 1px solid #dcdcde;
+    margin-top: 0;
+}
+.middleware-body:empty,
+.middleware-body.empty {
+    display: none;
+}
+.middleware-body .description {
+    margin: 10px 0 8px;
+    color: #646970;
+}
+.middleware-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+.middleware-field-wrapper label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+.middleware-field-wrapper input,
+.middleware-field-wrapper textarea {
+    width: 100%;
+    max-width: none;
 }
 .middleware-item-placeholder {
     background: #f0f6fc;

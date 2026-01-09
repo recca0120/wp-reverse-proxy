@@ -114,6 +114,7 @@
 
     function createMiddlewareItem(index, selectedName) {
         var html = '<div class="middleware-item" data-index="' + index + '">';
+        html += '<div class="middleware-header">';
         html += '<span class="middleware-drag-handle dashicons dashicons-move" title="Drag to reorder"></span>';
         html += '<select name="route[middlewares][' + index + '][name]" class="middleware-select">';
         html += '<option value="">-- Select Middleware --</option>';
@@ -127,7 +128,8 @@
 
         html += '</select>';
         html += '<button type="button" class="button button-small remove-middleware">Remove</button>';
-        html += '<div class="middleware-fields"></div>';
+        html += '</div>';
+        html += '<div class="middleware-body"></div>';
         html += '</div>';
 
         return html;
@@ -138,7 +140,7 @@
             var $item = $(this);
             $item.attr('data-index', index);
             $item.find('.middleware-select').attr('name', 'route[middlewares][' + index + '][name]');
-            $item.find('.middleware-fields input, .middleware-fields textarea').each(function() {
+            $item.find('.middleware-body input, .middleware-body textarea').each(function() {
                 var name = $(this).attr('name');
                 if (name) {
                     name = name.replace(/\[middlewares\]\[\d+\]/, '[middlewares][' + index + ']');
@@ -151,10 +153,11 @@
 
     function updateMiddlewareFields($select, existingValues) {
         var name = $select.val();
-        var $fieldsContainer = $select.siblings('.middleware-fields');
-        var index = $select.closest('.middleware-item').data('index');
+        var $item = $select.closest('.middleware-item');
+        var $body = $item.find('.middleware-body');
+        var index = $item.data('index');
         var values = existingValues || [];
-        $fieldsContainer.empty();
+        $body.empty().addClass('empty');
 
         if (!name || !middlewares[name]) {
             return;
@@ -164,18 +167,21 @@
         var fields = middleware.fields || [];
 
         if (middleware.description) {
-            $fieldsContainer.append('<p class="description">' + escapeHtml(middleware.description) + '</p>');
+            $body.append('<p class="description">' + escapeHtml(middleware.description) + '</p>');
+            $body.removeClass('empty');
         }
 
         if (fields.length === 0) {
-            $fieldsContainer.append('<p class="description"><em>No configuration required</em></p>');
             return;
         }
+
+        $body.removeClass('empty');
+        var $grid = $('<div class="middleware-fields-grid">');
 
         fields.forEach(function(field, fieldIndex) {
             var inputId = 'mw-' + index + '-' + field.name;
             var inputName = 'route[middlewares][' + index + '][' + field.name + ']';
-            var $wrapper = $('<div class="middleware-field-wrapper" style="margin-bottom: 8px;">');
+            var $wrapper = $('<div class="middleware-field-wrapper">');
             var $label = $('<label>').attr('for', inputId).text(field.label + (field.required ? ' *' : ''));
             var $input;
 
@@ -188,17 +194,19 @@
                     name: inputName,
                     rows: 3,
                     placeholder: field.placeholder || ''
-                }).css('width', '100%').css('max-width', '400px');
+                });
                 if (value !== undefined) {
                     $input.val(value);
                 }
+                // Textarea spans full width
+                $wrapper.css('grid-column', '1 / -1');
             } else {
                 $input = $('<input>').attr({
                     type: field.type || 'text',
                     id: inputId,
                     name: inputName,
                     placeholder: field.placeholder || ''
-                }).css('width', '100%').css('max-width', '400px');
+                });
 
                 if (field.required) {
                     $input.attr('required', true);
@@ -208,9 +216,11 @@
                 }
             }
 
-            $wrapper.append($label).append('<br>').append($input);
-            $fieldsContainer.append($wrapper);
+            $wrapper.append($label).append($input);
+            $grid.append($wrapper);
         });
+
+        $body.append($grid);
     }
 
     function escapeHtml(text) {
