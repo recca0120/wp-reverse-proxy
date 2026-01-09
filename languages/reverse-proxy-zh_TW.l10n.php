@@ -7,6 +7,7 @@ return [
     'project-id-version' => 'Reverse Proxy 1.0.0',
     'language' => 'zh_TW',
     'messages' => [
+        'Proxy requests to backend servers with configurable routes and middleware support.' => '將請求代理至後端伺服器，支援可設定的路由與中介軟體。',
         'Route saved successfully.' => '路由已成功儲存。',
         'Failed to save route. Please check the path and target URL.' => '儲存路由失敗。請檢查路徑和目標網址。',
         'Route ID is required.' => '路由 ID 為必填項目。',

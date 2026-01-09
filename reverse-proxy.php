@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Reverse Proxy
  * Plugin URI: https://github.com/recca0120/wp-reverse-proxy
- * Description: WordPress reverse proxy plugin
+ * Description: Proxy requests to backend servers with configurable routes and middleware support.
  * Version: 1.0.0
  * Author: Recca Tsai
  * Author URI: https://github.com/recca0120
