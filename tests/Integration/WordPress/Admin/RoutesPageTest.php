@@ -279,4 +279,194 @@ class RoutesPageTest extends WP_UnitTestCase
         $middlewares = $routeObject->getMiddlewares();
         $this->assertCount(3, $middlewares);
     }
+
+    public function test_ajax_save_route_handler()
+    {
+        $routesPage = new RoutesPage();
+
+        // Set up POST data for AJAX
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['route'] = [
+            'path' => '/ajax-api/*',
+            'target' => 'https://ajax.example.com',
+            'methods' => ['GET', 'POST'],
+            'enabled' => '1',
+        ];
+        $_POST['middlewares_json'] = json_encode(['ProxyHeaders']);
+
+        // Capture AJAX response with output buffering and custom die handler
+        $response = $this->captureAjaxResponse([$this->admin, 'handleSaveRoute']);
+
+        $this->assertTrue($response['success']);
+        $this->assertEquals('Route saved successfully.', $response['data']['message']);
+
+        $routes = $routesPage->getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertEquals('/ajax-api/*', $routes[0]['path']);
+        $this->assertEquals('https://ajax.example.com', $routes[0]['target']);
+
+        unset($_POST['nonce'], $_POST['route'], $_POST['middlewares_json']);
+    }
+
+    public function test_ajax_delete_route_handler()
+    {
+        $routesPage = new RoutesPage();
+
+        // First save a route
+        $routesPage->saveRoute([
+            'path' => '/to-delete/*',
+            'target' => 'https://delete.example.com',
+            'enabled' => true,
+        ]);
+
+        $routes = $routesPage->getRoutes();
+        $routeId = $routes[0]['id'];
+
+        // Set up POST data for AJAX delete
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['route_id'] = $routeId;
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleDeleteRoute']);
+
+        $this->assertTrue($response['success']);
+        $this->assertEquals('Route deleted successfully.', $response['data']['message']);
+
+        $routes = $routesPage->getRoutes();
+        $this->assertCount(0, $routes);
+
+        unset($_POST['nonce'], $_POST['route_id']);
+    }
+
+    public function test_ajax_toggle_route_handler()
+    {
+        $routesPage = new RoutesPage();
+
+        // First save an enabled route
+        $routesPage->saveRoute([
+            'path' => '/to-toggle/*',
+            'target' => 'https://toggle.example.com',
+            'enabled' => true,
+        ]);
+
+        $routes = $routesPage->getRoutes();
+        $routeId = $routes[0]['id'];
+        $this->assertTrue($routes[0]['enabled']);
+
+        // Set up POST data for AJAX toggle
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['route_id'] = $routeId;
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleToggleRoute']);
+
+        $this->assertTrue($response['success']);
+
+        $routes = $routesPage->getRoutes();
+        $this->assertFalse($routes[0]['enabled']);
+
+        unset($_POST['nonce'], $_POST['route_id']);
+    }
+
+    public function test_ajax_save_requires_valid_nonce()
+    {
+        $_POST['nonce'] = 'invalid_nonce';
+        $_POST['route'] = [
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+        ];
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleSaveRoute']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Security check failed.', $response['data']['message']);
+
+        unset($_POST['nonce'], $_POST['route']);
+    }
+
+    public function test_ajax_save_requires_permission()
+    {
+        // Switch to subscriber (no manage_options capability)
+        $subscriber_id = $this->factory->user->create(['role' => 'subscriber']);
+        wp_set_current_user($subscriber_id);
+
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['route'] = [
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+        ];
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleSaveRoute']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Permission denied.', $response['data']['message']);
+
+        unset($_POST['nonce'], $_POST['route']);
+    }
+
+    public function test_save_route_with_json_middlewares()
+    {
+        $routesPage = new RoutesPage();
+
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['route'] = [
+            'path' => '/json-mw/*',
+            'target' => 'https://json.example.com',
+            'enabled' => '1',
+        ];
+        $_POST['middlewares_json'] = json_encode([
+            'ProxyHeaders',
+            ['SetHost', 'custom.host.com'],
+            ['Timeout', 60],
+        ]);
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleSaveRoute']);
+
+        $this->assertTrue($response['success']);
+
+        $routes = $routesPage->getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertEquals([
+            'ProxyHeaders',
+            ['SetHost', 'custom.host.com'],
+            ['Timeout', 60],
+        ], $routes[0]['middlewares']);
+
+        unset($_POST['nonce'], $_POST['route'], $_POST['middlewares_json']);
+    }
+
+    /**
+     * Helper method to capture AJAX response without exiting
+     */
+    private function captureAjaxResponse(callable $callback): array
+    {
+        // Simulate AJAX context
+        if (!defined('DOING_AJAX')) {
+            define('DOING_AJAX', true);
+        }
+
+        // Replace die handler to throw exception instead of exiting
+        add_filter('wp_die_ajax_handler', function () {
+            return function ($message) {
+                throw new \WPDieException($message);
+            };
+        }, 99);
+
+        ob_start();
+        try {
+            $callback();
+        } catch (\WPDieException $e) {
+            // Expected - AJAX responses call wp_die
+        }
+        $output = ob_get_clean();
+
+        // Clean up filter
+        remove_all_filters('wp_die_ajax_handler');
+
+        // Parse JSON response
+        $response = json_decode($output, true);
+        if ($response === null) {
+            return ['success' => false, 'data' => ['message' => $output]];
+        }
+
+        return $response;
+    }
 }
