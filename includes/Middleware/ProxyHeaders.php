@@ -66,11 +66,7 @@ class ProxyHeaders implements MiddlewareInterface
      */
     private function detectScheme(array $serverParams): string
     {
-        if (isset($serverParams['HTTPS']) && $serverParams['HTTPS'] !== 'off') {
-            return 'https';
-        }
-
-        return 'http';
+        return ($serverParams['HTTPS'] ?? 'off') !== 'off' ? 'https' : 'http';
     }
 
     /**

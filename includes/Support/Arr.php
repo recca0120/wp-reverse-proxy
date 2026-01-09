@@ -61,4 +61,15 @@ class Arr
     {
         return in_array($value, $array, true);
     }
+
+    /**
+     * Determine if a key exists in an array.
+     *
+     * @param array<string|int, mixed> $array
+     * @param string|int $key
+     */
+    public static function has(array $array, $key): bool
+    {
+        return array_key_exists($key, $array);
+    }
 }

@@ -50,7 +50,7 @@ class ServerRequestFactory
 
     private function createUri(array $serverParams): Uri
     {
-        $scheme = isset($serverParams['HTTPS']) && $serverParams['HTTPS'] !== 'off' ? 'https' : 'http';
+        $scheme = ($serverParams['HTTPS'] ?? 'off') !== 'off' ? 'https' : 'http';
         $host = $serverParams['HTTP_HOST'] ?? $serverParams['SERVER_NAME'] ?? 'localhost';
         $requestUri = $this->normalizeRequestUri($serverParams['REQUEST_URI'] ?? '/');
 

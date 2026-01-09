@@ -6,8 +6,9 @@ A WordPress plugin that proxies specific URL paths to external backend servers.
 
 ## Features
 
-- Route matching with wildcard support (`/api/*`)
+- Route matching with wildcard (`/api/*`) and prefix matching (`/api`)
 - HTTP method matching (`POST /api/users`, `GET|POST /api/*`)
+- Nginx-style path prefix stripping (target URL ending with `/`)
 - Path rewriting via middleware
 - Full HTTP method support (GET, POST, PUT, PATCH, DELETE)
 - Request/Response headers forwarding
@@ -409,6 +410,62 @@ new Route('DELETE /api/users/*', 'https://backend.example.com');
 ```php
 new Route('GET|POST /api/users', 'https://backend.example.com');
 new Route('GET|POST|PUT|DELETE /api/*', 'https://backend.example.com');
+```
+
+### Path Matching Behavior
+
+**Prefix Matching (Default Behavior):**
+
+Paths without wildcards automatically perform prefix matching:
+
+```php
+// /api matches /api, /api/, /api/users, /api/users/123
+new Route('/api', 'https://backend.example.com');
+```
+
+**Wildcard Matching:**
+
+The `*` wildcard matches any characters:
+
+```php
+// /api/* matches /api, /api/, /api/users, /api/users/123
+new Route('/api/*', 'https://backend.example.com');
+
+// /api/*/posts matches /api/users/posts, /api/123/posts
+// but NOT /api/posts or /api/users/posts/123
+new Route('/api/*/posts', 'https://backend.example.com');
+```
+
+> **Note**: `/api` is equivalent to `/api/*`, both perform prefix matching.
+
+### Nginx-Style Path Prefix Stripping
+
+When the target URL ends with `/`, the matched path prefix is automatically stripped (similar to nginx `proxy_pass` behavior):
+
+```php
+// Target URL without trailing /: keep full path
+// /api/users/123 → https://backend.example.com/api/users/123
+new Route('/api/*', 'https://backend.example.com');
+
+// Target URL with trailing /: strip /api prefix
+// /api/users/123 → https://backend.example.com/users/123
+new Route('/api/*', 'https://backend.example.com/');
+```
+
+**Nginx Configuration Comparison:**
+
+```nginx
+# Keep full path (no trailing /)
+location /api/ {
+    proxy_pass https://backend.example.com;
+}
+# /api/users → https://backend.example.com/api/users
+
+# Strip prefix (with trailing /)
+location /api/ {
+    proxy_pass https://backend.example.com/;
+}
+# /api/users → https://backend.example.com/users
 ```
 
 ### Method-Based Routing Example

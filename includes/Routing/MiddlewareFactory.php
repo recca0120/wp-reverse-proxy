@@ -21,6 +21,7 @@ use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
+use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareFactory
@@ -162,7 +163,7 @@ class MiddlewareFactory
         }
 
         // Already standard format: ["name" => "...", ...]
-        if (isset($config['name'])) {
+        if (Arr::has($config, 'name')) {
             return $config;
         }
 
@@ -265,11 +266,11 @@ class MiddlewareFactory
      */
     private function resolveArguments(array $config): array
     {
-        if (isset($config['args'])) {
+        if (Arr::has($config, 'args')) {
             return (array) $config['args'];
         }
 
-        if (isset($config['options'])) {
+        if (Arr::has($config, 'options')) {
             return [$config['options']];
         }
 

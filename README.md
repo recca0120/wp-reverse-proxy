@@ -6,8 +6,9 @@
 
 ## 功能特色
 
-- 路由匹配支援萬用字元 (`/api/*`)
+- 路由匹配支援萬用字元 (`/api/*`) 與前綴匹配 (`/api`)
 - HTTP 方法匹配 (`POST /api/users`, `GET|POST /api/*`)
+- Nginx 風格的路徑前綴移除（目標 URL 以 `/` 結尾）
 - 透過中介層重寫路徑
 - 完整 HTTP 方法支援 (GET, POST, PUT, PATCH, DELETE)
 - 請求/回應標頭轉發
@@ -410,6 +411,62 @@ new Route('DELETE /api/users/*', 'https://backend.example.com');
 ```php
 new Route('GET|POST /api/users', 'https://backend.example.com');
 new Route('GET|POST|PUT|DELETE /api/*', 'https://backend.example.com');
+```
+
+### 路徑匹配行為
+
+**前綴匹配（預設行為）：**
+
+沒有萬用字元的路徑會自動進行前綴匹配：
+
+```php
+// /api 會匹配 /api, /api/, /api/users, /api/users/123
+new Route('/api', 'https://backend.example.com');
+```
+
+**萬用字元匹配：**
+
+`*` 萬用字元可匹配任意字元：
+
+```php
+// /api/* 會匹配 /api, /api/, /api/users, /api/users/123
+new Route('/api/*', 'https://backend.example.com');
+
+// /api/*/posts 會匹配 /api/users/posts, /api/123/posts
+// 但不會匹配 /api/posts 或 /api/users/posts/123
+new Route('/api/*/posts', 'https://backend.example.com');
+```
+
+> **注意**：`/api` 等同於 `/api/*`，兩者都會進行前綴匹配。
+
+### Nginx 風格的路徑前綴移除
+
+當目標 URL 以 `/` 結尾時，會自動移除匹配的路徑前綴（類似 nginx 的 `proxy_pass` 行為）：
+
+```php
+// 目標 URL 不以 / 結尾：保留完整路徑
+// /api/users/123 → https://backend.example.com/api/users/123
+new Route('/api/*', 'https://backend.example.com');
+
+// 目標 URL 以 / 結尾：移除 /api 前綴
+// /api/users/123 → https://backend.example.com/users/123
+new Route('/api/*', 'https://backend.example.com/');
+```
+
+**對照 nginx 設定：**
+
+```nginx
+# 保留完整路徑（不以 / 結尾）
+location /api/ {
+    proxy_pass https://backend.example.com;
+}
+# /api/users → https://backend.example.com/api/users
+
+# 移除前綴（以 / 結尾）
+location /api/ {
+    proxy_pass https://backend.example.com/;
+}
+# /api/users → https://backend.example.com/users
 ```
 
 ### 基於方法的路由範例

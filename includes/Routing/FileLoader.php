@@ -131,7 +131,7 @@ class FileLoader implements RouteLoaderInterface
     {
         $config = $this->parseFile($file);
 
-        if (empty($config) || !isset($config['routes'])) {
+        if (empty($config) || !Arr::has($config, 'routes')) {
             return [];
         }
 

@@ -256,8 +256,8 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
         $parsed = parse_url($url);
 
         return $parsed !== false
-            && isset($parsed['scheme'])
-            && isset($parsed['host'])
+            && Arr::has($parsed, 'scheme')
+            && Arr::has($parsed, 'host')
             && Arr::contains(['http', 'https'], $parsed['scheme']);
     }
 
