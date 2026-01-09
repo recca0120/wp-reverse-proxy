@@ -9,7 +9,6 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 class ProxyHeaders implements MiddlewareInterface
 {
     private const ALL_HEADERS = [
-        'X-Real-IP',
         'X-Forwarded-For',
         'X-Forwarded-Host',
         'X-Forwarded-Proto',
@@ -46,7 +45,6 @@ class ProxyHeaders implements MiddlewareInterface
         $port = $this->options['port'] ?? $serverParams['SERVER_PORT'] ?? ($scheme === 'https' ? '443' : '80');
 
         $headers = [
-            'X-Real-IP' => $clientIp,
             'X-Forwarded-For' => $this->buildForwardedFor($request, $clientIp),
             'X-Forwarded-Host' => $host,
             'X-Forwarded-Proto' => $scheme,

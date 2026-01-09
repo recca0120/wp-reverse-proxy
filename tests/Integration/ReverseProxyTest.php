@@ -382,7 +382,8 @@ class ReverseProxyTest extends WP_UnitTestCase
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertNotFalse($lastRequest);
-        $this->assertEquals('192.168.1.100', $lastRequest->getHeaderLine('X-Real-IP'));
+        // X-Real-IP is NOT set by ProxyHeaders - it only forwards existing X-Real-IP
+        $this->assertEquals('', $lastRequest->getHeaderLine('X-Real-IP'));
         $this->assertNotEmpty($lastRequest->getHeaderLine('X-Forwarded-For'));
         $this->assertNotEmpty($lastRequest->getHeaderLine('X-Forwarded-Proto'));
         $this->assertNotEmpty($lastRequest->getHeaderLine('X-Forwarded-Port'));
@@ -425,7 +426,8 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertNotFalse($lastRequest);
         $this->assertEquals('https://127.0.0.1:8080/v1/users', (string) $lastRequest->getUri());
         $this->assertEquals('api.example.com', $lastRequest->getHeaderLine('Host'));
-        $this->assertEquals('10.0.0.1', $lastRequest->getHeaderLine('X-Real-IP'));
+        // X-Real-IP is NOT set by ProxyHeaders - it only forwards existing X-Real-IP
+        $this->assertNotEmpty($lastRequest->getHeaderLine('X-Forwarded-For'));
         $this->assertEquals('{"success":true}', $output);
     }
 
