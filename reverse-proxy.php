@@ -139,14 +139,12 @@ add_action(
     'reverse_proxy_handle'
 );
 
-// Load text domain for translations
-add_action('init', function () {
-    load_plugin_textdomain('reverse-proxy', false, dirname(plugin_basename(__FILE__)) . '/languages');
-});
-
 // Initialize Admin interface (only in admin area)
 if (is_admin()) {
     add_action('plugins_loaded', function () {
+        // Load text domain for translations
+        load_plugin_textdomain('reverse-proxy', false, dirname(plugin_basename(REVERSE_PROXY_PLUGIN_FILE)) . '/languages');
+
         $admin = new Recca0120\ReverseProxy\WordPress\Admin\Admin();
         $admin->register();
     });
