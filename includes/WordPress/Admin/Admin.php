@@ -159,26 +159,22 @@ class Admin
             return;
         }
 
-        // Check if this is our form submission
-        if (!isset($_POST['action'])) {
-            return;
+        // Handle save route form (POST)
+        if (isset($_POST['action'])) {
+            $action = sanitize_text_field($_POST['action']);
+            if ($action === 'reverse_proxy_save_route') {
+                $this->handleFormSaveRoute();
+            }
         }
 
-        $action = sanitize_text_field($_POST['action']);
-
-        // Handle save route form
-        if ($action === 'reverse_proxy_save_route') {
-            $this->handleFormSaveRoute();
-        }
-
-        // Handle delete action from URL
+        // Handle delete action from URL (GET)
         if (isset($_GET['page']) && $_GET['page'] === 'reverse-proxy' &&
             isset($_GET['action']) && $_GET['action'] === 'delete' &&
             isset($_GET['route_id']) && isset($_GET['_wpnonce'])) {
             $this->handleFormDeleteRoute();
         }
 
-        // Handle toggle action from URL
+        // Handle toggle action from URL (GET)
         if (isset($_GET['page']) && $_GET['page'] === 'reverse-proxy' &&
             isset($_GET['action']) && $_GET['action'] === 'toggle' &&
             isset($_GET['route_id']) && isset($_GET['_wpnonce'])) {

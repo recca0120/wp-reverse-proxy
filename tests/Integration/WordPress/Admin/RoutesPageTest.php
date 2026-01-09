@@ -434,6 +434,144 @@ class RoutesPageTest extends WP_UnitTestCase
     }
 
     /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_form_delete_route_via_get()
+    {
+        $routesPage = new RoutesPage();
+
+        // Save a route first
+        $routesPage->saveRoute([
+            'path' => '/form-delete/*',
+            'target' => 'https://form-delete.example.com',
+            'enabled' => true,
+        ]);
+
+        $routes = $routesPage->getRoutes();
+        $routeId = $routes[0]['id'];
+
+        // Set up GET data for form delete
+        $_GET['page'] = 'reverse-proxy';
+        $_GET['action'] = 'delete';
+        $_GET['route_id'] = $routeId;
+        $_GET['_wpnonce'] = wp_create_nonce('delete_route_' . $routeId);
+
+        // Capture redirect
+        $redirectUrl = $this->captureFormRedirect([$this->admin, 'handleFormSubmission']);
+
+        $this->assertStringContainsString('message=deleted', $redirectUrl);
+        $this->assertCount(0, $routesPage->getRoutes());
+
+        unset($_GET['page'], $_GET['action'], $_GET['route_id'], $_GET['_wpnonce']);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_form_toggle_route_via_get()
+    {
+        $routesPage = new RoutesPage();
+
+        // Save an enabled route
+        $routesPage->saveRoute([
+            'path' => '/form-toggle/*',
+            'target' => 'https://form-toggle.example.com',
+            'enabled' => true,
+        ]);
+
+        $routes = $routesPage->getRoutes();
+        $routeId = $routes[0]['id'];
+        $this->assertTrue($routes[0]['enabled']);
+
+        // Set up GET data for form toggle
+        $_GET['page'] = 'reverse-proxy';
+        $_GET['action'] = 'toggle';
+        $_GET['route_id'] = $routeId;
+        $_GET['_wpnonce'] = wp_create_nonce('toggle_route_' . $routeId);
+
+        $redirectUrl = $this->captureFormRedirect([$this->admin, 'handleFormSubmission']);
+
+        $this->assertStringContainsString('message=toggled', $redirectUrl);
+        $routes = $routesPage->getRoutes();
+        $this->assertFalse($routes[0]['enabled']);
+
+        unset($_GET['page'], $_GET['action'], $_GET['route_id'], $_GET['_wpnonce']);
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_form_delete_requires_valid_nonce()
+    {
+        $routesPage = new RoutesPage();
+
+        $routesPage->saveRoute([
+            'path' => '/nonce-test/*',
+            'target' => 'https://nonce.example.com',
+            'enabled' => true,
+        ]);
+
+        $routes = $routesPage->getRoutes();
+        $routeId = $routes[0]['id'];
+
+        $_GET['page'] = 'reverse-proxy';
+        $_GET['action'] = 'delete';
+        $_GET['route_id'] = $routeId;
+        $_GET['_wpnonce'] = 'invalid_nonce';
+
+        // Set up wp_die handler to throw exception
+        add_filter('wp_die_handler', function () {
+            return function ($message) {
+                throw new \WPDieException($message);
+            };
+        });
+
+        $exceptionThrown = false;
+        try {
+            $this->admin->handleFormSubmission();
+        } catch (\WPDieException $e) {
+            $exceptionThrown = true;
+            $this->assertStringContainsString('Security check failed', $e->getMessage());
+        }
+
+        $this->assertTrue($exceptionThrown, 'Expected WPDieException to be thrown for invalid nonce');
+
+        remove_all_filters('wp_die_handler');
+        unset($_GET['page'], $_GET['action'], $_GET['route_id'], $_GET['_wpnonce']);
+    }
+
+    /**
+     * Helper method to capture form redirect
+     *
+     * Note: Since PHP's exit() cannot be mocked, we throw an exception
+     * in wp_redirect filter to stop execution before exit is reached.
+     */
+    private function captureFormRedirect(callable $callback): string
+    {
+        $redirectUrl = '';
+
+        // Override wp_redirect to capture URL and throw exception to stop execution
+        add_filter('wp_redirect', function ($location) use (&$redirectUrl) {
+            $redirectUrl = $location;
+            // Throw exception to prevent reaching exit()
+            throw new \WPDieException('redirect captured');
+        }, 1);
+
+        try {
+            $callback();
+        } catch (\WPDieException $e) {
+            // Expected - we threw this to capture the redirect
+        }
+
+        remove_all_filters('wp_redirect');
+
+        return $redirectUrl;
+    }
+
+    /**
      * Helper method to capture AJAX response without exiting
      */
     private function captureAjaxResponse(callable $callback): array
