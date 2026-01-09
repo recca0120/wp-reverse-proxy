@@ -93,50 +93,19 @@ foreach ($allMethods as $method) :
             <?php esc_html_e('Middlewares process requests before they are sent to the target server. They are executed in order from top to bottom.', 'reverse-proxy'); ?>
         </p>
 
-        <div id="middleware-mode-toggle" style="margin-bottom: 15px;">
-            <label style="margin-right: 15px;">
-                <input type="radio" name="middleware_mode" value="simple" checked>
-                <?php esc_html_e('Simple Mode', 'reverse-proxy'); ?>
-            </label>
-            <label>
-                <input type="radio" name="middleware_mode" value="advanced">
-                <?php esc_html_e('Advanced Mode (JSON)', 'reverse-proxy'); ?>
-            </label>
+        <div id="middleware-list">
+            <!-- Middlewares will be loaded by JavaScript -->
         </div>
-
-        <div id="middleware-simple-mode">
-            <div id="middleware-list">
-                <!-- Middlewares will be loaded by JavaScript -->
-            </div>
-            <p>
-                <button type="button" id="add-middleware" class="button">
-                    <span class="dashicons dashicons-plus-alt2" style="vertical-align: middle;"></span>
-                    <?php esc_html_e('Add Middleware', 'reverse-proxy'); ?>
-                </button>
-            </p>
-        </div>
-
-        <div id="middleware-advanced-mode" style="display: none;">
-            <textarea id="middlewares-json" name="middlewares_json" rows="12" class="large-text code"
-                      placeholder='[
-  "ProxyHeaders",
-  ["SetHost", "api.example.com"],
-  ["Timeout", 30]
-]'><?php
-                $currentMiddlewares = $route['middlewares'] ?? [];
-if (! empty($currentMiddlewares)) {
-    echo esc_textarea(json_encode($currentMiddlewares, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-}
-?></textarea>
-            <p class="description">
-                <?php esc_html_e('Enter middleware configuration as a JSON array. Supported formats:', 'reverse-proxy'); ?>
-            </p>
-            <ul class="description" style="list-style: disc; margin-left: 20px;">
-                <li><code>"MiddlewareName"</code> - <?php esc_html_e('Simple middleware without options', 'reverse-proxy'); ?></li>
-                <li><code>["MiddlewareName", "arg1"]</code> - <?php esc_html_e('Middleware with single argument', 'reverse-proxy'); ?></li>
-                <li><code>["MiddlewareName", "arg1", "arg2"]</code> - <?php esc_html_e('Middleware with multiple arguments', 'reverse-proxy'); ?></li>
-            </ul>
-        </div>
+        <p>
+            <button type="button" id="add-middleware" class="button">
+                <span class="dashicons dashicons-plus-alt2" style="vertical-align: middle;"></span>
+                <?php esc_html_e('Add Middleware', 'reverse-proxy'); ?>
+            </button>
+        </p>
+        <input type="hidden" id="middlewares-json" name="middlewares_json" value="<?php
+            $currentMiddlewares = $route['middlewares'] ?? [];
+echo esc_attr(json_encode($currentMiddlewares));
+?>" />
 
         <p class="submit">
             <input type="submit" name="submit" id="submit" class="button button-primary"
@@ -177,9 +146,5 @@ if (! empty($currentMiddlewares)) {
 .middleware-item .remove-middleware:hover {
     color: #a00;
     border-color: #a00;
-}
-#middlewares-json {
-    font-family: Consolas, Monaco, monospace;
-    font-size: 13px;
 }
 </style>

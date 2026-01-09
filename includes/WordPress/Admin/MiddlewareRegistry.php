@@ -4,7 +4,28 @@ namespace Recca0120\ReverseProxy\WordPress\Admin;
 
 class MiddlewareRegistry
 {
+    /**
+     * Global middlewares that are automatically applied to all routes.
+     * These should not be shown in the admin UI.
+     */
+    private static $globalMiddlewares = [
+        'SanitizeHeaders',
+        'ErrorHandling',
+        'Logging',
+    ];
+
+    /**
+     * Get middlewares available for route configuration (excludes global middlewares).
+     */
     public static function getAll(): array
+    {
+        return array_diff_key(self::getAllMiddlewares(), array_flip(self::$globalMiddlewares));
+    }
+
+    /**
+     * Get all middlewares including global ones.
+     */
+    public static function getAllMiddlewares(): array
     {
         return [
             'ProxyHeaders' => [

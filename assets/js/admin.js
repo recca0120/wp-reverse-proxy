@@ -12,9 +12,12 @@
         // Initialize middleware index
         middlewareIndex = $('#middleware-list .middleware-item').length;
 
-        // Load existing middlewares if editing
+        // Load existing middlewares if editing, or add default for new route
         if (existingMiddlewares && existingMiddlewares.length > 0) {
             loadExistingMiddlewares();
+        } else if ($('#middleware-list').length > 0) {
+            // New route: add ProxyHeaders as default
+            addMiddlewareWithValues('ProxyHeaders', []);
         }
 
         // Add middleware button
@@ -29,19 +32,6 @@
         // Middleware select change (delegated)
         $(document).on('change', '.middleware-select', function() {
             updateMiddlewareFields($(this));
-        });
-
-        // Mode toggle
-        $('input[name="middleware_mode"]').on('change', function() {
-            var mode = $(this).val();
-            if (mode === 'simple') {
-                $('#middleware-simple-mode').show();
-                $('#middleware-advanced-mode').hide();
-            } else {
-                $('#middleware-simple-mode').hide();
-                $('#middleware-advanced-mode').show();
-                syncToJson();
-            }
         });
 
         // Toggle route status
@@ -177,7 +167,7 @@
             return;
         }
 
-        fields.forEach(function(field, fieldIndex) {
+        fields.forEach(function(field) {
             var inputId = 'mw-' + index + '-' + field.name;
             var inputName = 'route[middlewares][' + index + '][' + field.name + ']';
             var $wrapper = $('<div class="middleware-field-wrapper" style="margin-bottom: 8px;">');
@@ -216,44 +206,6 @@
         var div = document.createElement('div');
         div.appendChild(document.createTextNode(text));
         return div.innerHTML;
-    }
-
-    function syncToJson() {
-        var middlewareArray = [];
-        $('#middleware-list .middleware-item').each(function() {
-            var $item = $(this);
-            var name = $item.find('.middleware-select').val();
-            if (!name) return;
-
-            var middleware = middlewares[name];
-            var fields = middleware ? middleware.fields || [] : [];
-            var args = [];
-
-            $item.find('.middleware-fields input, .middleware-fields textarea').each(function(i) {
-                var val = $(this).val();
-                if (val !== '' && val !== null) {
-                    // Try to parse as number
-                    if (!isNaN(val) && val !== '') {
-                        val = parseFloat(val);
-                    } else if (val === 'true') {
-                        val = true;
-                    } else if (val === 'false') {
-                        val = false;
-                    }
-                    args.push(val);
-                }
-            });
-
-            if (args.length === 0) {
-                middlewareArray.push(name);
-            } else if (args.length === 1) {
-                middlewareArray.push([name, args[0]]);
-            } else {
-                middlewareArray.push([name].concat(args));
-            }
-        });
-
-        $('#middlewares-json').val(JSON.stringify(middlewareArray, null, 2));
     }
 
     function toggleRoute(routeId, $button) {
@@ -314,27 +266,12 @@
         var $submitBtn = $form.find('#submit');
         $submitBtn.prop('disabled', true).val('Saving...');
 
-        var mode = $('input[name="middleware_mode"]:checked').val();
-
         // Build form data
         var formData = new FormData($form[0]);
 
-        // If in advanced mode, parse JSON and use it
-        if (mode === 'advanced') {
-            try {
-                var json = $('#middlewares-json').val();
-                var middlewareArray = JSON.parse(json || '[]');
-                formData.set('middlewares_json', JSON.stringify(middlewareArray));
-            } catch (e) {
-                alert('Invalid JSON format for middlewares.');
-                $submitBtn.prop('disabled', false).val('Save Route');
-                return;
-            }
-        } else {
-            // In simple mode, collect middleware data
-            var middlewareArray = collectSimpleModeMiddlewares();
-            formData.set('middlewares_json', JSON.stringify(middlewareArray));
-        }
+        // Collect middleware data
+        var middlewareArray = collectMiddlewares();
+        formData.set('middlewares_json', JSON.stringify(middlewareArray));
 
         $.ajax({
             url: reverseProxyAdmin.ajaxUrl,
@@ -355,7 +292,7 @@
         });
     }
 
-    function collectSimpleModeMiddlewares() {
+    function collectMiddlewares() {
         var middlewareArray = [];
         $('#middleware-list .middleware-item').each(function() {
             var $item = $(this);

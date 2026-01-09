@@ -141,11 +141,13 @@ if (isset($_GET['error'])) {
         <div class="alignleft actions">
             <p class="description">
                 <?php
-                printf(
-                    /* translators: %s: directory path */
-                    esc_html__('Routes from configuration files in %s will also be loaded.', 'reverse-proxy'),
-                    '<code>' . esc_html(apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR . '/reverse-proxy-routes')) . '</code>'
-                );
+                $fullPath = apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR . '/reverse-proxy-routes');
+$relativePath = str_replace(ABSPATH, '', $fullPath);
+printf(
+    /* translators: %s: directory path */
+    esc_html__('Routes from configuration files in %s will also be loaded.', 'reverse-proxy'),
+    '<code>' . esc_html($relativePath) . '</code>'
+);
 ?>
             </p>
         </div>
