@@ -5,26 +5,24 @@ namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Middleware\RateLimiting;
+use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 
 class RateLimitingTest extends TestCase
 {
-    /** @var CacheInterface&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var ArrayCache */
     private $cache;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->cache = $this->createMock(CacheInterface::class);
+        $this->cache = new ArrayCache();
     }
 
     public function test_it_allows_request_within_limit()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->method('set')->willReturn(true);
-
-        $middleware = new RateLimiting(10, 60, null, $this->cache);
+        $middleware = new RateLimiting(10, 60);
+        $middleware->setCache($this->cache);
         $request = $this->createRequest();
 
         $called = false;
@@ -40,10 +38,8 @@ class RateLimitingTest extends TestCase
 
     public function test_it_adds_rate_limit_headers()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->method('set')->willReturn(true);
-
-        $middleware = new RateLimiting(10, 60, null, $this->cache);
+        $middleware = new RateLimiting(10, 60);
+        $middleware->setCache($this->cache);
         $request = $this->createRequest();
 
         $response = $middleware->process($request, function ($req) {
@@ -57,13 +53,14 @@ class RateLimitingTest extends TestCase
 
     public function test_it_returns_429_when_limit_exceeded()
     {
-        $this->cache->method('get')->willReturn([
+        $cacheKey = 'rp_rate_' . md5('192.168.1.100');
+        $this->cache->set($cacheKey, [
             'window_start' => time(),
             'count' => 10,
         ]);
-        $this->cache->method('set')->willReturn(true);
 
-        $middleware = new RateLimiting(10, 60, null, $this->cache);
+        $middleware = new RateLimiting(10, 60);
+        $middleware->setCache($this->cache);
         $request = $this->createRequest();
 
         $called = false;
@@ -80,14 +77,15 @@ class RateLimitingTest extends TestCase
 
     public function test_it_resets_counter_after_window_expires()
     {
+        $cacheKey = 'rp_rate_' . md5('192.168.1.100');
         $oldWindowStart = time() - 120; // 2 minutes ago
-        $this->cache->method('get')->willReturn([
+        $this->cache->set($cacheKey, [
             'window_start' => $oldWindowStart,
             'count' => 100,
         ]);
-        $this->cache->method('set')->willReturn(true);
 
-        $middleware = new RateLimiting(10, 60, null, $this->cache);
+        $middleware = new RateLimiting(10, 60);
+        $middleware->setCache($this->cache);
         $request = $this->createRequest();
 
         $called = false;
@@ -103,30 +101,30 @@ class RateLimitingTest extends TestCase
 
     public function test_it_uses_custom_key_generator()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->expects($this->once())
-            ->method('set')
-            ->with($this->equalTo(md5('custom-key')));
-
         $middleware = new RateLimiting(10, 60, function ($request) {
             return 'custom-key';
-        }, $this->cache);
+        });
+        $middleware->setCache($this->cache);
         $request = $this->createRequest();
 
         $middleware->process($request, function ($req) {
             return new Response(200);
         });
+
+        $expectedKey = 'rp_rate_' . md5('custom-key');
+        $this->assertTrue($this->cache->has($expectedKey));
     }
 
     public function test_it_returns_json_error_body_on_429()
     {
-        $this->cache->method('get')->willReturn([
+        $cacheKey = 'rp_rate_' . md5('192.168.1.100');
+        $this->cache->set($cacheKey, [
             'window_start' => time(),
             'count' => 10,
         ]);
-        $this->cache->method('set')->willReturn(true);
 
-        $middleware = new RateLimiting(10, 60, null, $this->cache);
+        $middleware = new RateLimiting(10, 60);
+        $middleware->setCache($this->cache);
         $request = $this->createRequest();
 
         $response = $middleware->process($request, function ($req) {
@@ -141,13 +139,14 @@ class RateLimitingTest extends TestCase
 
     public function test_remaining_count_decreases_with_each_request()
     {
-        $this->cache->method('get')->willReturn([
+        $cacheKey = 'rp_rate_' . md5('192.168.1.100');
+        $this->cache->set($cacheKey, [
             'window_start' => time(),
             'count' => 5,
         ]);
-        $this->cache->method('set')->willReturn(true);
 
-        $middleware = new RateLimiting(10, 60, null, $this->cache);
+        $middleware = new RateLimiting(10, 60);
+        $middleware->setCache($this->cache);
         $request = $this->createRequest();
 
         $response = $middleware->process($request, function ($req) {

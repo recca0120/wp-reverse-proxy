@@ -21,11 +21,16 @@ use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
+use Psr\SimpleCache\CacheInterface;
+use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareFactory
 {
+    /** @var CacheInterface|null */
+    private $cache;
+
     /** @var array<class-string<MiddlewareInterface>> */
     private static $defaultMiddlewares = [
         AllowMethods::class,
@@ -57,6 +62,11 @@ class MiddlewareFactory
     /** @var array<string, class-string<MiddlewareInterface>> */
     private static $customAliases = [];
 
+    public function __construct(?CacheInterface $cache = null)
+    {
+        $this->cache = $cache;
+    }
+
     /**
      * Create a middleware instance from configuration.
      *
@@ -79,8 +89,13 @@ class MiddlewareFactory
         }
 
         $args = $this->resolveArguments($config);
+        $middleware = new $class(...$args);
 
-        return new $class(...$args);
+        if ($this->cache !== null && $middleware instanceof CacheAwareInterface) {
+            $middleware->setCache($this->cache);
+        }
+
+        return $middleware;
     }
 
     /**

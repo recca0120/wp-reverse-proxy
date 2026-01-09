@@ -5,28 +5,25 @@ namespace Recca0120\ReverseProxy\Middleware;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\SimpleCache\CacheInterface;
+use Recca0120\ReverseProxy\Concerns\HasCache;
+use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
-use Recca0120\ReverseProxy\WordPress\TransientCache;
 
-class Caching implements MiddlewareInterface
+class Caching implements MiddlewareInterface, CacheAwareInterface
 {
+    use HasCache;
+
     /** @var int */
     private $ttl;
 
-    /** @var CacheInterface */
-    private $cache;
-
     /**
      * @param  int  $ttl  快取時間（秒）
-     * @param  CacheInterface|null  $cache  快取實作
      */
-    public function __construct(int $ttl = 300, ?CacheInterface $cache = null)
+    public function __construct(int $ttl = 300)
     {
         $this->ttl = $ttl;
-        $this->cache = $cache ?? new TransientCache('rp_cache_');
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -40,7 +37,7 @@ class Caching implements MiddlewareInterface
         $cacheKey = $this->generateCacheKey($request);
 
         // 嘗試從快取取得
-        $cached = $this->cache->get($cacheKey);
+        $cached = $this->cacheGet($cacheKey);
         if ($cached !== null && is_array($cached)) {
             return $this->restoreResponse($cached)->withHeader('X-Cache', 'HIT');
         }
@@ -54,6 +51,11 @@ class Caching implements MiddlewareInterface
         }
 
         return $response->withHeader('X-Cache', 'MISS');
+    }
+
+    protected function getCachePrefix(): string
+    {
+        return 'rp_cache_';
     }
 
     private function generateCacheKey(ServerRequestInterface $request): string
@@ -93,7 +95,7 @@ class Caching implements MiddlewareInterface
             'reason' => $response->getReasonPhrase(),
         ];
 
-        $this->cache->set($key, $data, $this->ttl);
+        $this->cacheSet($key, $data, $this->ttl);
     }
 
     private function restoreResponse(array $data): ResponseInterface
