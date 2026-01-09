@@ -170,16 +170,11 @@ echo esc_attr(json_encode($currentMiddlewares));
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-width: 400px;
 }
 .middleware-field-wrapper label {
     display: block;
     font-weight: 500;
     margin-bottom: 4px;
-}
-.middleware-field-wrapper input,
-.middleware-field-wrapper textarea {
-    width: 100%;
 }
 .middleware-item-placeholder {
     background: #f0f6fc;

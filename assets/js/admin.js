@@ -194,17 +194,18 @@
                     name: inputName,
                     rows: 3,
                     placeholder: field.placeholder || ''
-                });
+                }).addClass('large-text');
                 if (value !== undefined) {
                     $input.val(value);
                 }
             } else {
+                var inputClass = field.type === 'number' ? 'small-text' : 'regular-text';
                 $input = $('<input>').attr({
                     type: field.type || 'text',
                     id: inputId,
                     name: inputName,
                     placeholder: field.placeholder || ''
-                });
+                }).addClass(inputClass);
 
                 if (field.required) {
                     $input.attr('required', true);
