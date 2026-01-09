@@ -388,7 +388,9 @@ class MiddlewareFactoryTest extends TestCase
         $middleware = $factory->create('Caching:300');
 
         $request = new ServerRequest('GET', 'https://example.com/test');
-        $middleware->process($request, fn () => new Response(200, [], 'OK'));
+        $middleware->process($request, function () {
+            return new Response(200, [], 'OK');
+        });
 
         $this->assertNotEmpty($cache->all());
     }
@@ -400,7 +402,9 @@ class MiddlewareFactoryTest extends TestCase
         $middleware = $factory->create(['name' => 'CircuitBreaker', 'args' => ['my-service']]);
 
         $request = new ServerRequest('GET', 'https://example.com/test');
-        $middleware->process($request, fn () => new Response(200, [], 'OK'));
+        $middleware->process($request, function () {
+            return new Response(200, [], 'OK');
+        });
 
         $this->assertNotEmpty($cache->all());
     }
@@ -412,7 +416,9 @@ class MiddlewareFactoryTest extends TestCase
         $middleware = $factory->create('RateLimiting:100,60');
 
         $request = new ServerRequest('GET', 'https://example.com/test', [], null, '1.1', ['REMOTE_ADDR' => '127.0.0.1']);
-        $middleware->process($request, fn () => new Response(200, [], 'OK'));
+        $middleware->process($request, function () {
+            return new Response(200, [], 'OK');
+        });
 
         $this->assertNotEmpty($cache->all());
     }
