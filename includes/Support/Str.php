@@ -45,4 +45,22 @@ class Str
 
         return substr($subject, $pos + strlen($search));
     }
+
+    /**
+     * Return the remainder of a string after the last occurrence of a given value.
+     */
+    public static function afterLast(string $subject, string $search): string
+    {
+        if ($search === '') {
+            return $subject;
+        }
+
+        $pos = strrpos($subject, $search);
+
+        if ($pos === false) {
+            return $subject;
+        }
+
+        return substr($subject, $pos + strlen($search));
+    }
 }

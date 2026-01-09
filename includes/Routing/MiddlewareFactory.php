@@ -21,6 +21,7 @@ use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
+use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareFactory
 {
@@ -246,7 +247,7 @@ class MiddlewareFactory
     {
         $aliases = [];
         foreach ($classes as $class) {
-            $shortName = substr(strrchr($class, '\\'), 1) ?: $class;
+            $shortName = Str::afterLast($class, '\\');
             $aliases[$shortName] = $class;
         }
 

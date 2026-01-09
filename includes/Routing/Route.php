@@ -128,7 +128,7 @@ class Route
 
     private function matchesPattern(string $path): bool
     {
-        $regex = '#^'.str_replace('\*', '(.*)', preg_quote($this->path, '#')).'$#';
+        $regex = $this->buildRegex();
 
         if (preg_match($regex, $path, $matches)) {
             $this->captures = array_slice($matches, 1);
@@ -137,6 +137,25 @@ class Route
         }
 
         return false;
+    }
+
+    private function buildRegex(): string
+    {
+        $pattern = preg_quote($this->path, '#');
+
+        // Handle trailing /* pattern - make slash and wildcard optional
+        // This allows /test/* to match /test, /test/, and /test/foo
+        if (Str::endsWith($pattern, '/\\*')) {
+            // Replace all wildcards except the trailing one
+            $pattern = substr($pattern, 0, -3);
+            $pattern = str_replace('\\*', '(.*)', $pattern);
+            // Use non-capturing group (?:...) for trailing optional part
+            $pattern .= '(?:/(.*))?';
+        } else {
+            $pattern = str_replace('\\*', '(.*)', $pattern);
+        }
+
+        return '#^'.$pattern.'$#';
     }
 
     private function buildTargetUrl(string $path, string $queryString): string
