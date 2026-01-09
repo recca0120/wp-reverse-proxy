@@ -126,7 +126,7 @@ return [
         "ProxyHeaders",
         ["SetHost", "api.example.com"],
         ["Timeout", 30],
-        { "name": "RateLimiting", "options": { "limit": 100, "window": 60 } }
+        { "name": "RateLimiting", "options": { "maxRequests": 100, "windowSeconds": 60 } }
       ]
     },
     {
@@ -155,8 +155,8 @@ routes:
       - Timeout: 30
       - name: RateLimiting
         options:
-          limit: 100
-          window: 60
+          maxRequests: 100
+          windowSeconds: 60
 
   - path: /legacy/*
     target: https://legacy.example.com
@@ -176,7 +176,7 @@ return [
                 'ProxyHeaders',
                 'SetHost' => 'api.example.com',      // Key-Value 格式
                 'Timeout' => 30,
-                'RateLimiting' => ['limit' => 100, 'window' => 60],
+                'RateLimiting' => ['maxRequests' => 100, 'windowSeconds' => 60],
             ],
         ],
         [
@@ -242,14 +242,14 @@ return [
 
 ```php
 // mu-plugins/reverse-proxy.php
-use Recca0120\ReverseProxy\Routing\MiddlewareFactory;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 
 // 方式一：逐一註冊
-MiddlewareFactory::registerAlias('MyAuth', MyAuthMiddleware::class);
-MiddlewareFactory::registerAlias('CustomCache', MyCacheMiddleware::class);
+MiddlewareManager::registerAlias('MyAuth', MyAuthMiddleware::class);
+MiddlewareManager::registerAlias('CustomCache', MyCacheMiddleware::class);
 
 // 方式二：批次註冊（陣列格式）
-MiddlewareFactory::registerAlias([
+MiddlewareManager::registerAlias([
     'MyAuth' => MyAuthMiddleware::class,
     'CustomCache' => MyCacheMiddleware::class,
     'RateLimit' => MyRateLimitMiddleware::class,

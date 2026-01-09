@@ -126,7 +126,7 @@ The plugin automatically loads all `.json`, `.yaml`, `.yml`, and `.php` files fr
         "ProxyHeaders",
         ["SetHost", "api.example.com"],
         ["Timeout", 30],
-        { "name": "RateLimiting", "options": { "limit": 100, "window": 60 } }
+        { "name": "RateLimiting", "options": { "maxRequests": 100, "windowSeconds": 60 } }
       ]
     },
     {
@@ -155,8 +155,8 @@ routes:
       - Timeout: 30
       - name: RateLimiting
         options:
-          limit: 100
-          window: 60
+          maxRequests: 100
+          windowSeconds: 60
 
   - path: /legacy/*
     target: https://legacy.example.com
@@ -176,7 +176,7 @@ return [
                 'ProxyHeaders',
                 'SetHost' => 'api.example.com',      // Key-Value format
                 'Timeout' => 30,
-                'RateLimiting' => ['limit' => 100, 'window' => 60],
+                'RateLimiting' => ['maxRequests' => 100, 'windowSeconds' => 60],
             ],
         ],
         [
@@ -241,14 +241,14 @@ Multiple formats supported, can be mixed:
 
 ```php
 // mu-plugins/reverse-proxy.php
-use Recca0120\ReverseProxy\Routing\MiddlewareFactory;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 
 // Option 1: Register one by one
-MiddlewareFactory::registerAlias('MyAuth', MyAuthMiddleware::class);
-MiddlewareFactory::registerAlias('CustomCache', MyCacheMiddleware::class);
+MiddlewareManager::registerAlias('MyAuth', MyAuthMiddleware::class);
+MiddlewareManager::registerAlias('CustomCache', MyCacheMiddleware::class);
 
 // Option 2: Batch registration (array format)
-MiddlewareFactory::registerAlias([
+MiddlewareManager::registerAlias([
     'MyAuth' => MyAuthMiddleware::class,
     'CustomCache' => MyCacheMiddleware::class,
     'RateLimit' => MyRateLimitMiddleware::class,
