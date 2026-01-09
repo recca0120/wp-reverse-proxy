@@ -2,8 +2,6 @@
 
 namespace Recca0120\ReverseProxy\Routing;
 
-use InvalidArgumentException;
-use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\FileLoaderInterface;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Routing\Loaders\JsonLoader;
@@ -18,48 +16,36 @@ class FileLoader implements RouteLoaderInterface
     /** @var array<FileLoaderInterface> */
     private $parsers;
 
-    /** @var MiddlewareFactory */
-    private $middlewareFactory;
-
-    /** @var CacheInterface|null */
-    private $cache;
-
     /**
      * @param array<string> $paths Directories or files to load routes from
      * @param array<FileLoaderInterface>|null $parsers Custom parsers (default: JSON, YAML, PHP)
      */
-    public function __construct(
-        array $paths,
-        ?array $parsers = null,
-        ?MiddlewareFactory $middlewareFactory = null,
-        ?CacheInterface $cache = null
-    ) {
+    public function __construct(array $paths, ?array $parsers = null)
+    {
         $this->paths = $paths;
         $this->parsers = $parsers ?? $this->defaultParsers();
-        $this->middlewareFactory = $middlewareFactory ?? new MiddlewareFactory();
-        $this->cache = $cache;
     }
 
     /**
-     * Load routes from all configured paths.
+     * Load route configurations from all configured paths.
      *
-     * @return array<Route>
+     * @return array<array<string, mixed>>
      */
     public function load(): array
     {
-        $routes = [];
+        $configs = [];
 
         foreach ($this->paths as $path) {
-            foreach ($this->loadFromPath($path) as $route) {
-                $routes[] = $route;
+            foreach ($this->loadFromPath($path) as $config) {
+                $configs[] = $config;
             }
         }
 
-        return $routes;
+        return $configs;
     }
 
     /**
-     * @return array<Route>
+     * @return array<array<string, mixed>>
      */
     private function loadFromPath(string $path): array
     {
@@ -75,20 +61,20 @@ class FileLoader implements RouteLoaderInterface
     }
 
     /**
-     * @return array<Route>
+     * @return array<array<string, mixed>>
      */
     private function loadFromDirectory(string $directory): array
     {
         $files = $this->globFiles($directory, $this->buildPattern());
-        $routes = [];
+        $configs = [];
 
         foreach ($files as $file) {
-            foreach ($this->loadFromFile($file) as $route) {
-                $routes[] = $route;
+            foreach ($this->loadFromFile($file) as $config) {
+                $configs[] = $config;
             }
         }
 
-        return $routes;
+        return $configs;
     }
 
     /**
@@ -113,19 +99,17 @@ class FileLoader implements RouteLoaderInterface
     }
 
     /**
-     * @return array<Route>
+     * @return array<array<string, mixed>>
      */
     private function loadFromFile(string $file): array
     {
-        return $this->remember($file, function () use ($file) {
-            $config = $this->parseFile($file);
+        $config = $this->parseFile($file);
 
-            if (empty($config) || !isset($config['routes'])) {
-                return [];
-            }
+        if (empty($config) || !isset($config['routes'])) {
+            return [];
+        }
 
-            return $this->createRoutes($config['routes']);
-        });
+        return $config['routes'];
     }
 
     /**
@@ -140,83 +124,6 @@ class FileLoader implements RouteLoaderInterface
         }
 
         return [];
-    }
-
-    /**
-     * @param array<array<string, mixed>> $configs
-     * @return array<Route>
-     */
-    private function createRoutes(array $configs): array
-    {
-        $routes = [];
-
-        foreach ($configs as $config) {
-            try {
-                $routes[] = $this->createRoute($config);
-            } catch (InvalidArgumentException $e) {
-                // Skip invalid routes
-                continue;
-            }
-        }
-
-        return $routes;
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     */
-    private function createRoute(array $config): Route
-    {
-        $this->validateRoute($config);
-
-        $path = $this->buildPath($config);
-        $target = $config['target'];
-        $middlewares = $this->middlewareFactory->createMany($config['middlewares'] ?? []);
-
-        return new Route($path, $target, $middlewares);
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     */
-    private function buildPath(array $config): string
-    {
-        if (empty($config['methods'])) {
-            return $config['path'];
-        }
-
-        $methods = implode('|', array_map('strtoupper', $config['methods']));
-
-        return "{$methods} {$config['path']}";
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     * @throws InvalidArgumentException
-     */
-    private function validateRoute(array $config): void
-    {
-        if (empty($config['path'])) {
-            throw new InvalidArgumentException('Route configuration must have a "path" field');
-        }
-
-        if (empty($config['target'])) {
-            throw new InvalidArgumentException('Route configuration must have a "target" field');
-        }
-
-        if (!$this->isValidUrl($config['target'])) {
-            throw new InvalidArgumentException('Invalid target URL: ' . $config['target']);
-        }
-    }
-
-    private function isValidUrl(string $url): bool
-    {
-        $parsed = parse_url($url);
-
-        return $parsed !== false
-            && isset($parsed['scheme'])
-            && isset($parsed['host'])
-            && in_array($parsed['scheme'], ['http', 'https'], true);
     }
 
     /**
@@ -250,31 +157,6 @@ class FileLoader implements RouteLoaderInterface
     private function safeGlob(string $pattern, int $flags = 0): array
     {
         return glob($pattern, $flags) ?: [];
-    }
-
-    /**
-     * @template T
-     * @param callable(): T $callback
-     * @return T
-     */
-    private function remember(string $file, callable $callback)
-    {
-        if ($this->cache === null) {
-            return $callback();
-        }
-
-        $key = 'route_file_' . md5($file);
-        $mtime = file_exists($file) ? filemtime($file) : 0;
-
-        $cached = $this->cache->get($key);
-        if ($cached !== null && isset($cached['mtime']) && $cached['mtime'] === $mtime) {
-            return $cached['data'];
-        }
-
-        $data = $callback();
-        $this->cache->set($key, ['mtime' => $mtime, 'data' => $data]);
-
-        return $data;
     }
 
     /**

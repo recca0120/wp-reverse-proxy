@@ -9,6 +9,7 @@ use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Routing\FileLoader;
 use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 class FileLoaderTest extends TestCase
 {
@@ -54,8 +55,7 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $this->assertCount(1, $routes);
         $this->assertInstanceOf(Route::class, $routes[0]);
@@ -67,8 +67,7 @@ class FileLoaderTest extends TestCase
         $yaml = "routes:\n  - path: /api/*\n    target: https://api.example.com\n";
         file_put_contents($filePath, $yaml);
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $this->assertCount(1, $routes);
         $this->assertInstanceOf(Route::class, $routes[0]);
@@ -92,8 +91,7 @@ class FileLoaderTest extends TestCase
         ]);
         file_put_contents($filePath, $yaml);
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $this->assertCount(2, $routes);
         $this->assertCount(1, $routes[0]->getMiddlewares());
@@ -112,8 +110,7 @@ class FileLoaderTest extends TestCase
             ],
         ];');
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $this->assertCount(1, $routes);
         $this->assertInstanceOf(Route::class, $routes[0]);
@@ -133,8 +130,7 @@ class FileLoaderTest extends TestCase
             ],
         ];');
 
-        $loader = new FileLoader([$this->fixturesPath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$this->fixturesPath]));
 
         $this->assertCount(2, $routes);
     }
@@ -153,8 +149,7 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$this->fixturesPath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$this->fixturesPath]));
 
         $this->assertCount(2, $routes);
     }
@@ -176,8 +171,7 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$filePath1, $filePath2]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath1, $filePath2]));
 
         $this->assertCount(2, $routes);
     }
@@ -194,8 +188,7 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $this->assertCount(1, $routes);
         $this->assertEquals('api.example.com', $routes[0]->getTargetHost());
@@ -214,8 +207,7 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $this->assertCount(1, $routes);
         $this->assertInstanceOf(Route::class, $routes[0]);
@@ -236,8 +228,7 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $middlewares = $routes[0]->getMiddlewares();
         $this->assertCount(1, $middlewares);
@@ -259,14 +250,13 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $this->assertCount(1, $routes);
         $this->assertEquals('valid.example.com', $routes[0]->getTargetHost());
     }
 
-    public function test_uses_cache_when_mtime_matches(): void
+    public function test_uses_cache_when_available(): void
     {
         $filePath = $this->fixturesPath . '/routes.json';
         file_put_contents($filePath, json_encode([
@@ -275,43 +265,21 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $mtime = filemtime($filePath);
-        $cachedRoutes = [new Route('/cached/*', 'https://cached.example.com')];
+        $cachedConfigs = [
+            ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
+        ];
 
         $cache = Mockery::mock(CacheInterface::class);
         $cache->shouldReceive('get')
+            ->with('route_configs')
             ->once()
-            ->andReturn(['mtime' => $mtime, 'data' => $cachedRoutes]);
+            ->andReturn($cachedConfigs);
 
-        $loader = new FileLoader([$filePath], null, null, $cache);
-        $routes = $loader->load();
+        $collection = new RouteCollection([new FileLoader([$filePath])], null, $cache);
+        $collection->load();
 
-        $this->assertSame($cachedRoutes[0], $routes[0]);
-    }
-
-    public function test_invalidates_cache_when_mtime_differs(): void
-    {
-        $filePath = $this->fixturesPath . '/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                ['path' => '/api/*', 'target' => 'https://api.example.com'],
-            ],
-        ]));
-
-        $oldMtime = filemtime($filePath) - 100;
-        $cachedRoutes = [new Route('/cached/*', 'https://cached.example.com')];
-
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')
-            ->once()
-            ->andReturn(['mtime' => $oldMtime, 'data' => $cachedRoutes]);
-        $cache->shouldReceive('set')->once();
-
-        $loader = new FileLoader([$filePath], null, null, $cache);
-        $routes = $loader->load();
-
-        $this->assertCount(1, $routes);
-        $this->assertEquals('api.example.com', $routes[0]->getTargetHost());
+        $this->assertCount(1, $collection);
+        $this->assertEquals('cached.example.com', $collection[0]->getTargetHost());
     }
 
     public function test_stores_cache_when_not_cached(): void
@@ -324,13 +292,13 @@ class FileLoaderTest extends TestCase
         ]));
 
         $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->once()->andReturnNull();
-        $cache->shouldReceive('set')->once();
+        $cache->shouldReceive('get')->with('route_configs')->once()->andReturnNull();
+        $cache->shouldReceive('set')->with('route_configs', Mockery::type('array'))->once();
 
-        $loader = new FileLoader([$filePath], null, null, $cache);
-        $routes = $loader->load();
+        $collection = new RouteCollection([new FileLoader([$filePath])], null, $cache);
+        $collection->load();
 
-        $this->assertCount(1, $routes);
+        $this->assertCount(1, $collection);
     }
 
     public function test_works_without_cache(): void
@@ -342,16 +310,14 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $this->assertCount(1, $routes);
     }
 
     public function test_returns_empty_array_for_nonexistent_file(): void
     {
-        $loader = new FileLoader(['/nonexistent/path/routes.json']);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader(['/nonexistent/path/routes.json']));
 
         $this->assertIsArray($routes);
         $this->assertEmpty($routes);
@@ -364,8 +330,7 @@ class FileLoaderTest extends TestCase
             mkdir($emptyDir, 0755, true);
         }
 
-        $loader = new FileLoader([$emptyDir]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$emptyDir]));
 
         $this->assertIsArray($routes);
         $this->assertEmpty($routes);
@@ -389,8 +354,7 @@ class FileLoaderTest extends TestCase
 
         file_put_contents($this->fixturesPath . '/ignore.txt', 'should be ignored');
 
-        $loader = new FileLoader([$this->fixturesPath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$this->fixturesPath]));
 
         $this->assertCount(2, $routes);
     }
@@ -408,8 +372,7 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = new FileLoader([$filePath]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
 
         $middlewares = $routes[0]->getMiddlewares();
         $this->assertCount(3, $middlewares);
@@ -420,10 +383,21 @@ class FileLoaderTest extends TestCase
 
     public function test_returns_empty_array_when_no_paths(): void
     {
-        $loader = new FileLoader([]);
-        $routes = $loader->load();
+        $routes = $this->loadRoutes(new FileLoader([]));
 
         $this->assertIsArray($routes);
         $this->assertEmpty($routes);
+    }
+
+    /**
+     * Helper to load routes through RouteCollection.
+     *
+     * @return array<Route>
+     */
+    private function loadRoutes(FileLoader $loader): array
+    {
+        $collection = new RouteCollection([$loader]);
+
+        return $collection->load()->all();
     }
 }

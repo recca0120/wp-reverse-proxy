@@ -2,14 +2,12 @@
 
 namespace Recca0120\ReverseProxy\Contracts;
 
-use Recca0120\ReverseProxy\Routing\Route;
-
 interface RouteLoaderInterface
 {
     /**
-     * Load routes from the source.
+     * Load route configurations from the source.
      *
-     * @return array<Route>
+     * @return array<array<string, mixed>> Array of route config arrays
      */
     public function load(): array;
 }
