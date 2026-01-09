@@ -55,10 +55,12 @@ class RoutesPageTest extends WP_UnitTestCase
     {
         do_action('admin_menu');
 
-        global $menu;
+        global $submenu;
 
-        $menu_slugs = array_column($menu ?? [], 2);
-        $this->assertContains('reverse-proxy', $menu_slugs);
+        // Menu is registered under Settings (options-general.php)
+        $settingsSubmenu = $submenu['options-general.php'] ?? [];
+        $submenu_slugs = array_column($settingsSubmenu, 2);
+        $this->assertContains('reverse-proxy', $submenu_slugs);
     }
 
     public function test_routes_list_page_displays_routes()
@@ -479,6 +481,54 @@ class RoutesPageTest extends WP_UnitTestCase
         ], $routes[0]['middlewares']);
 
         unset($_POST['nonce'], $_POST['route'], $_POST['middlewares_json']);
+    }
+
+    public function test_get_route_by_id_returns_route()
+    {
+        $routesPage = new RoutesPage();
+
+        $routesPage->saveRoute([
+            'path' => '/find-me/*',
+            'target' => 'https://find.example.com',
+            'enabled' => true,
+        ]);
+
+        $routes = $routesPage->getRoutes();
+        $routeId = $routes[0]['id'];
+
+        $found = $routesPage->getRouteById($routeId);
+
+        $this->assertNotNull($found);
+        $this->assertEquals('/find-me/*', $found['path']);
+    }
+
+    public function test_get_route_by_id_returns_null_for_nonexistent()
+    {
+        $routesPage = new RoutesPage();
+
+        $found = $routesPage->getRouteById('nonexistent_id');
+
+        $this->assertNull($found);
+    }
+
+    public function test_get_action_url_generates_toggle_url()
+    {
+        $routesPage = new RoutesPage();
+        $url = $routesPage->getActionUrl('route_123', 'toggle');
+
+        $this->assertStringContainsString('action=toggle', $url);
+        $this->assertStringContainsString('route_id=route_123', $url);
+        $this->assertStringContainsString('_wpnonce=', $url);
+    }
+
+    public function test_get_action_url_generates_delete_url()
+    {
+        $routesPage = new RoutesPage();
+        $url = $routesPage->getActionUrl('route_456', 'delete');
+
+        $this->assertStringContainsString('action=delete', $url);
+        $this->assertStringContainsString('route_id=route_456', $url);
+        $this->assertStringContainsString('_wpnonce=', $url);
     }
 
     /**

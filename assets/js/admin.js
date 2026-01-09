@@ -68,30 +68,29 @@
         });
     }
 
+    function parseMiddleware(mw) {
+        if (typeof mw === 'string') {
+            return { name: mw, args: [] };
+        }
+        if (Array.isArray(mw)) {
+            return { name: mw[0], args: mw.slice(1) };
+        }
+        if (typeof mw === 'object' && mw.name) {
+            var args = mw.args || mw.options || [];
+            return { name: mw.name, args: Array.isArray(args) ? args : [args] };
+        }
+        return null;
+    }
+
     function loadExistingMiddlewares() {
         $('#middleware-list').empty();
         middlewareIndex = 0;
 
         existingMiddlewares.forEach(function(mw) {
-            var name, args;
-
-            if (typeof mw === 'string') {
-                name = mw;
-                args = [];
-            } else if (Array.isArray(mw)) {
-                name = mw[0];
-                args = mw.slice(1);
-            } else if (typeof mw === 'object' && mw.name) {
-                name = mw.name;
-                args = mw.args || mw.options || [];
-                if (!Array.isArray(args)) {
-                    args = [args];
-                }
-            } else {
-                return;
+            var parsed = parseMiddleware(mw);
+            if (parsed) {
+                addMiddlewareWithValues(parsed.name, parsed.args);
             }
-
-            addMiddlewareWithValues(name, args);
         });
     }
 
@@ -223,56 +222,57 @@
         return div.innerHTML;
     }
 
-    function toggleRoute(routeId, $button) {
-        $button.prop('disabled', true);
+    function makeRouteAjaxRequest(action, routeId, options) {
+        var settings = $.extend({
+            onSuccess: function() { location.reload(); },
+            onError: function() {},
+            errorMessage: __('An error occurred.', 'reverse-proxy')
+        }, options);
 
         $.ajax({
             url: reverseProxyAdmin.ajaxUrl,
             method: 'POST',
             data: {
-                action: 'reverse_proxy_toggle_route',
+                action: action,
                 nonce: reverseProxyAdmin.nonce,
                 route_id: routeId
             },
             success: function(response) {
                 if (response.success) {
-                    location.reload();
+                    settings.onSuccess(response);
                 } else {
-                    alert(response.data.message || __('Failed to toggle route status.', 'reverse-proxy'));
-                    $button.prop('disabled', false);
+                    alert(response.data.message || settings.errorMessage);
+                    settings.onError();
                 }
             },
             error: function() {
-                alert(__('An error occurred.', 'reverse-proxy'));
+                alert(settings.errorMessage);
+                settings.onError();
+            }
+        });
+    }
+
+    function toggleRoute(routeId, $button) {
+        $button.prop('disabled', true);
+
+        makeRouteAjaxRequest('reverse_proxy_toggle_route', routeId, {
+            errorMessage: __('Failed to toggle route status.', 'reverse-proxy'),
+            onError: function() {
                 $button.prop('disabled', false);
             }
         });
     }
 
     function deleteRoute(routeId, $row) {
-        $.ajax({
-            url: reverseProxyAdmin.ajaxUrl,
-            method: 'POST',
-            data: {
-                action: 'reverse_proxy_delete_route',
-                nonce: reverseProxyAdmin.nonce,
-                route_id: routeId
-            },
-            success: function(response) {
-                if (response.success) {
-                    $row.fadeOut(function() {
-                        $(this).remove();
-                        // Check if table is now empty
-                        if ($('.wp-list-table tbody tr').length === 0) {
-                            location.reload();
-                        }
-                    });
-                } else {
-                    alert(response.data.message || __('Failed to delete route.', 'reverse-proxy'));
-                }
-            },
-            error: function() {
-                alert(__('An error occurred.', 'reverse-proxy'));
+        makeRouteAjaxRequest('reverse_proxy_delete_route', routeId, {
+            errorMessage: __('Failed to delete route.', 'reverse-proxy'),
+            onSuccess: function() {
+                $row.fadeOut(function() {
+                    $(this).remove();
+                    if ($('.wp-list-table tbody tr').length === 0) {
+                        location.reload();
+                    }
+                });
             }
         });
     }

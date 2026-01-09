@@ -3,6 +3,7 @@
  * Routes list view
  *
  * @var array $routes
+ * @var \Recca0120\ReverseProxy\WordPress\Admin\RoutesPage $routesPage
  */
 
 if (! defined('ABSPATH')) {
@@ -108,14 +109,8 @@ if (isset($_GET['error'])) {
                                 <?php esc_html_e('Edit', 'reverse-proxy'); ?>
                             </a>
                             <?php
-                    $toggleUrl = wp_nonce_url(
-                        admin_url('options-general.php?page=reverse-proxy&action=toggle&route_id=' . $route['id']),
-                        'toggle_route_' . $route['id']
-                    );
-                    $deleteUrl = wp_nonce_url(
-                        admin_url('options-general.php?page=reverse-proxy&action=delete&route_id=' . $route['id']),
-                        'delete_route_' . $route['id']
-                    );
+                            $toggleUrl = $routesPage->getActionUrl($route['id'], 'toggle');
+                    $deleteUrl = $routesPage->getActionUrl($route['id'], 'delete');
                     ?>
                             <a href="<?php echo esc_url($toggleUrl); ?>" class="button button-small reverse-proxy-toggle" data-route-id="<?php echo esc_attr($route['id']); ?>">
                                 <?php echo ! empty($route['enabled']) ? esc_html__('Disable', 'reverse-proxy') : esc_html__('Enable', 'reverse-proxy'); ?>

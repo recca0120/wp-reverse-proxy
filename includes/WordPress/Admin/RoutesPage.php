@@ -38,83 +38,69 @@ class RoutesPage
         return get_option(self::OPTION_NAME, []);
     }
 
+    public function getRouteById(string $id): ?array
+    {
+        $routes = $this->getRoutes();
+        $index = $this->findRouteIndex($routes, $id);
+
+        return $index !== null ? $routes[$index] : null;
+    }
+
+    public function getActionUrl(string $routeId, string $action): string
+    {
+        return wp_nonce_url(
+            admin_url("options-general.php?page=reverse-proxy&action={$action}&route_id={$routeId}"),
+            "{$action}_route_{$routeId}"
+        );
+    }
+
     public function saveRoute(array $route): bool
     {
         $sanitized = $this->sanitizeRoute($route);
 
-        // Validate required fields
-        if (empty($sanitized['path'])) {
-            return false;
-        }
-
-        if (empty($sanitized['target'])) {
+        if (empty($sanitized['path']) || empty($sanitized['target'])) {
             return false;
         }
 
         $routes = $this->getRoutes();
 
-        // Generate ID if not provided
         if (empty($sanitized['id'])) {
             $sanitized['id'] = 'route_' . wp_generate_uuid4();
             $routes[] = $sanitized;
         } else {
-            // Update existing route
-            $found = false;
-            foreach ($routes as $index => $existingRoute) {
-                if ($existingRoute['id'] === $sanitized['id']) {
-                    $routes[$index] = $sanitized;
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
+            $index = $this->findRouteIndex($routes, $sanitized['id']);
+            if ($index !== null) {
+                $routes[$index] = $sanitized;
+            } else {
                 $routes[] = $sanitized;
             }
         }
 
-        $result = update_option(self::OPTION_NAME, $routes);
-
-        if ($result) {
-            $this->incrementVersion();
-        }
-
-        return $result;
+        return $this->saveRoutes($routes);
     }
 
     public function deleteRoute(string $id): bool
     {
         $routes = $this->getRoutes();
-        $routes = array_filter($routes, function ($route) use ($id) {
+        $routes = array_values(array_filter($routes, function ($route) use ($id) {
             return $route['id'] !== $id;
-        });
+        }));
 
-        $result = update_option(self::OPTION_NAME, array_values($routes));
-
-        if ($result) {
-            $this->incrementVersion();
-        }
-
-        return $result;
+        return $this->saveRoutes($routes);
     }
 
     public function toggleRoute(string $id): bool
     {
         $routes = $this->getRoutes();
+        $index = $this->findRouteIndex($routes, $id);
 
-        foreach ($routes as $index => $route) {
-            if ($route['id'] === $id) {
-                $routes[$index]['enabled'] = !$route['enabled'];
-                break;
-            }
+        if ($index === null) {
+            return false;
         }
 
-        $result = update_option(self::OPTION_NAME, $routes);
+        $routes[$index]['enabled'] = !$routes[$index]['enabled'];
 
-        if ($result) {
-            $this->incrementVersion();
-        }
-
-        return $result;
+        return $this->saveRoutes($routes);
     }
 
     public static function getVersion(): int
@@ -188,6 +174,28 @@ class RoutesPage
         $middlewares = $factory->createMany($middlewaresConfig);
 
         return new Route($path, $target, $middlewares);
+    }
+
+    private function findRouteIndex(array $routes, string $id): ?int
+    {
+        foreach ($routes as $index => $route) {
+            if ($route['id'] === $id) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
+    private function saveRoutes(array $routes): bool
+    {
+        $result = update_option(self::OPTION_NAME, $routes);
+
+        if ($result) {
+            $this->incrementVersion();
+        }
+
+        return $result;
     }
 
     private function incrementVersion(): void
@@ -273,22 +281,13 @@ class RoutesPage
     private function renderListPage(): void
     {
         $routes = $this->getRoutes();
+        $routesPage = $this;
         include REVERSE_PROXY_PLUGIN_DIR . 'templates/admin/routes.php';
     }
 
     private function renderEditPage(?string $routeId): void
     {
-        $route = null;
-        if ($routeId) {
-            $routes = $this->getRoutes();
-            foreach ($routes as $r) {
-                if ($r['id'] === $routeId) {
-                    $route = $r;
-                    break;
-                }
-            }
-        }
-
+        $route = $routeId ? $this->getRouteById($routeId) : null;
         $middlewares = MiddlewareRegistry::getAll();
         include REVERSE_PROXY_PLUGIN_DIR . 'templates/admin/route-form.php';
     }
