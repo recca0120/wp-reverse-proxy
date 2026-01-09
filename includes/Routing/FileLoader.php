@@ -82,16 +82,9 @@ class FileLoader implements RouteLoaderInterface
      */
     private function getMaxMtime(): int
     {
-        $maxMtime = 0;
+        $files = $this->getAllFiles();
 
-        foreach ($this->getAllFiles() as $file) {
-            $mtime = filemtime($file);
-            if ($mtime > $maxMtime) {
-                $maxMtime = $mtime;
-            }
-        }
-
-        return $maxMtime;
+        return empty($files) ? 0 : (int) max(array_map('filemtime', $files));
     }
 
     /**
@@ -101,24 +94,15 @@ class FileLoader implements RouteLoaderInterface
      */
     private function getAllFiles(): array
     {
-        $files = [];
         $pattern = $this->getPattern();
 
-        foreach ($this->paths as $path) {
+        return Arr::flatMap($this->paths, function ($path) use ($pattern) {
             if (!file_exists($path)) {
-                continue;
+                return [];
             }
 
-            if (is_dir($path)) {
-                foreach ($this->globFiles($path, $pattern) as $file) {
-                    $files[] = $file;
-                }
-            } else {
-                $files[] = $path;
-            }
-        }
-
-        return $files;
+            return is_dir($path) ? $this->globFiles($path, $pattern) : [$path];
+        });
     }
 
     /**
