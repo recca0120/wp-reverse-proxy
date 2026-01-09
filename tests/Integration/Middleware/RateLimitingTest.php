@@ -7,6 +7,7 @@ use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\RateLimiting;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 use WP_UnitTestCase;
 
 class RateLimitingTest extends WP_UnitTestCase
@@ -14,11 +15,15 @@ class RateLimitingTest extends WP_UnitTestCase
     /** @var MockClient */
     private $mockClient;
 
+    /** @var ArrayCache */
+    private $cache;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->mockClient = new MockClient();
+        $this->cache = new ArrayCache();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -48,7 +53,7 @@ class RateLimitingTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new RateLimiting(10, 60), // 10 requests per 60 seconds
+                $this->createRateLimiting(10, 60), // 10 requests per 60 seconds
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -66,7 +71,7 @@ class RateLimitingTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new RateLimiting(100, 60),
+                $this->createRateLimiting(100, 60),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -92,7 +97,7 @@ class RateLimitingTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new RateLimiting(2, 60), // 2 requests per 60 seconds
+                $this->createRateLimiting(2, 60), // 2 requests per 60 seconds
             ]),
         ]);
 
@@ -123,7 +128,7 @@ class RateLimitingTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new RateLimiting(1, 60),
+                $this->createRateLimiting(1, 60),
             ]),
         ]);
 
@@ -156,7 +161,7 @@ class RateLimitingTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new RateLimiting(10, 60, function ($request) {
+                $this->createRateLimiting(10, 60, function ($request) {
                     // 用 Authorization header 作為 key
                     return md5($request->getHeaderLine('Authorization'));
                 }),
@@ -197,5 +202,13 @@ class RateLimitingTest extends WP_UnitTestCase
         $this->go_to($path);
 
         return ob_get_clean();
+    }
+
+    private function createRateLimiting(int $maxRequests, int $windowSeconds, ?callable $keyGenerator = null): RateLimiting
+    {
+        $middleware = new RateLimiting($maxRequests, $windowSeconds, $keyGenerator);
+        $middleware->setCache($this->cache);
+
+        return $middleware;
     }
 }

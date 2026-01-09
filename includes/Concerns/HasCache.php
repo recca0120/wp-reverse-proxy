@@ -3,7 +3,7 @@
 namespace Recca0120\ReverseProxy\Concerns;
 
 use Psr\SimpleCache\CacheInterface;
-use Recca0120\ReverseProxy\WordPress\TransientCache;
+use RuntimeException;
 
 trait HasCache
 {
@@ -33,7 +33,7 @@ trait HasCache
     private function getCache(): CacheInterface
     {
         if ($this->cache === null) {
-            $this->cache = new TransientCache();
+            throw new RuntimeException('Cache not set. Call setCache() before using cache operations.');
         }
 
         return $this->cache;
