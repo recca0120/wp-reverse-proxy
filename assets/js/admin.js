@@ -17,7 +17,8 @@
         select: renderSelect,
         checkboxes: renderCheckboxes,
         repeater: renderRepeater,
-        keyvalue: renderKeyValue
+        keyvalue: renderKeyValue,
+        json: renderJson
     };
 
     // Field value collectors registry
@@ -27,7 +28,8 @@
         repeater: collectRepeater,
         keyvalue: collectKeyValue,
         select: collectSelect,
-        number: collectNumber
+        number: collectNumber,
+        json: collectJson
     };
 
     function init() {
@@ -59,11 +61,13 @@
             });
         }
 
-        $('.reverse-proxy-toggle').on('click', function() {
+        $('.reverse-proxy-toggle').on('click', function(e) {
+            e.preventDefault();
             toggleRoute($(this).data('route-id'), $(this));
         });
 
-        $('.reverse-proxy-delete').on('click', function() {
+        $('.reverse-proxy-delete').on('click', function(e) {
+            e.preventDefault();
             if (confirm(__('Are you sure you want to delete this route?', 'reverse-proxy'))) {
                 deleteRoute($(this).data('route-id'), $(this).closest('tr'));
             }
@@ -352,6 +356,59 @@
         return $wrapper.append($container);
     }
 
+    function renderJson(ctx) {
+        var $wrapper = $('<div class="middleware-field-wrapper middleware-json-wrapper">');
+        $wrapper.append(createLabel(ctx));
+
+        var $textarea = $('<textarea>').attr({
+            id: ctx.inputId,
+            name: ctx.inputName,
+            rows: 6
+        }).addClass('large-text code json-editor');
+
+        // Format value as JSON string
+        if (ctx.value !== undefined && ctx.value !== null) {
+            try {
+                var formatted = typeof ctx.value === 'string'
+                    ? ctx.value
+                    : JSON.stringify(ctx.value, null, 2);
+                $textarea.val(formatted);
+            } catch (e) {
+                $textarea.val('');
+            }
+        }
+
+        $wrapper.append($textarea);
+
+        // Initialize CodeMirror after DOM insertion
+        setTimeout(function() {
+            initCodeMirror($textarea[0]);
+        }, 0);
+
+        return $wrapper;
+    }
+
+    function initCodeMirror(textarea) {
+        if (!window.reverseProxyAdmin || !window.reverseProxyAdmin.codeEditor || !window.wp || !window.wp.codeEditor) {
+            return;
+        }
+
+        var settings = $.extend({}, window.reverseProxyAdmin.codeEditor, {
+            codemirror: $.extend({}, window.reverseProxyAdmin.codeEditor.codemirror, {
+                lineNumbers: true,
+                lineWrapping: true,
+                matchBrackets: true,
+                autoCloseBrackets: true,
+                mode: 'application/json'
+            })
+        });
+
+        var editor = wp.codeEditor.initialize(textarea, settings);
+
+        // Store editor instance for later retrieval
+        $(textarea).data('codemirror', editor.codemirror);
+    }
+
     function renderDefaultInput(ctx) {
         var $wrapper = createFieldWrapper();
         var inputClass = ctx.field.type === 'number' ? 'small-text' : 'regular-text';
@@ -629,6 +686,23 @@
             return parseFloat(val);
         }
         return field.default !== undefined ? field.default : null;
+    }
+
+    function collectJson($item, field) {
+        var $textarea = $item.find('.json-editor[name*="[' + field.name + ']"]');
+        var cm = $textarea.data('codemirror');
+        var val = cm ? cm.getValue() : $textarea.val();
+
+        if (!val || val.trim() === '') {
+            return null;
+        }
+
+        try {
+            return JSON.parse(val);
+        } catch (e) {
+            // Return as string if invalid JSON
+            return val;
+        }
     }
 
     function collectDefault($item, field) {

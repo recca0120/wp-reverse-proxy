@@ -200,3 +200,17 @@
 .middleware-field-wrapper select {
     min-width: 150px;
 }
+
+/* JSON Field (CodeMirror) */
+.middleware-json-wrapper .CodeMirror {
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    height: auto;
+    min-height: 120px;
+    max-height: 300px;
+}
+
+.middleware-json-wrapper .json-editor {
+    font-family: Consolas, Monaco, monospace;
+    min-height: 120px;
+}

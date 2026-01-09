@@ -187,13 +187,18 @@ class RoutesPage
 
     private function saveRoutes(array $routes): bool
     {
-        $result = update_option(self::OPTION_NAME, $routes);
+        // update_option returns false when value is unchanged, so we check if the save was successful
+        // by comparing with get_option after the update
+        update_option(self::OPTION_NAME, $routes);
 
-        if ($result) {
+        $saved = get_option(self::OPTION_NAME, []);
+        $success = $saved === $routes;
+
+        if ($success) {
             $this->incrementVersion();
         }
 
-        return $result;
+        return $success;
     }
 
     private function incrementVersion(): void

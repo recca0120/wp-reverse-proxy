@@ -64,6 +64,9 @@ class Admin
             REVERSE_PROXY_VERSION
         );
 
+        // Enqueue CodeMirror for JSON editing
+        $codeEditorSettings = wp_enqueue_code_editor(['type' => 'application/json']);
+
         wp_enqueue_script(
             'reverse-proxy-admin',
             REVERSE_PROXY_PLUGIN_URL . 'assets/js/admin.js',
@@ -90,6 +93,7 @@ class Admin
             'nonce' => wp_create_nonce('reverse_proxy_admin'),
             'middlewares' => $this->routesPage->getAvailableMiddlewares(),
             'existingMiddlewares' => $existingMiddlewares,
+            'codeEditor' => $codeEditorSettings,
         ]);
     }
 

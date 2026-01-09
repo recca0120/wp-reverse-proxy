@@ -109,14 +109,14 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('checkbox', $allowCredentialsField['type']);
     }
 
-    public function test_it_maps_array_type_without_phpdoc_to_textarea()
+    public function test_it_maps_array_type_without_phpdoc_to_json()
     {
         // Use test fixture to test auto-reflection from parameters
-        // array without PHPDoc type hint should be textarea (can't distinguish list from key-value)
+        // array without PHPDoc type hint should be json (allows any structure)
         $info = $this->reflector->reflect(AutoReflectMiddlewareFixture::class);
 
         $allowedOriginsField = $this->findField($info['fields'], 'allowedOrigins');
-        $this->assertEquals('textarea', $allowedOriginsField['type']);
+        $this->assertEquals('json', $allowedOriginsField['type']);
     }
 
     public function test_it_extracts_param_description_as_label()
@@ -138,12 +138,12 @@ class MiddlewareReflectorTest extends TestCase
     public function test_it_handles_class_with_optional_array_parameter()
     {
         // Use test fixture to test auto-reflection with optional array parameter
-        // array without PHPDoc type hint should be textarea
+        // array without PHPDoc type hint should be json
         $info = $this->reflector->reflect(OptionalArrayMiddlewareFixture::class);
 
         $this->assertCount(1, $info['fields']);
         $this->assertEquals('options', $info['fields'][0]['name']);
-        $this->assertEquals('textarea', $info['fields'][0]['type']);
+        $this->assertEquals('json', $info['fields'][0]['type']);
     }
 
     public function test_it_handles_class_without_phpdoc()
@@ -289,16 +289,16 @@ class MiddlewareReflectorTest extends TestCase
     }
 
     /**
-     * Test array without PHPDoc should be textarea (can't distinguish list from key-value).
+     * Test array without PHPDoc should be json (allows any structure).
      */
-    public function test_array_without_phpdoc_is_textarea()
+    public function test_array_without_phpdoc_is_json()
     {
         $info = $this->reflector->reflect(ArrayWithoutPHPDocMiddleware::class);
 
         $this->assertCount(2, $info['fields']);
 
         $itemsField = $this->findField($info['fields'], 'items');
-        $this->assertEquals('textarea', $itemsField['type']);
+        $this->assertEquals('json', $itemsField['type']);
         $this->assertEquals('Items', $itemsField['label']);
     }
 

@@ -22,7 +22,7 @@ class MiddlewareReflector
         'string' => 'text',
         'bool' => 'checkbox',
         'boolean' => 'checkbox',
-        'array' => 'textarea',
+        'array' => 'json',
     ];
 
     /** @var array<string, string> */
@@ -346,9 +346,9 @@ class MiddlewareReflector
             return $options !== null ? 'checkboxes' : 'repeater';
         }
 
-        // Plain array without PHPDoc type hint = textarea (can't distinguish list from key-value)
+        // Plain array without PHPDoc type hint = json (allows any structure)
         if ($phpType === 'array') {
-            return 'textarea';
+            return 'json';
         }
 
         // String with options = select

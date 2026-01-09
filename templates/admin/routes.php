@@ -115,7 +115,7 @@ if (isset($_GET['error'])) {
                             <a href="<?php echo esc_url($toggleUrl); ?>" class="button button-small reverse-proxy-toggle" data-route-id="<?php echo esc_attr($route['id']); ?>">
                                 <?php echo ! empty($route['enabled']) ? esc_html__('Disable', 'reverse-proxy') : esc_html__('Enable', 'reverse-proxy'); ?>
                             </a>
-                            <a href="<?php echo esc_url($deleteUrl); ?>" class="button button-small button-link-delete reverse-proxy-delete" data-route-id="<?php echo esc_attr($route['id']); ?>" onclick="return confirm('<?php esc_attr_e('Are you sure you want to delete this route?', 'reverse-proxy'); ?>');">
+                            <a href="<?php echo esc_url($deleteUrl); ?>" class="button button-small button-link-delete reverse-proxy-delete" data-route-id="<?php echo esc_attr($route['id']); ?>">
                                 <?php esc_html_e('Delete', 'reverse-proxy'); ?>
                             </a>
                         </td>
