@@ -20,7 +20,7 @@ class RewritePath implements MiddlewareInterface, RouteAwareInterface
     private $route;
 
     /**
-     * @param string $replacement Replacement
+     * @param string $replacement Path replacement pattern
      */
     public function __construct(string $replacement)
     {

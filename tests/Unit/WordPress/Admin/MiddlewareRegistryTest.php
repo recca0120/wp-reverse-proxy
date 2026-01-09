@@ -126,7 +126,7 @@ class MiddlewareRegistryTest extends TestCase
         $hostField = $setHost['fields'][0];
         $this->assertEquals('host', $hostField['name']);
         $this->assertEquals('text', $hostField['type']);
-        $this->assertEquals('Host', $hostField['label']);
+        $this->assertEquals('Target host name', $hostField['label']);
         $this->assertTrue($hostField['required']);
     }
 
@@ -143,7 +143,7 @@ class MiddlewareRegistryTest extends TestCase
         $field = $timeout['fields'][0];
         $this->assertEquals('seconds', $field['name']);
         $this->assertEquals('number', $field['type']);
-        $this->assertEquals('Timeout (seconds)', $field['label']);
+        $this->assertEquals('Request timeout in seconds', $field['label']);
         $this->assertEquals(30, $field['default']);
     }
 
@@ -255,7 +255,7 @@ class MiddlewareRegistryTest extends TestCase
         $ttlField = $caching['fields'][0];
         $this->assertEquals('ttl', $ttlField['name']);
         $this->assertEquals('number', $ttlField['type']);
-        $this->assertEquals('TTL (seconds)', $ttlField['label']);
+        $this->assertEquals('Cache duration in seconds', $ttlField['label']);
         $this->assertEquals(300, $ttlField['default']);
     }
 

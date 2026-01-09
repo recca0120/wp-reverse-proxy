@@ -20,7 +20,7 @@ class Fallback implements MiddlewareInterface
     private $statusCodes;
 
     /**
-     * @param int|int[] $statusCodes Trigger Status Codes (default: 404)
+     * @param int|int[] $statusCodes Status codes that trigger fallback (default: 404)
      */
     public function __construct(...$statusCodes)
     {

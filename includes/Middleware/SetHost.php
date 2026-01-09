@@ -15,7 +15,7 @@ class SetHost implements MiddlewareInterface
     private $host;
 
     /**
-     * @param string $host Host
+     * @param string $host Target host name
      */
     public function __construct(string $host)
     {

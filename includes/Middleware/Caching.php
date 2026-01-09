@@ -22,7 +22,7 @@ class Caching implements MiddlewareInterface, CacheAwareInterface
     private $ttl;
 
     /**
-     * @param int $ttl TTL (seconds)
+     * @param int $ttl Cache duration in seconds
      */
     public function __construct(int $ttl = 300)
     {

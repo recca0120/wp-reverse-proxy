@@ -21,7 +21,7 @@ class Timeout implements MiddlewareInterface
     private $seconds;
 
     /**
-     * @param int $seconds Timeout (seconds)
+     * @param int $seconds Request timeout in seconds
      */
     public function __construct(int $seconds = 30)
     {
