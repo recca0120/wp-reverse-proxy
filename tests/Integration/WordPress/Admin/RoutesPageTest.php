@@ -60,6 +60,44 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertContains('reverse-proxy', $menu_slugs);
     }
 
+    public function test_routes_list_page_displays_routes()
+    {
+        $routesPage = new RoutesPage();
+
+        // Save some routes
+        $routesPage->saveRoute([
+            'path' => '/api/v1/*',
+            'target' => 'https://api-v1.example.com',
+            'methods' => ['GET', 'POST'],
+            'middlewares' => ['ProxyHeaders'],
+            'enabled' => true,
+        ]);
+
+        $routesPage->saveRoute([
+            'path' => '/api/v2/*',
+            'target' => 'https://api-v2.example.com',
+            'methods' => ['GET'],
+            'middlewares' => [],
+            'enabled' => false,
+        ]);
+
+        // Capture the rendered output
+        ob_start();
+        $routesPage->render();
+        $output = ob_get_clean();
+
+        // Verify routes are displayed in the list
+        $this->assertStringContainsString('/api/v1/*', $output);
+        $this->assertStringContainsString('https://api-v1.example.com', $output);
+        $this->assertStringContainsString('/api/v2/*', $output);
+        $this->assertStringContainsString('https://api-v2.example.com', $output);
+
+        // Verify table structure
+        $this->assertStringContainsString('wp-list-table', $output);
+        $this->assertStringContainsString('GET', $output);
+        $this->assertStringContainsString('POST', $output);
+    }
+
     public function test_it_can_save_route()
     {
         $routesPage = new RoutesPage();
