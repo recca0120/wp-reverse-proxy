@@ -59,6 +59,5 @@ return [
         'Saving...' => '儲存中...',
         'Failed to save route.' => '儲存路由失敗。',
         'An error occurred while saving.' => '儲存時發生錯誤。',
-        'Settings' => '設定',
     ],
 ];

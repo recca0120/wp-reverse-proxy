@@ -43,7 +43,7 @@ class Admin
         $settingsLink = sprintf(
             '<a href="%s">%s</a>',
             admin_url('options-general.php?page=reverse-proxy'),
-            __('Settings', 'reverse-proxy')
+            __('Settings')
         );
 
         array_unshift($links, $settingsLink);
