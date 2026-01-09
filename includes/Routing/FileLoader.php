@@ -50,7 +50,9 @@ class FileLoader implements RouteLoaderInterface
         $routes = [];
 
         foreach ($this->paths as $path) {
-            array_push($routes, ...$this->loadFromPath($path));
+            foreach ($this->loadFromPath($path) as $route) {
+                $routes[] = $route;
+            }
         }
 
         return $routes;
@@ -81,7 +83,9 @@ class FileLoader implements RouteLoaderInterface
         $routes = [];
 
         foreach ($files as $file) {
-            array_push($routes, ...$this->loadFromFile($file));
+            foreach ($this->loadFromFile($file) as $route) {
+                $routes[] = $route;
+            }
         }
 
         return $routes;
@@ -94,7 +98,9 @@ class FileLoader implements RouteLoaderInterface
     {
         $extensions = [];
         foreach ($this->parsers as $parser) {
-            array_push($extensions, ...$parser->getExtensions());
+            foreach ($parser->getExtensions() as $ext) {
+                $extensions[] = $ext;
+            }
         }
 
         $extensions = array_unique($extensions);
@@ -227,7 +233,9 @@ class FileLoader implements RouteLoaderInterface
         if (preg_match('/\{([^}]+)\}/', $pattern, $matches)) {
             $files = [];
             foreach (explode(',', $matches[1]) as $alt) {
-                array_push($files, ...$this->safeGlob(str_replace($matches[0], $alt, $fullPattern)));
+                foreach ($this->safeGlob(str_replace($matches[0], $alt, $fullPattern)) as $file) {
+                    $files[] = $file;
+                }
             }
 
             return array_unique($files);
