@@ -13,15 +13,6 @@
             "Are you sure you want to delete this route?": [
                 "確定要刪除此路由嗎？"
             ],
-            "Drag to reorder": [
-                "拖曳以重新排序"
-            ],
-            "-- Select Middleware --": [
-                "-- 選擇中介軟體 --"
-            ],
-            "Remove": [
-                "移除"
-            ],
             "Failed to toggle route status.": [
                 "切換路由狀態失敗。"
             ],
