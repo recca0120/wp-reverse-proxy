@@ -53,10 +53,12 @@ class Admin
         wp_enqueue_script(
             'reverse-proxy-admin',
             REVERSE_PROXY_PLUGIN_URL . 'assets/js/admin.js',
-            ['jquery', 'jquery-ui-sortable'],
+            ['jquery', 'jquery-ui-sortable', 'wp-i18n'],
             REVERSE_PROXY_VERSION,
             true
         );
+
+        wp_set_script_translations('reverse-proxy-admin', 'reverse-proxy');
 
         // Get existing middlewares if editing a route
         $existingMiddlewares = [];
@@ -77,11 +79,6 @@ class Admin
             'nonce' => wp_create_nonce('reverse_proxy_admin'),
             'middlewares' => MiddlewareRegistry::getAll(),
             'existingMiddlewares' => $existingMiddlewares,
-            'i18n' => [
-                'confirmDelete' => __('Are you sure you want to delete this route?', 'reverse-proxy'),
-                'saving' => __('Saving...', 'reverse-proxy'),
-                'saveRoute' => __('Save Route', 'reverse-proxy'),
-            ],
         ]);
     }
 

@@ -1,9 +1,10 @@
 /**
  * Reverse Proxy Admin JavaScript
  */
-(function($) {
+(function($, wp) {
     'use strict';
 
+    var __ = wp.i18n.__;
     var middlewareIndex = 0;
     var middlewares = window.reverseProxyAdmin ? window.reverseProxyAdmin.middlewares : {};
     var existingMiddlewares = window.reverseProxyAdmin ? window.reverseProxyAdmin.existingMiddlewares : [];
@@ -53,7 +54,7 @@
 
         // Delete route
         $('.reverse-proxy-delete').on('click', function() {
-            if (confirm(reverseProxyAdmin.i18n ? reverseProxyAdmin.i18n.confirmDelete : 'Are you sure you want to delete this route?')) {
+            if (confirm(__('Are you sure you want to delete this route?', 'reverse-proxy'))) {
                 var routeId = $(this).data('route-id');
                 deleteRoute(routeId, $(this).closest('tr'));
             }
@@ -115,9 +116,9 @@
     function createMiddlewareItem(index, selectedName) {
         var html = '<div class="middleware-item" data-index="' + index + '">';
         html += '<div class="middleware-header">';
-        html += '<span class="middleware-drag-handle dashicons dashicons-move" title="Drag to reorder"></span>';
+        html += '<span class="middleware-drag-handle dashicons dashicons-move" title="' + __('Drag to reorder', 'reverse-proxy') + '"></span>';
         html += '<select name="route[middlewares][' + index + '][name]" class="middleware-select">';
-        html += '<option value="">-- Select Middleware --</option>';
+        html += '<option value="">' + __('-- Select Middleware --', 'reverse-proxy') + '</option>';
 
         // Sort middleware names alphabetically
         var sortedNames = Object.keys(middlewares).sort(function(a, b) {
@@ -130,7 +131,7 @@
         });
 
         html += '</select>';
-        html += '<button type="button" class="button button-small button-link-delete remove-middleware">Remove</button>';
+        html += '<button type="button" class="button button-small button-link-delete remove-middleware">' + __('Remove', 'reverse-proxy') + '</button>';
         html += '</div>';
         html += '<div class="middleware-body"></div>';
         html += '</div>';
@@ -246,12 +247,12 @@
                 if (response.success) {
                     location.reload();
                 } else {
-                    alert(response.data.message || 'Failed to toggle route status.');
+                    alert(response.data.message || __('Failed to toggle route status.', 'reverse-proxy'));
                     $button.prop('disabled', false);
                 }
             },
             error: function() {
-                alert('An error occurred.');
+                alert(__('An error occurred.', 'reverse-proxy'));
                 $button.prop('disabled', false);
             }
         });
@@ -276,18 +277,19 @@
                         }
                     });
                 } else {
-                    alert(response.data.message || 'Failed to delete route.');
+                    alert(response.data.message || __('Failed to delete route.', 'reverse-proxy'));
                 }
             },
             error: function() {
-                alert('An error occurred.');
+                alert(__('An error occurred.', 'reverse-proxy'));
             }
         });
     }
 
     function saveRoute($form) {
         var $submitBtn = $form.find('#submit');
-        $submitBtn.prop('disabled', true).val('Saving...');
+        var originalText = $submitBtn.val();
+        $submitBtn.prop('disabled', true).val(__('Saving...', 'reverse-proxy'));
 
         // Build form data
         var formData = new FormData($form[0]);
@@ -304,13 +306,13 @@
                 if (response.success) {
                     window.location.href = response.data.redirect || (reverseProxyAdmin.adminUrl + '?page=reverse-proxy');
                 } else {
-                    alert(response.data.message || 'Failed to save route.');
-                    $submitBtn.prop('disabled', false).val('Save Route');
+                    alert(response.data.message || __('Failed to save route.', 'reverse-proxy'));
+                    $submitBtn.prop('disabled', false).val(originalText);
                 }
             },
             error: function() {
-                alert('An error occurred while saving.');
-                $submitBtn.prop('disabled', false).val('Save Route');
+                alert(__('An error occurred while saving.', 'reverse-proxy'));
+                $submitBtn.prop('disabled', false).val(originalText);
             }
         });
     }
@@ -377,4 +379,4 @@
 
     $(document).ready(init);
 
-})(jQuery);
+})(jQuery, wp);
