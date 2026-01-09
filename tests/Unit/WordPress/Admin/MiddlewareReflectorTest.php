@@ -72,7 +72,7 @@ class MiddlewareReflectorTest extends TestCase
         $info = $this->reflector->reflect(SetHost::class);
 
         $field = $info['fields'][0];
-        $this->assertEquals('Host', $field['label']);
+        $this->assertEquals('Target host name', $field['label']);
     }
 
     public function test_it_generates_label_from_camel_case()
