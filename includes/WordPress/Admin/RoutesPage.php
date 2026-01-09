@@ -127,51 +127,49 @@ class RoutesPage
 
     public function sanitizeRoute(array $input): array
     {
-        $sanitized = [
+        return [
             'id' => isset($input['id']) ? sanitize_text_field($input['id']) : '',
             'path' => isset($input['path']) ? sanitize_text_field($input['path']) : '',
-            'target' => '',
-            'methods' => [],
-            'middlewares' => [],
-            'enabled' => false,
+            'target' => $this->sanitizeTargetUrl($input['target'] ?? ''),
+            'methods' => $this->sanitizeMethods($input['methods'] ?? []),
+            'middlewares' => $this->sanitizeMiddlewares($input['middlewares'] ?? []),
+            'enabled' => filter_var($input['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
         ];
+    }
 
-        // Sanitize target URL
-        if (!empty($input['target'])) {
-            $target = esc_url_raw($input['target']);
-            // Validate it's a proper HTTP(S) URL with a valid host
-            $parsed = parse_url($target);
-            if (
-                isset($parsed['scheme']) &&
-                Arr::contains(['http', 'https'], $parsed['scheme']) &&
-                !empty($parsed['host']) &&
-                $this->isValidHost($parsed['host'])
-            ) {
-                $sanitized['target'] = $target;
+    private function sanitizeTargetUrl(string $target): string
+    {
+        if (empty($target)) {
+            return '';
+        }
+
+        $target = esc_url_raw($target);
+        $parsed = parse_url($target);
+
+        if (
+            !isset($parsed['scheme']) ||
+            !Arr::contains(['http', 'https'], $parsed['scheme']) ||
+            empty($parsed['host']) ||
+            !$this->isValidHost($parsed['host'])
+        ) {
+            return '';
+        }
+
+        return $target;
+    }
+
+    private function sanitizeMethods(array $methods): array
+    {
+        if (empty($methods)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map('strtoupper', $methods),
+            function ($method) {
+                return Arr::contains(self::VALID_METHODS, $method);
             }
-        }
-
-        // Sanitize methods
-        if (!empty($input['methods']) && is_array($input['methods'])) {
-            $sanitized['methods'] = array_values(array_filter(
-                array_map('strtoupper', $input['methods']),
-                function ($method) {
-                    return Arr::contains(self::VALID_METHODS, $method);
-                }
-            ));
-        }
-
-        // Sanitize middlewares
-        if (!empty($input['middlewares']) && is_array($input['middlewares'])) {
-            $sanitized['middlewares'] = $this->sanitizeMiddlewares($input['middlewares']);
-        }
-
-        // Sanitize enabled
-        if (isset($input['enabled'])) {
-            $sanitized['enabled'] = filter_var($input['enabled'], FILTER_VALIDATE_BOOLEAN);
-        }
-
-        return $sanitized;
+        ));
     }
 
     private function findRouteIndex(array $routes, string $id): ?int

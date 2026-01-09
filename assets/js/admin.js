@@ -634,14 +634,21 @@
         return result;
     }
 
+    // Field selector helper
+    function findFieldInput($item, fieldName, prefix, suffix) {
+        prefix = prefix || '';
+        suffix = suffix || '';
+        return $item.find(prefix + '[name*="[' + fieldName + ']"]' + suffix);
+    }
+
     // Field value collectors
     function collectCheckbox($item, field) {
-        return $item.find('[name*="[' + field.name + ']"]').is(':checked');
+        return findFieldInput($item, field.name).is(':checked');
     }
 
     function collectCheckboxes($item, field) {
         var checked = [];
-        $item.find('[name*="[' + field.name + ']"]:checked').each(function() {
+        findFieldInput($item, field.name, '', ':checked').each(function() {
             checked.push($(this).val());
         });
         return checked.length > 0 ? checked : null;
@@ -676,12 +683,12 @@
     }
 
     function collectSelect($item, field) {
-        var val = $item.find('[name*="[' + field.name + ']"]').val();
+        var val = findFieldInput($item, field.name).val();
         return val !== '' ? val : null;
     }
 
     function collectNumber($item, field) {
-        var val = $item.find('[name*="[' + field.name + ']"]').val();
+        var val = findFieldInput($item, field.name).val();
         if (val !== '' && val !== null && !isNaN(val)) {
             return parseFloat(val);
         }
@@ -689,7 +696,7 @@
     }
 
     function collectJson($item, field) {
-        var $textarea = $item.find('.json-editor[name*="[' + field.name + ']"]');
+        var $textarea = findFieldInput($item, field.name, '.json-editor');
         var cm = $textarea.data('codemirror');
         var val = cm ? cm.getValue() : $textarea.val();
 
@@ -706,7 +713,7 @@
     }
 
     function collectDefault($item, field) {
-        var val = $item.find('[name*="[' + field.name + ']"]').val();
+        var val = findFieldInput($item, field.name).val();
         if (val !== '' && val !== null && val !== undefined) {
             if (val === 'true') return true;
             if (val === 'false') return false;
