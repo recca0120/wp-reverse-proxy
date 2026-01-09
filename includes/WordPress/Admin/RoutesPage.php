@@ -18,6 +18,16 @@ class RoutesPage
         $this->registry = $registry;
     }
 
+    /**
+     * Get available middlewares from the registry.
+     *
+     * @return array<string, array>
+     */
+    public function getAvailableMiddlewares(): array
+    {
+        return $this->registry !== null ? $this->registry->getAvailable() : [];
+    }
+
     public function render(): void
     {
         if (!current_user_can('manage_options')) {
@@ -274,7 +284,7 @@ class RoutesPage
     private function renderEditPage(?string $routeId): void
     {
         $route = $routeId ? $this->getRouteById($routeId) : null;
-        $middlewares = $this->registry !== null ? $this->registry->getAvailable() : [];
+        $middlewares = $this->getAvailableMiddlewares();
         include REVERSE_PROXY_PLUGIN_DIR . 'templates/admin/route-form.php';
     }
 }

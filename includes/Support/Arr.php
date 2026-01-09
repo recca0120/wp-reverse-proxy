@@ -83,4 +83,21 @@ class Arr
     {
         return array_merge(...$arrays);
     }
+
+    /**
+     * Get the first key from an array (PHP 7.2 compatible).
+     *
+     * @param array<mixed> $array
+     * @return string|int|null
+     */
+    public static function firstKey(array $array)
+    {
+        if (function_exists('array_key_first')) {
+            return array_key_first($array);
+        }
+
+        reset($array);
+
+        return key($array);
+    }
 }

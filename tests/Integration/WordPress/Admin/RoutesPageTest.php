@@ -507,6 +507,66 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertStringContainsString('_wpnonce=', $url);
     }
 
+    public function test_get_available_middlewares_returns_middlewares_from_registry()
+    {
+        $middlewareManager = reverse_proxy_create_middleware_manager();
+        $registry = new \Recca0120\ReverseProxy\WordPress\Admin\MiddlewareRegistry($middlewareManager);
+        $routesPage = new RoutesPage($registry);
+
+        $middlewares = $routesPage->getAvailableMiddlewares();
+
+        // Should return array of middlewares
+        $this->assertIsArray($middlewares);
+        $this->assertNotEmpty($middlewares);
+
+        // Should include common middlewares
+        $this->assertArrayHasKey('SetHost', $middlewares);
+        $this->assertArrayHasKey('Timeout', $middlewares);
+        $this->assertArrayHasKey('Cors', $middlewares);
+
+        // Should have expected structure
+        $setHost = $middlewares['SetHost'];
+        $this->assertArrayHasKey('label', $setHost);
+        $this->assertArrayHasKey('description', $setHost);
+        $this->assertArrayHasKey('fields', $setHost);
+    }
+
+    public function test_get_available_middlewares_returns_empty_without_registry()
+    {
+        $routesPage = new RoutesPage(null);
+
+        $middlewares = $routesPage->getAvailableMiddlewares();
+
+        $this->assertIsArray($middlewares);
+        $this->assertEmpty($middlewares);
+    }
+
+    public function test_admin_enqueue_assets_includes_middlewares()
+    {
+        // Create properly initialized admin
+        $middlewareManager = reverse_proxy_create_middleware_manager();
+        $registry = new \Recca0120\ReverseProxy\WordPress\Admin\MiddlewareRegistry($middlewareManager);
+        $routesPage = new RoutesPage($registry);
+        $admin = new Admin($routesPage);
+        $admin->register();
+
+        // Simulate being on the correct admin page
+        set_current_screen('settings_page_reverse-proxy');
+
+        // Run enqueue action
+        do_action('admin_enqueue_scripts', 'settings_page_reverse-proxy');
+
+        // Get the localized script data
+        global $wp_scripts;
+        $this->assertTrue(wp_script_is('reverse-proxy-admin', 'enqueued'));
+
+        // Check localized data was set (would have failed before the fix)
+        $data = $wp_scripts->get_data('reverse-proxy-admin', 'data');
+        $this->assertNotEmpty($data);
+        $this->assertStringContainsString('reverseProxyAdmin', $data);
+        $this->assertStringContainsString('middlewares', $data);
+    }
+
     /**
      * @runInSeparateProcess
      * @preserveGlobalState disabled

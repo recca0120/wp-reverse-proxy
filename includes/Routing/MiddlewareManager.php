@@ -215,7 +215,7 @@ class MiddlewareManager
 
         // YAML key-value format: ["SetHost" => "api.example.com"] or ["Timeout" => 30]
         if ($this->isYamlKeyValueFormat($config)) {
-            $name = array_key_first($config);
+            $name = Arr::firstKey($config);
             $value = $config[$name];
 
             return is_array($value)
@@ -242,7 +242,7 @@ class MiddlewareManager
             return false;
         }
 
-        $key = array_key_first($config);
+        $key = Arr::firstKey($config);
 
         return is_string($key) && ! is_numeric($key);
     }

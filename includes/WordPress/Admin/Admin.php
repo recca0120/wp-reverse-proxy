@@ -88,7 +88,7 @@ class Admin
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'adminUrl' => admin_url('admin.php'),
             'nonce' => wp_create_nonce('reverse_proxy_admin'),
-            'middlewares' => MiddlewareRegistry::getAll(),
+            'middlewares' => $this->routesPage->getAvailableMiddlewares(),
             'existingMiddlewares' => $existingMiddlewares,
         ]);
     }

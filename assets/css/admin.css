@@ -105,3 +105,98 @@
 .ui-sortable-helper {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }
+
+/* Checkbox Fields */
+.middleware-checkbox-wrapper label,
+.middleware-checkboxes-wrapper .checkbox-group label {
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.middleware-checkbox-wrapper input[type="checkbox"],
+.middleware-checkboxes-wrapper .checkbox-group input[type="checkbox"] {
+    margin-right: 4px;
+}
+
+.middleware-checkboxes-wrapper .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 15px;
+    margin-top: 5px;
+}
+
+.middleware-checkboxes-wrapper .checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Dynamic List (Repeater & KeyValue) */
+.dynamic-list-container {
+    margin-top: 5px;
+}
+
+.dynamic-list-items {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.dynamic-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dynamic-list-item input {
+    flex: 1;
+}
+
+.dynamic-list-item input.small-text {
+    flex: 0 0 80px;
+}
+
+.dynamic-list-remove {
+    padding: 0 5px !important;
+    min-height: 28px;
+    line-height: 26px;
+}
+
+.dynamic-list-remove .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 26px;
+}
+
+.dynamic-list-add {
+    margin-top: 5px;
+}
+
+/* KeyValue specific */
+.keyvalue-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #646970;
+}
+
+.keyvalue-key-header,
+.keyvalue-value-header {
+    flex: 1;
+}
+
+.keyvalue-action-header {
+    width: 32px;
+}
+
+.keyvalue-item .keyvalue-key,
+.keyvalue-item .keyvalue-value {
+    flex: 1;
+}
+
+/* Select Field */
+.middleware-field-wrapper select {
+    min-width: 150px;
+}

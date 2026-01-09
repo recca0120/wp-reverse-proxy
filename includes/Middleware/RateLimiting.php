@@ -9,6 +9,9 @@ use Recca0120\ReverseProxy\Concerns\HasCache;
 use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 
+/**
+ * @UIDescription("Limit the number of requests")
+ */
 class RateLimiting implements MiddlewareInterface, CacheAwareInterface
 {
     use HasCache;
@@ -26,6 +29,9 @@ class RateLimiting implements MiddlewareInterface, CacheAwareInterface
      * @param  int  $maxRequests  每個時間窗口的最大請求數
      * @param  int  $windowSeconds  時間窗口（秒）
      * @param  callable|null  $keyGenerator  自訂 key 產生器
+     *
+     * @UIField(name="maxRequests", type="number", label="Max Requests", default=100)
+     * @UIField(name="windowSeconds", type="number", label="Window (seconds)", default=60)
      */
     public function __construct(
         int $maxRequests,

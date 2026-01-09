@@ -8,6 +8,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 
+/**
+ * @UILabel("CORS")
+ * @UIDescription("Add CORS headers to the response")
+ */
 class Cors implements MiddlewareInterface
 {
     /** @var string[] */
@@ -29,6 +33,12 @@ class Cors implements MiddlewareInterface
      * @param  string[]  $allowedOrigins
      * @param  string[]  $allowedMethods
      * @param  string[]  $allowedHeaders
+     *
+     * @UIField(name="allowedOrigins", type="repeater", label="Allowed Origins", default="*", placeholder="e.g. https://example.com or *")
+     * @UIField(name="allowedMethods", type="checkboxes", label="Allowed Methods", options="GET,POST,PUT,PATCH,DELETE,OPTIONS", default="GET,POST,PUT,PATCH,DELETE,OPTIONS")
+     * @UIField(name="allowedHeaders", type="repeater", label="Allowed Headers", default="Content-Type,Authorization,X-Requested-With", placeholder="e.g. Content-Type")
+     * @UIField(name="allowCredentials", type="checkbox", label="Allow Credentials", default=false)
+     * @UIField(name="maxAge", type="number", label="Max Age (seconds)", default=0)
      */
     public function __construct(
         array $allowedOrigins = ['*'],

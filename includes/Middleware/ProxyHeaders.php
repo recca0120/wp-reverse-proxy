@@ -8,6 +8,10 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
+/**
+ * @UIDescription("Add X-Forwarded-* headers to the proxied request")
+ * @UINoFields
+ */
 class ProxyHeaders implements MiddlewareInterface
 {
     private const ALL_HEADERS = [

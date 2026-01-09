@@ -8,6 +8,9 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Exceptions\FallbackException;
 use Recca0120\ReverseProxy\Support\Arr;
 
+/**
+ * @UIDescription("Provide fallback response on failure")
+ */
 class Fallback implements MiddlewareInterface
 {
     /** @var int */
@@ -17,11 +20,17 @@ class Fallback implements MiddlewareInterface
     private $statusCodes;
 
     /**
-     * @param  int  ...$statusCodes  觸發 fallback 的狀態碼
+     * @param  int|int[]  ...$statusCodes  觸發 fallback 的狀態碼
+     *
+     * @UIField(name="statusCodes", type="repeater", label="Trigger Status Codes", default="404", inputType="number")
      */
-    public function __construct(int ...$statusCodes)
+    public function __construct(...$statusCodes)
     {
-        $this->statusCodes = $statusCodes ?: [404];
+        // Support both: new Fallback(404, 500) and new Fallback([404, 500])
+        if (count($statusCodes) === 1 && is_array($statusCodes[0])) {
+            $statusCodes = $statusCodes[0];
+        }
+        $this->statusCodes = array_map('intval', $statusCodes) ?: [404];
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface

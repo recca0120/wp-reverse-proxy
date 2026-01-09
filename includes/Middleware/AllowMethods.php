@@ -8,13 +8,25 @@ use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 
+/**
+ * @UIDescription("Restrict allowed HTTP methods")
+ */
 class AllowMethods implements MiddlewareInterface
 {
     /** @var string[] */
     private $allowedMethods;
 
-    public function __construct(string ...$allowedMethods)
+    /**
+     * @param  string|string[]  ...$allowedMethods
+     *
+     * @UIField(name="allowedMethods", type="checkboxes", label="Allowed Methods", options="GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS", default="GET")
+     */
+    public function __construct(...$allowedMethods)
     {
+        // Support both: new AllowMethods('GET', 'POST') and new AllowMethods(['GET', 'POST'])
+        if (count($allowedMethods) === 1 && is_array($allowedMethods[0])) {
+            $allowedMethods = $allowedMethods[0];
+        }
         $methods = $allowedMethods ?: ['GET'];
         $this->allowedMethods = array_map('strtoupper', $methods);
     }
