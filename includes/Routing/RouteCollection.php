@@ -149,7 +149,7 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
-     * Clear all cached routes.
+     * Clear cached routes for all loaders.
      */
     public function clearCache(): void
     {
@@ -157,7 +157,12 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
             return;
         }
 
-        $this->cache->clear();
+        foreach ($this->loaders as $loader) {
+            $cacheKey = $loader->getCacheKey();
+            if ($cacheKey !== null) {
+                $this->cache->delete($cacheKey);
+            }
+        }
     }
 
     /**

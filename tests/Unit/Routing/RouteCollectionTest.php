@@ -217,12 +217,15 @@ class RouteCollectionTest extends TestCase
 
     public function test_clear_cache(): void
     {
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
+
         $cache = Mockery::spy(CacheInterface::class);
 
-        $collection = new RouteCollection([], null, $cache);
+        $collection = new RouteCollection([$loader], null, $cache);
         $collection->clearCache();
 
-        $cache->shouldHaveReceived('clear')->once();
+        $cache->shouldHaveReceived('delete')->with('test_loader_key')->once();
         $this->addToAssertionCount(1);
     }
 

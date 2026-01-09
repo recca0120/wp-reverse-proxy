@@ -16,6 +16,9 @@ class FileLoader implements RouteLoaderInterface
     /** @var array<FileLoaderInterface> */
     private $parsers;
 
+    /** @var string|null */
+    private $pattern;
+
     /**
      * @param array<string> $paths Directories or files to load routes from
      * @param array<FileLoaderInterface>|null $parsers Custom parsers (default: JSON, YAML, PHP)
@@ -35,8 +38,8 @@ class FileLoader implements RouteLoaderInterface
     {
         $configs = [];
 
-        foreach ($this->paths as $path) {
-            foreach ($this->loadFromPath($path) as $config) {
+        foreach ($this->getAllFiles() as $file) {
+            foreach ($this->loadFromFile($file) as $config) {
                 $configs[] = $config;
             }
         }
@@ -104,6 +107,7 @@ class FileLoader implements RouteLoaderInterface
     private function getAllFiles(): array
     {
         $files = [];
+        $pattern = $this->getPattern();
 
         foreach ($this->paths as $path) {
             if (!file_exists($path)) {
@@ -111,7 +115,7 @@ class FileLoader implements RouteLoaderInterface
             }
 
             if (is_dir($path)) {
-                foreach ($this->globFiles($path, $this->buildPattern()) as $file) {
+                foreach ($this->globFiles($path, $pattern) as $file) {
                     $files[] = $file;
                 }
             } else {
@@ -123,43 +127,14 @@ class FileLoader implements RouteLoaderInterface
     }
 
     /**
-     * @return array<array<string, mixed>>
+     * Get glob pattern (cached).
      */
-    private function loadFromPath(string $path): array
+    private function getPattern(): string
     {
-        if (!file_exists($path)) {
-            return [];
+        if ($this->pattern !== null) {
+            return $this->pattern;
         }
 
-        if (is_dir($path)) {
-            return $this->loadFromDirectory($path);
-        }
-
-        return $this->loadFromFile($path);
-    }
-
-    /**
-     * @return array<array<string, mixed>>
-     */
-    private function loadFromDirectory(string $directory): array
-    {
-        $files = $this->globFiles($directory, $this->buildPattern());
-        $configs = [];
-
-        foreach ($files as $file) {
-            foreach ($this->loadFromFile($file) as $config) {
-                $configs[] = $config;
-            }
-        }
-
-        return $configs;
-    }
-
-    /**
-     * Build glob pattern from parsers' extensions.
-     */
-    private function buildPattern(): string
-    {
         $extensions = [];
         foreach ($this->parsers as $parser) {
             foreach ($parser->getExtensions() as $ext) {
@@ -170,10 +145,12 @@ class FileLoader implements RouteLoaderInterface
         $extensions = array_unique($extensions);
 
         if (count($extensions) === 1) {
-            return '*.' . $extensions[0];
+            $this->pattern = '*.' . $extensions[0];
+        } else {
+            $this->pattern = '*.{' . implode(',', $extensions) . '}';
         }
 
-        return '*.{' . implode(',', $extensions) . '}';
+        return $this->pattern;
     }
 
     /**
