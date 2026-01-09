@@ -134,9 +134,7 @@ class FileLoader implements RouteLoaderInterface
             return $parser->getExtensions();
         }));
 
-        $this->pattern = count($extensions) === 1
-            ? '*.' . $extensions[0]
-            : '*.{' . implode(',', $extensions) . '}';
+        $this->pattern = '*.{' . implode(',', $extensions) . '}';
 
         return $this->pattern;
     }
