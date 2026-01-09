@@ -71,7 +71,6 @@ if (isset($_GET['error'])) {
                     <th scope="col" class="column-path"><?php esc_html_e('Path', 'reverse-proxy'); ?></th>
                     <th scope="col" class="column-target"><?php esc_html_e('Target', 'reverse-proxy'); ?></th>
                     <th scope="col" class="column-methods" style="width: 150px;"><?php esc_html_e('Methods', 'reverse-proxy'); ?></th>
-                    <th scope="col" class="column-middlewares" style="width: 100px;"><?php esc_html_e('Middlewares', 'reverse-proxy'); ?></th>
                     <th scope="col" class="column-actions" style="width: 200px;"><?php esc_html_e('Actions', 'reverse-proxy'); ?></th>
                 </tr>
             </thead>
@@ -102,12 +101,6 @@ if (isset($_GET['error'])) {
                             } else {
                                 echo '<span class="description">' . esc_html__('ALL', 'reverse-proxy') . '</span>';
                             }
-                    ?>
-                        </td>
-                        <td class="column-middlewares">
-                            <?php
-                    $mwCount = count($route['middlewares'] ?? []);
-                    echo esc_html($mwCount);
                     ?>
                         </td>
                         <td class="column-actions">
