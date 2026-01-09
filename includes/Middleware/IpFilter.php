@@ -9,9 +9,9 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 
 class IpFilter implements MiddlewareInterface
 {
-    const MODE_ALLOW = 'allow';
+    public const MODE_ALLOW = 'allow';
 
-    const MODE_DENY = 'deny';
+    public const MODE_DENY = 'deny';
 
     /** @var string[] */
     private $ips;

@@ -40,7 +40,7 @@ class RewriteBody implements MiddlewareInterface
         ?StreamFactoryInterface $streamFactory = null
     ) {
         $this->replacements = $replacements;
-        $this->streamFactory = $streamFactory ?? new Psr17Factory;
+        $this->streamFactory = $streamFactory ?? new Psr17Factory();
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface

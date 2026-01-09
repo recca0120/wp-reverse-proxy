@@ -49,6 +49,35 @@ class ConfigLoader
     }
 
     /**
+     * Load routes from a single file.
+     *
+     * @return array<Route>
+     */
+    public function loadFromFile(string $file): array
+    {
+        return $this->remember($file, function () use ($file) {
+            $config = $this->loadConfig($file);
+            if (empty($config) || ! isset($config['routes'])) {
+                return [];
+            }
+
+            return $this->createRoutes($config['routes']);
+        });
+    }
+
+    /**
+     * Clear all cached routes.
+     */
+    public function clearCache(): void
+    {
+        if ($this->cache === null) {
+            return;
+        }
+
+        $this->cache->clear();
+    }
+
+    /**
      * Get files matching pattern with brace expansion support.
      *
      * @return array<string>
@@ -86,23 +115,6 @@ class ConfigLoader
     }
 
     /**
-     * Load routes from a single file.
-     *
-     * @return array<Route>
-     */
-    public function loadFromFile(string $file): array
-    {
-        return $this->remember($file, function () use ($file) {
-            $config = $this->loadConfig($file);
-            if (empty($config) || ! isset($config['routes'])) {
-                return [];
-            }
-
-            return $this->createRoutes($config['routes']);
-        });
-    }
-
-    /**
      * Get value from cache or execute callback and store result.
      * Uses file modification time for cache invalidation.
      *
@@ -129,18 +141,6 @@ class ConfigLoader
         $this->cache->set($key, ['mtime' => $mtime, 'data' => $data]);
 
         return $data;
-    }
-
-    /**
-     * Clear all cached routes.
-     */
-    public function clearCache(): void
-    {
-        if ($this->cache === null) {
-            return;
-        }
-
-        $this->cache->clear();
     }
 
     /**

@@ -17,7 +17,7 @@ class CachingTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -37,26 +37,6 @@ class CachingTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_response');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
-    }
-
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function givenResponse(Response $response): void
-    {
-        $this->mockClient->addResponse($response);
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
     }
 
     public function test_it_caches_get_response()
@@ -200,5 +180,25 @@ class CachingTest extends WP_UnitTestCase
         // 再次請求 page=1（應該從快取）
         $output3 = $this->whenRequesting('/api/users?page=1');
         $this->assertEquals('{"page":1}', $output3);
+    }
+
+    private function givenRoutes(array $routes): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routes) {
+            return $routes;
+        });
+    }
+
+    private function givenResponse(Response $response): void
+    {
+        $this->mockClient->addResponse($response);
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

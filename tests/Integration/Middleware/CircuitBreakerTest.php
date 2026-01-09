@@ -19,7 +19,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -41,21 +41,6 @@ class CircuitBreakerTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_default_middlewares');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
-    }
-
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
     }
 
     public function test_it_allows_requests_when_circuit_is_closed()
@@ -207,5 +192,20 @@ class CircuitBreakerTest extends WP_UnitTestCase
         $output = $this->whenRequesting('/api/b/users');
 
         $this->assertEquals('{"data":"service-b"}', $output);
+    }
+
+    private function givenRoutes(array $routes): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routes) {
+            return $routes;
+        });
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

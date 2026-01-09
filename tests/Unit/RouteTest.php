@@ -124,8 +124,7 @@ class RouteTest extends TestCase
 
     public function test_it_can_add_middleware_interface()
     {
-        $middleware = new class implements MiddlewareInterface
-        {
+        $middleware = new class () implements MiddlewareInterface {
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request->withHeader('X-Test', 'value'));
@@ -140,8 +139,7 @@ class RouteTest extends TestCase
 
     public function test_it_accepts_middleware_interface_in_constructor()
     {
-        $middleware = new class implements MiddlewareInterface
-        {
+        $middleware = new class () implements MiddlewareInterface {
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request->withHeader('X-Test', 'value'));
@@ -241,8 +239,7 @@ class RouteTest extends TestCase
 
     public function test_it_sorts_middlewares_by_priority()
     {
-        $lowPriority = new class implements MiddlewareInterface
-        {
+        $lowPriority = new class () implements MiddlewareInterface {
             public $priority = 10;
 
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -251,8 +248,7 @@ class RouteTest extends TestCase
             }
         };
 
-        $highPriority = new class implements MiddlewareInterface
-        {
+        $highPriority = new class () implements MiddlewareInterface {
             public $priority = -100;
 
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -272,8 +268,7 @@ class RouteTest extends TestCase
 
     public function test_it_uses_zero_priority_for_middlewares_without_priority()
     {
-        $withPriority = new class implements MiddlewareInterface
-        {
+        $withPriority = new class () implements MiddlewareInterface {
             public $priority = -50;
 
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -282,8 +277,7 @@ class RouteTest extends TestCase
             }
         };
 
-        $withoutPriority = new class implements MiddlewareInterface
-        {
+        $withoutPriority = new class () implements MiddlewareInterface {
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request);
@@ -301,8 +295,7 @@ class RouteTest extends TestCase
 
     public function test_it_uses_zero_priority_for_closure_middlewares()
     {
-        $highPriority = new class implements MiddlewareInterface
-        {
+        $highPriority = new class () implements MiddlewareInterface {
             public $priority = -100;
 
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -326,8 +319,7 @@ class RouteTest extends TestCase
 
     public function test_it_maintains_order_for_same_priority()
     {
-        $first = new class implements MiddlewareInterface
-        {
+        $first = new class () implements MiddlewareInterface {
             public $priority = 0;
 
             public $name = 'first';
@@ -338,8 +330,7 @@ class RouteTest extends TestCase
             }
         };
 
-        $second = new class implements MiddlewareInterface
-        {
+        $second = new class () implements MiddlewareInterface {
             public $priority = 0;
 
             public $name = 'second';

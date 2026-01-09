@@ -13,7 +13,7 @@ class ServerRequestFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->factory = new ServerRequestFactory(new Psr17Factory);
+        $this->factory = new ServerRequestFactory(new Psr17Factory());
     }
 
     public function test_it_does_not_duplicate_content_type_header()

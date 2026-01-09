@@ -19,7 +19,7 @@ class RetryTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -37,21 +37,6 @@ class RetryTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_default_middlewares');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
-    }
-
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
     }
 
     public function test_it_succeeds_on_first_try()
@@ -205,5 +190,20 @@ class RetryTest extends WP_UnitTestCase
 
         $this->assertEquals('{"data":"success"}', $output);
         $this->assertCount(2, $this->mockClient->getRequests());
+    }
+
+    private function givenRoutes(array $routes): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routes) {
+            return $routes;
+        });
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

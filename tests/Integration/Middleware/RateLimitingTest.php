@@ -17,7 +17,7 @@ class RateLimitingTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -39,26 +39,6 @@ class RateLimitingTest extends WP_UnitTestCase
         $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
-    }
-
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function givenResponse(Response $response): void
-    {
-        $this->mockClient->addResponse($response);
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
     }
 
     public function test_it_allows_requests_within_limit()
@@ -194,5 +174,25 @@ class RateLimitingTest extends WP_UnitTestCase
 
         $this->assertNotNull($capturedResponse);
         $this->assertEquals(200, $capturedResponse->getStatusCode());
+    }
+
+    private function givenRoutes(array $routes): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routes) {
+            return $routes;
+        });
+    }
+
+    private function givenResponse(Response $response): void
+    {
+        $this->mockClient->addResponse($response);
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

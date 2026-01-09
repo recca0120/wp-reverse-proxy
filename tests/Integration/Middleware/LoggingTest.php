@@ -19,7 +19,7 @@ class LoggingTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
         $this->loggedMessages = [];
 
         add_filter('reverse_proxy_http_client', function () {
@@ -47,21 +47,6 @@ class LoggingTest extends WP_UnitTestCase
         remove_all_actions('reverse_proxy_log');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
-    }
-
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
     }
 
     public function test_it_logs_request_info()
@@ -123,5 +108,20 @@ class LoggingTest extends WP_UnitTestCase
         $this->whenRequesting('/api/users');
 
         $this->assertNotEmpty($this->loggedMessages);
+    }
+
+    private function givenRoutes(array $routes): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routes) {
+            return $routes;
+        });
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

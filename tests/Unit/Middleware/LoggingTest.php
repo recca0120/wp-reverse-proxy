@@ -107,7 +107,7 @@ class LoggingTest extends TestCase
         $this->expectException(ClientExceptionInterface::class);
 
         $middleware->process($request, function ($req) {
-            throw new class('Connection refused') extends \Exception implements ClientExceptionInterface {};
+            throw new class ('Connection refused') extends \Exception implements ClientExceptionInterface {};
         });
     }
 
@@ -121,7 +121,7 @@ class LoggingTest extends TestCase
         $this->expectExceptionMessage('Connection refused');
 
         $middleware->process($request, function ($req) {
-            throw new class('Connection refused') extends \Exception implements ClientExceptionInterface {};
+            throw new class ('Connection refused') extends \Exception implements ClientExceptionInterface {};
         });
     }
 }

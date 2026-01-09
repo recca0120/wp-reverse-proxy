@@ -10,7 +10,7 @@ class CurlClientTest extends HttpClientTestCase
 {
     public function test_it_sends_get_request()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/api/test'));
 
         $response = $client->sendRequest($request);
@@ -25,7 +25,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_sends_post_request_with_body()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('POST', $this->getServerUrl('/api/test'), [
             'Content-Type' => 'application/json',
         ], '{"data":"test"}');
@@ -51,7 +51,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_does_not_follow_redirects()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/redirect'));
 
         $response = $client->sendRequest($request);
@@ -62,7 +62,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_handles_error_status_codes()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
 
         $response404 = $client->sendRequest(new Request('GET', $this->getServerUrl('/status/404')));
         $this->assertEquals(404, $response404->getStatusCode());
@@ -73,7 +73,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_sends_request_headers()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/'), [
             'Accept' => 'application/json',
             'X-Custom-Header' => 'custom-value',
@@ -88,7 +88,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_receives_response_headers()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/headers'));
 
         $response = $client->sendRequest($request);
@@ -98,7 +98,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_handles_multiple_headers_with_same_name()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/headers'));
 
         $response = $client->sendRequest($request);
@@ -121,7 +121,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_auto_decodes_gzip_response_by_default()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/gzip'), [
             'Accept-Encoding' => 'gzip',
         ]);
@@ -155,7 +155,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_auto_decodes_deflate_response_by_default()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/deflate'), [
             'Accept-Encoding' => 'deflate',
         ]);
@@ -190,7 +190,7 @@ class CurlClientTest extends HttpClientTestCase
 
     public function test_it_handles_lowercase_content_encoding_header()
     {
-        $client = new CurlClient;
+        $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/gzip-lowercase'), [
             'Accept-Encoding' => 'gzip',
         ]);

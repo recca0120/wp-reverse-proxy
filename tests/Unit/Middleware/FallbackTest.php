@@ -60,7 +60,7 @@ class FallbackTest extends TestCase
 
     public function test_it_defaults_to_404_only()
     {
-        $middleware = new Fallback;
+        $middleware = new Fallback();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $this->expectException(FallbackException::class);
@@ -72,7 +72,7 @@ class FallbackTest extends TestCase
 
     public function test_default_does_not_throw_on_410()
     {
-        $middleware = new Fallback;
+        $middleware = new Fallback();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
@@ -84,7 +84,7 @@ class FallbackTest extends TestCase
 
     public function test_it_has_high_priority()
     {
-        $middleware = new Fallback;
+        $middleware = new Fallback();
 
         $this->assertEquals(100, $middleware->priority);
     }

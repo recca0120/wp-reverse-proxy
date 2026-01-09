@@ -17,7 +17,7 @@ class MiddlewareFactoryTest extends TestCase
 {
     public function test_create_middleware_by_alias(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create(['name' => 'ProxyHeaders']);
 
@@ -27,7 +27,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_by_full_class_name(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create(['name' => SetHost::class, 'args' => ['example.com']]);
 
@@ -36,7 +36,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_with_args(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create([
             'name' => 'SetHost',
@@ -48,7 +48,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_with_options(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create([
             'name' => 'ProxyHeaders',
@@ -60,7 +60,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_with_single_option_value(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create([
             'name' => 'Timeout',
@@ -72,10 +72,9 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_register_custom_alias(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
-        $customMiddleware = new class implements MiddlewareInterface
-        {
+        $customMiddleware = new class () implements MiddlewareInterface {
             public function process(\Psr\Http\Message\ServerRequestInterface $request, callable $next): \Psr\Http\Message\ResponseInterface
             {
                 return $next($request);
@@ -91,7 +90,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_throws_exception_for_unknown_middleware(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown middleware: NonExistentMiddleware');
@@ -101,7 +100,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_get_aliases_returns_all_registered_aliases(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $aliases = $factory->getAliases();
 
@@ -113,7 +112,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_string_format(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create('ProxyHeaders');
 
@@ -122,7 +121,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_array_format_with_single_arg(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create(['SetHost', 'api.example.com']);
 
@@ -131,7 +130,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_array_format_with_options_object(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create(['ProxyHeaders', ['clientIp' => '192.168.1.1']]);
 
@@ -140,7 +139,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_array_format_with_multiple_args(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         // Timeout accepts single int, but testing the args spread mechanism
         $middleware = $factory->create(['Timeout', 30]);
@@ -150,7 +149,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_colon_format(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create('SetHost:api.example.com');
 
@@ -159,7 +158,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_colon_format_with_multiple_params(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create('Timeout:30');
 
@@ -168,7 +167,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_many_from_array(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middlewares = $factory->createMany([
             'ProxyHeaders',
@@ -184,7 +183,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_many_from_pipe_separated_string(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middlewares = $factory->createMany('ProxyHeaders|SetHost:api.example.com|Timeout:30');
 
@@ -196,7 +195,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_allow_methods_from_colon_format(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create('AllowMethods:GET,POST,PUT');
 
@@ -205,7 +204,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_fallback_from_colon_format(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create('Fallback:404,500,502');
 
@@ -214,7 +213,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_ip_filter_from_colon_format_with_mode(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create('IpFilter:allow,192.168.1.1,10.0.0.1');
 
@@ -223,7 +222,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_ip_filter_from_colon_format_without_mode(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create('IpFilter:192.168.1.1,10.0.0.1');
 
@@ -232,7 +231,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_ip_filter_deny_mode_from_colon_format(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middleware = $factory->create('IpFilter:deny,192.168.1.100');
 
@@ -241,7 +240,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_register_alias_returns_self_for_chaining(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $result = $factory->registerAlias('CustomAlias', ProxyHeaders::class);
 
@@ -250,7 +249,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_register_alias_chaining(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $factory->registerAlias('Alias1', ProxyHeaders::class)
             ->registerAlias('Alias2', SetHost::class);
@@ -263,7 +262,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_register_alias_with_array(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $factory->registerAlias([
             'MyProxy' => ProxyHeaders::class,
@@ -280,7 +279,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_register_alias_with_array_returns_self(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $result = $factory->registerAlias([
             'MyProxy' => ProxyHeaders::class,
@@ -291,7 +290,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_yaml_key_value_format(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         // YAML format: "SetHost: api.example.com" parses to ['SetHost' => 'api.example.com']
         $middleware = $factory->create(['SetHost' => 'api.example.com']);
@@ -301,7 +300,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_yaml_key_value_format_with_array_options(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         // YAML format with options
         $middleware = $factory->create(['ProxyHeaders' => ['clientIp' => '192.168.1.1']]);
@@ -311,7 +310,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_middleware_from_yaml_key_value_format_with_numeric_value(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         // YAML format: "Timeout: 30" parses to ['Timeout' => 30]
         $middleware = $factory->create(['Timeout' => 30]);
@@ -321,7 +320,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_many_with_yaml_key_value_format(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         // Mixed formats including YAML key-value
         $middlewares = $factory->createMany([
@@ -338,7 +337,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_many_with_php_mixed_array_format(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         // PHP mixed array format
         $middlewares = $factory->createMany([
@@ -355,7 +354,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_many_with_php_mixed_array_format_with_array_options(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         // PHP mixed array format with array options
         $middlewares = $factory->createMany([
@@ -370,7 +369,7 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_create_many_preserves_order(): void
     {
-        $factory = new MiddlewareFactory;
+        $factory = new MiddlewareFactory();
 
         $middlewares = $factory->createMany([
             'SetHost' => 'api.example.com',

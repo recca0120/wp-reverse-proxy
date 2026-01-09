@@ -28,7 +28,7 @@ class Fallback implements MiddlewareInterface
         $response = $next($request);
 
         if (in_array($response->getStatusCode(), $this->statusCodes, true)) {
-            throw new FallbackException;
+            throw new FallbackException();
         }
 
         return $response;

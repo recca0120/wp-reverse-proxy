@@ -32,18 +32,6 @@ class Route
         }
     }
 
-    private function parseSource(string $source): void
-    {
-        // Check if source contains HTTP method (e.g., "POST /api/users" or "GET|POST /api/*")
-        if (preg_match('/^([A-Za-z|]+)\s+(\/.*)$/', $source, $matches)) {
-            $this->methods = array_map('strtoupper', explode('|', $matches[1]));
-            $this->path = $matches[2];
-        } else {
-            $this->methods = [];
-            $this->path = $source;
-        }
-    }
-
     /**
      * @param  callable|MiddlewareInterface  $middleware
      */
@@ -61,6 +49,45 @@ class Route
     public function getMiddlewares(): array
     {
         return $this->sortByPriority($this->middlewares);
+    }
+
+    public function matches(ServerRequestInterface $request): ?string
+    {
+        $uri = $request->getUri();
+        $path = $uri->getPath() ?: '/';
+        $queryString = $uri->getQuery() ?: '';
+
+        if (! $this->matchesMethod($request->getMethod())) {
+            return null;
+        }
+
+        if (! $this->matchesPattern($path)) {
+            return null;
+        }
+
+        return $this->buildTargetUrl($path, $queryString);
+    }
+
+    public function getTargetHost(): string
+    {
+        return parse_url($this->target, PHP_URL_HOST) ?: '';
+    }
+
+    public function getCaptures(): array
+    {
+        return $this->captures;
+    }
+
+    private function parseSource(string $source): void
+    {
+        // Check if source contains HTTP method (e.g., "POST /api/users" or "GET|POST /api/*")
+        if (preg_match('/^([A-Za-z|]+)\s+(\/.*)$/', $source, $matches)) {
+            $this->methods = array_map('strtoupper', explode('|', $matches[1]));
+            $this->path = $matches[2];
+        } else {
+            $this->methods = [];
+            $this->path = $source;
+        }
     }
 
     private function sortByPriority(array $middlewares): array
@@ -87,23 +114,6 @@ class Route
         return 0;
     }
 
-    public function matches(ServerRequestInterface $request): ?string
-    {
-        $uri = $request->getUri();
-        $path = $uri->getPath() ?: '/';
-        $queryString = $uri->getQuery() ?: '';
-
-        if (! $this->matchesMethod($request->getMethod())) {
-            return null;
-        }
-
-        if (! $this->matchesPattern($path)) {
-            return null;
-        }
-
-        return $this->buildTargetUrl($path, $queryString);
-    }
-
     private function matchesMethod(string $method): bool
     {
         // Empty methods array means match all methods
@@ -112,16 +122,6 @@ class Route
         }
 
         return in_array(strtoupper($method), $this->methods, true);
-    }
-
-    public function getTargetHost(): string
-    {
-        return parse_url($this->target, PHP_URL_HOST) ?: '';
-    }
-
-    public function getCaptures(): array
-    {
-        return $this->captures;
     }
 
     private function matchesPattern(string $path): bool

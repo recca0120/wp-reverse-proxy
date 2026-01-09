@@ -17,7 +17,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -42,26 +42,11 @@ class ProxyHeadersTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
-    }
-
     public function test_it_adds_x_real_ip_header()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new ProxyHeaders,
+                new ProxyHeaders(),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(200, [], '{}'));
@@ -76,7 +61,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new ProxyHeaders,
+                new ProxyHeaders(),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(200, [], '{}'));
@@ -91,7 +76,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new ProxyHeaders,
+                new ProxyHeaders(),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(200, [], '{}'));
@@ -106,7 +91,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new ProxyHeaders,
+                new ProxyHeaders(),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(200, [], '{}'));
@@ -115,5 +100,20 @@ class ProxyHeadersTest extends WP_UnitTestCase
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals('443', $lastRequest->getHeaderLine('X-Forwarded-Port'));
+    }
+
+    private function givenRoutes(array $routes): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routes) {
+            return $routes;
+        });
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

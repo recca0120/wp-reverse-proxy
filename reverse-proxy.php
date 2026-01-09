@@ -31,14 +31,14 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
 
 function reverse_proxy_create_proxy(array $routes)
 {
-    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
+    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
     $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
 
     $proxy = new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
     $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
-        new Recca0120\ReverseProxy\Middleware\SanitizeHeaders,
-        new Recca0120\ReverseProxy\Middleware\ErrorHandling,
-        new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger),
+        new Recca0120\ReverseProxy\Middleware\SanitizeHeaders(),
+        new Recca0120\ReverseProxy\Middleware\ErrorHandling(),
+        new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger()),
     ]));
 
     return $proxy;
@@ -51,7 +51,7 @@ function reverse_proxy_create_request()
         return $request;
     }
 
-    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
+    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
 
     return (new Recca0120\ReverseProxy\Http\ServerRequestFactory($psr17Factory))->createFromGlobals();
 }
@@ -86,14 +86,14 @@ function reverse_proxy_load_config_routes()
     if ($configLoader === null) {
         $middlewareFactory = apply_filters(
             'reverse_proxy_middleware_factory',
-            new Recca0120\ReverseProxy\Config\MiddlewareFactory
+            new Recca0120\ReverseProxy\Config\MiddlewareFactory()
         );
 
         $configLoader = new Recca0120\ReverseProxy\Config\ConfigLoader(
             [
-                new Recca0120\ReverseProxy\Config\Loaders\JsonLoader,
-                new Recca0120\ReverseProxy\Config\Loaders\YamlLoader,
-                new Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader,
+                new Recca0120\ReverseProxy\Config\Loaders\JsonLoader(),
+                new Recca0120\ReverseProxy\Config\Loaders\YamlLoader(),
+                new Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader(),
             ],
             $middlewareFactory,
             apply_filters('reverse_proxy_config_cache', null)

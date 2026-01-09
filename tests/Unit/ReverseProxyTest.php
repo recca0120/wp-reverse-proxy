@@ -23,18 +23,8 @@ class ReverseProxyTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->mockClient = new MockClient;
-        $this->psr17Factory = new Psr17Factory;
-    }
-
-    private function createProxy(array $routes): ReverseProxy
-    {
-        return new ReverseProxy(
-            $routes,
-            $this->mockClient,
-            $this->psr17Factory,
-            $this->psr17Factory
-        );
+        $this->mockClient = new MockClient();
+        $this->psr17Factory = new Psr17Factory();
     }
 
     public function test_it_returns_null_when_no_routes_match()
@@ -250,8 +240,7 @@ class ReverseProxyTest extends TestCase
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
-        $middleware = new class implements MiddlewareInterface
-        {
+        $middleware = new class () implements MiddlewareInterface {
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 $response = $next($request->withHeader('X-From-Interface', 'yes'));
@@ -393,8 +382,7 @@ class ReverseProxyTest extends TestCase
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
-        $middleware = new class implements MiddlewareInterface
-        {
+        $middleware = new class () implements MiddlewareInterface {
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
             {
                 return $next($request->withHeader('X-Interface-Global', 'yes'));
@@ -449,5 +437,15 @@ class ReverseProxyTest extends TestCase
             'mw2:after',
             'mw1:after',
         ], $order);
+    }
+
+    private function createProxy(array $routes): ReverseProxy
+    {
+        return new ReverseProxy(
+            $routes,
+            $this->mockClient,
+            $this->psr17Factory,
+            $this->psr17Factory
+        );
     }
 }

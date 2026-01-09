@@ -17,7 +17,7 @@ class JsonLoaderTest extends TestCase
 
     public function test_supports_json_extension(): void
     {
-        $loader = new JsonLoader;
+        $loader = new JsonLoader();
 
         $this->assertTrue($loader->supports('/path/to/routes.json'));
         $this->assertTrue($loader->supports('/path/to/reverse-proxy-routes.json'));
@@ -25,7 +25,7 @@ class JsonLoaderTest extends TestCase
 
     public function test_does_not_support_php_extension(): void
     {
-        $loader = new JsonLoader;
+        $loader = new JsonLoader();
 
         $this->assertFalse($loader->supports('/path/to/routes.php'));
         $this->assertFalse($loader->supports('/path/to/config.yaml'));
@@ -34,7 +34,7 @@ class JsonLoaderTest extends TestCase
 
     public function test_load_valid_json_file(): void
     {
-        $loader = new JsonLoader;
+        $loader = new JsonLoader();
         $result = $loader->load($this->fixturesPath.'/valid-routes.json');
 
         $this->assertIsArray($result);
@@ -46,7 +46,7 @@ class JsonLoaderTest extends TestCase
 
     public function test_load_returns_empty_array_for_invalid_json(): void
     {
-        $loader = new JsonLoader;
+        $loader = new JsonLoader();
         $result = $loader->load($this->fixturesPath.'/invalid.json');
 
         $this->assertIsArray($result);
@@ -55,7 +55,7 @@ class JsonLoaderTest extends TestCase
 
     public function test_load_returns_empty_array_for_nonexistent_file(): void
     {
-        $loader = new JsonLoader;
+        $loader = new JsonLoader();
         $result = $loader->load('/nonexistent/path/routes.json');
 
         $this->assertIsArray($result);

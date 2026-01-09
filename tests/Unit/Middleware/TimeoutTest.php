@@ -43,7 +43,7 @@ class TimeoutTest extends TestCase
 
     public function test_it_uses_default_timeout()
     {
-        $middleware = new Timeout;
+        $middleware = new Timeout();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $capturedRequest = null;
@@ -109,7 +109,7 @@ class TimeoutTest extends TestCase
 
     public function test_it_has_correct_priority()
     {
-        $middleware = new Timeout;
+        $middleware = new Timeout();
 
         $this->assertEquals(-60, $middleware->priority);
     }

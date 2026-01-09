@@ -39,15 +39,6 @@ class ConfigLoaderTest extends TestCase
         }
     }
 
-    private function createConfigLoader(?CacheInterface $cache = null): ConfigLoader
-    {
-        return new ConfigLoader(
-            [new JsonLoader, new YamlLoader, new PhpArrayLoader],
-            new MiddlewareFactory,
-            $cache
-        );
-    }
-
     public function test_load_routes_from_json_file(): void
     {
         $filePath = $this->fixturesPath.'/routes.json';
@@ -460,5 +451,14 @@ class ConfigLoaderTest extends TestCase
         // Verify all middleware types are present (order may vary due to priority sorting)
         $classes = array_map('get_class', $middlewares);
         $this->assertContains(ProxyHeaders::class, $classes);
+    }
+
+    private function createConfigLoader(?CacheInterface $cache = null): ConfigLoader
+    {
+        return new ConfigLoader(
+            [new JsonLoader(), new YamlLoader(), new PhpArrayLoader()],
+            new MiddlewareFactory(),
+            $cache
+        );
     }
 }

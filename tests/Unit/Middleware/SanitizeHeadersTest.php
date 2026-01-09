@@ -11,7 +11,7 @@ class SanitizeHeadersTest extends TestCase
 {
     public function test_it_passes_request_to_next_middleware()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
 
         $response = $middleware->process($request, function ($req) {
@@ -24,7 +24,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_removes_br_from_accept_encoding()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
             'Accept-Encoding' => 'gzip, deflate, br',
         ]);
@@ -41,7 +41,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_removes_br_when_only_encoding()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
             'Accept-Encoding' => 'br',
         ]);
@@ -58,7 +58,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_removes_br_at_beginning()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
             'Accept-Encoding' => 'br, gzip, deflate',
         ]);
@@ -75,7 +75,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_removes_br_in_middle()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
             'Accept-Encoding' => 'gzip, br, deflate',
         ]);
@@ -92,7 +92,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_preserves_other_encodings()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
             'Accept-Encoding' => 'gzip, deflate',
         ]);
@@ -109,7 +109,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_handles_missing_accept_encoding()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
 
         $capturedRequest = null;
@@ -124,7 +124,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_removes_hop_by_hop_headers_from_response()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
 
         $response = $middleware->process($request, function () {
@@ -144,7 +144,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_removes_all_hop_by_hop_headers()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
 
         $response = $middleware->process($request, function () {
@@ -165,7 +165,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_preserves_content_headers()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
 
         $response = $middleware->process($request, function () {
@@ -185,7 +185,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_removes_hop_by_hop_headers_case_insensitively()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
 
         $response = $middleware->process($request, function () {
@@ -201,7 +201,7 @@ class SanitizeHeadersTest extends TestCase
 
     public function test_it_has_high_priority()
     {
-        $middleware = new SanitizeHeaders;
+        $middleware = new SanitizeHeaders();
 
         $this->assertEquals(-1000, $middleware->priority);
     }
