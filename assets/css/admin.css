@@ -1,0 +1,216 @@
+/**
+ * Reverse Proxy Admin Styles
+ */
+
+/* Routes List Table */
+.reverse-proxy-admin .column-status {
+    width: 60px;
+}
+
+.reverse-proxy-admin .column-methods {
+    width: 150px;
+}
+
+.reverse-proxy-admin .column-actions {
+    width: 200px;
+}
+
+.reverse-proxy-admin .status-enabled {
+    color: #00a32a;
+}
+
+.reverse-proxy-admin .status-disabled {
+    color: #d63638;
+}
+
+/* Route Edit Form */
+.reverse-proxy-route-form .checkbox-group label {
+    margin-right: 15px;
+    display: inline-block;
+}
+
+.reverse-proxy-route-form .section-description {
+    margin-bottom: 15px;
+}
+
+/* Middleware Items */
+.middleware-item {
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.middleware-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 8px;
+}
+
+.middleware-drag-handle {
+    cursor: move;
+    color: #787c82;
+    flex-shrink: 0;
+}
+
+.middleware-drag-handle:hover {
+    color: #2271b1;
+}
+
+.middleware-select {
+    flex: 1;
+    max-width: 250px;
+}
+
+.middleware-header .remove-middleware {
+    margin-left: auto;
+}
+
+.middleware-body {
+    padding: 0 12px 12px;
+    border-top: 1px solid #dcdcde;
+}
+
+.middleware-body:empty,
+.middleware-body.empty {
+    display: none;
+}
+
+.middleware-body .description {
+    margin: 10px 0 8px;
+}
+
+.middleware-fields-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.middleware-field-wrapper label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* Sortable */
+.middleware-item-placeholder {
+    background: #f0f6fc;
+    border: 2px dashed #2271b1;
+    border-radius: 4px;
+    height: 50px;
+    margin-bottom: 10px;
+}
+
+.ui-sortable-helper {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Checkbox Fields */
+.middleware-checkbox-wrapper label,
+.middleware-checkboxes-wrapper .checkbox-group label {
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.middleware-checkbox-wrapper input[type="checkbox"],
+.middleware-checkboxes-wrapper .checkbox-group input[type="checkbox"] {
+    margin-right: 4px;
+}
+
+.middleware-checkboxes-wrapper .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 15px;
+    margin-top: 5px;
+}
+
+.middleware-checkboxes-wrapper .checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Dynamic List (Repeater & KeyValue) */
+.dynamic-list-container {
+    margin-top: 5px;
+}
+
+.dynamic-list-items {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.dynamic-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dynamic-list-item input {
+    flex: 1;
+}
+
+.dynamic-list-item input.small-text {
+    flex: 0 0 80px;
+}
+
+.dynamic-list-remove {
+    padding: 0 5px !important;
+    min-height: 28px;
+    line-height: 26px;
+}
+
+.dynamic-list-remove .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 26px;
+}
+
+.dynamic-list-add {
+    margin-top: 5px;
+}
+
+/* KeyValue specific */
+.keyvalue-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #646970;
+}
+
+.keyvalue-key-header,
+.keyvalue-value-header {
+    flex: 1;
+}
+
+.keyvalue-action-header {
+    width: 32px;
+}
+
+.keyvalue-item .keyvalue-key,
+.keyvalue-item .keyvalue-value {
+    flex: 1;
+}
+
+/* Select Field */
+.middleware-field-wrapper select {
+    min-width: 150px;
+}
+
+/* JSON Field (CodeMirror) */
+.middleware-json-wrapper .CodeMirror {
+    border: 1px solid #8c8f94;
+    border-radius: 4px;
+    height: auto;
+    min-height: 120px;
+    max-height: 300px;
+}
+
+.middleware-json-wrapper .json-editor {
+    font-family: Consolas, Monaco, monospace;
+    min-height: 120px;
+}

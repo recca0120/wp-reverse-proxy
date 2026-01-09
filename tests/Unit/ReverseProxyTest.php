@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\ReverseProxy;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
@@ -271,12 +272,18 @@ class ReverseProxyTest extends TestCase
         $request = new ServerRequest('GET', '/api/users');
         $route = new Route('/api/*', 'https://backend.example.com');
 
-        $proxy = $this->createProxy([$route]);
-        $proxy->addGlobalMiddleware(function ($request, $next) {
-            $response = $next($request->withHeader('X-Global', 'yes'));
+        $globalMiddleware = new class () implements MiddlewareInterface {
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                $response = $next($request->withHeader('X-Global', 'yes'));
 
-            return $response->withHeader('X-Global-Response', 'yes');
-        });
+                return $response->withHeader('X-Global-Response', 'yes');
+            }
+        };
+
+        $manager = new MiddlewareManager();
+        $manager->registerGlobalMiddleware($globalMiddleware);
+        $proxy = $this->createProxy([$route], $manager);
 
         $response = $proxy->handle($request);
 
@@ -300,14 +307,27 @@ class ReverseProxyTest extends TestCase
                 return $response;
             });
 
-        $proxy = $this->createProxy([$route]);
-        $proxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
-            $order[] = 'global:before';
-            $response = $next($request);
-            $order[] = 'global:after';
+        $globalMiddleware = new class ($order) implements MiddlewareInterface {
+            private $order;
 
-            return $response;
-        });
+            public function __construct(&$order)
+            {
+                $this->order = &$order;
+            }
+
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                $this->order[] = 'global:before';
+                $response = $next($request);
+                $this->order[] = 'global:after';
+
+                return $response;
+            }
+        };
+
+        $manager = new MiddlewareManager();
+        $manager->registerGlobalMiddleware($globalMiddleware);
+        $proxy = $this->createProxy([$route], $manager);
 
         $request = new ServerRequest('GET', '/api/users');
         $proxy->handle($request);
@@ -329,22 +349,46 @@ class ReverseProxyTest extends TestCase
         $request = new ServerRequest('GET', '/api/users');
         $route = new Route('/api/*', 'https://backend.example.com');
 
-        $proxy = $this->createProxy([$route]);
-        $proxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
-            $order[] = 'global1:before';
-            $response = $next($request);
-            $order[] = 'global1:after';
+        $global1 = new class ($order) implements MiddlewareInterface {
+            private $order;
 
-            return $response;
-        });
+            public function __construct(&$order)
+            {
+                $this->order = &$order;
+            }
 
-        $proxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
-            $order[] = 'global2:before';
-            $response = $next($request);
-            $order[] = 'global2:after';
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                $this->order[] = 'global1:before';
+                $response = $next($request);
+                $this->order[] = 'global1:after';
 
-            return $response;
-        });
+                return $response;
+            }
+        };
+
+        $global2 = new class ($order) implements MiddlewareInterface {
+            private $order;
+
+            public function __construct(&$order)
+            {
+                $this->order = &$order;
+            }
+
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                $this->order[] = 'global2:before';
+                $response = $next($request);
+                $this->order[] = 'global2:after';
+
+                return $response;
+            }
+        };
+
+        $manager = new MiddlewareManager();
+        $manager->registerGlobalMiddleware($global1);
+        $manager->registerGlobalMiddleware($global2);
+        $proxy = $this->createProxy([$route], $manager);
 
         $proxy->handle($request);
 
@@ -363,14 +407,20 @@ class ReverseProxyTest extends TestCase
                 throw new \RuntimeException('Error');
             });
 
-        $proxy = $this->createProxy([$route]);
-        $proxy->addGlobalMiddleware(function ($request, $next) {
-            try {
-                return $next($request);
-            } catch (\Exception $e) {
-                return new Response(502, [], '{"error":"caught"}');
+        $errorHandler = new class () implements MiddlewareInterface {
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                try {
+                    return $next($request);
+                } catch (\Exception $e) {
+                    return new Response(502, [], '{"error":"caught"}');
+                }
             }
-        });
+        };
+
+        $manager = new MiddlewareManager();
+        $manager->registerGlobalMiddleware($errorHandler);
+        $proxy = $this->createProxy([$route], $manager);
 
         $request = new ServerRequest('GET', '/api/users');
         $response = $proxy->handle($request);
@@ -393,8 +443,9 @@ class ReverseProxyTest extends TestCase
         $request = new ServerRequest('GET', '/api/users');
         $route = new Route('/api/*', 'https://backend.example.com');
 
-        $proxy = $this->createProxy([$route]);
-        $proxy->addGlobalMiddleware($middleware);
+        $manager = new MiddlewareManager();
+        $manager->registerGlobalMiddleware($middleware);
+        $proxy = $this->createProxy([$route], $manager);
 
         $proxy->handle($request);
 
@@ -402,33 +453,55 @@ class ReverseProxyTest extends TestCase
         $this->assertEquals('yes', $lastRequest->getHeaderLine('X-Interface-Global'));
     }
 
-    public function test_add_global_middlewares_accepts_array()
+    public function test_multiple_global_middlewares_registered_together()
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
         $order = [];
 
-        $middleware1 = function ($request, $next) use (&$order) {
-            $order[] = 'mw1:before';
-            $response = $next($request);
-            $order[] = 'mw1:after';
+        $mw1 = new class ($order) implements MiddlewareInterface {
+            private $order;
 
-            return $response;
+            public function __construct(&$order)
+            {
+                $this->order = &$order;
+            }
+
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                $this->order[] = 'mw1:before';
+                $response = $next($request);
+                $this->order[] = 'mw1:after';
+
+                return $response;
+            }
         };
 
-        $middleware2 = function ($request, $next) use (&$order) {
-            $order[] = 'mw2:before';
-            $response = $next($request);
-            $order[] = 'mw2:after';
+        $mw2 = new class ($order) implements MiddlewareInterface {
+            private $order;
 
-            return $response;
+            public function __construct(&$order)
+            {
+                $this->order = &$order;
+            }
+
+            public function process(ServerRequestInterface $request, callable $next): ResponseInterface
+            {
+                $this->order[] = 'mw2:before';
+                $response = $next($request);
+                $this->order[] = 'mw2:after';
+
+                return $response;
+            }
         };
 
         $request = new ServerRequest('GET', '/api/users');
         $route = new Route('/api/*', 'https://backend.example.com');
 
-        $proxy = $this->createProxy([$route]);
-        $proxy->addGlobalMiddlewares([$middleware1, $middleware2]);
+        $manager = new MiddlewareManager();
+        $manager->registerGlobalMiddleware($mw1);
+        $manager->registerGlobalMiddleware($mw2);
+        $proxy = $this->createProxy([$route], $manager);
 
         $proxy->handle($request);
 
@@ -440,9 +513,10 @@ class ReverseProxyTest extends TestCase
         ], $order);
     }
 
-    private function createProxy(array $routeArray): ReverseProxy
+    private function createProxy(array $routeArray, ?MiddlewareManager $manager = null): ReverseProxy
     {
-        $routes = (new RouteCollection())->add($routeArray);
+        $manager = $manager ?? new MiddlewareManager();
+        $routes = (new RouteCollection([], $manager))->add($routeArray);
 
         return new ReverseProxy(
             $routes,

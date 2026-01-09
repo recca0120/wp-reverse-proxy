@@ -9,6 +9,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Str;
 
+/**
+ * Set request timeout.
+ */
 class Timeout implements MiddlewareInterface
 {
     /** @var int */
@@ -18,7 +21,7 @@ class Timeout implements MiddlewareInterface
     private $seconds;
 
     /**
-     * @param  int  $seconds  超時時間（秒）
+     * @param int $seconds Timeout (seconds)
      */
     public function __construct(int $seconds = 30)
     {

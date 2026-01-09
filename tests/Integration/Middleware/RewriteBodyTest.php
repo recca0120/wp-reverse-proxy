@@ -7,7 +7,6 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\RewriteBody;
 use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class RewriteBodyTest extends WP_UnitTestCase
@@ -38,7 +37,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_http_client');
         remove_all_filters('reverse_proxy_should_exit');
         remove_all_filters('reverse_proxy_response');
-        remove_all_filters('reverse_proxy_default_middlewares');
+        remove_all_filters('reverse_proxy_global_middlewares');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
     }
@@ -176,10 +175,9 @@ class RewriteBodyTest extends WP_UnitTestCase
 
     private function givenRoutes(array $routeArray): void
     {
-        add_filter('reverse_proxy_routes', function () use ($routeArray) {
-            $routes = (new RouteCollection())->add($routeArray);
+        add_filter('reverse_proxy_routes', function ($routes) use ($routeArray) {
+            return $routes->add($routeArray);
 
-            return $routes;
         });
     }
 

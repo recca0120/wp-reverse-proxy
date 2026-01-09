@@ -9,6 +9,9 @@ use Psr\Http\Message\StreamFactoryInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 
+/**
+ * Rewrite response body content.
+ */
 class RewriteBody implements MiddlewareInterface
 {
     /** @var array<string, string> */
@@ -34,7 +37,8 @@ class RewriteBody implements MiddlewareInterface
     ];
 
     /**
-     * @param  array<string, string>  $replacements  Key-value pairs of regex pattern => replacement
+     * @param array<string,string> $replacements Replacements (labels: Pattern \(regex\)|Replacement)
+     * @param StreamFactoryInterface|null $streamFactory
      */
     public function __construct(
         array $replacements = [],

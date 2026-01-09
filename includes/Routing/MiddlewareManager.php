@@ -26,10 +26,13 @@ use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
-class MiddlewareFactory
+class MiddlewareManager
 {
     /** @var CacheInterface|null */
     private $cache;
+
+    /** @var array<MiddlewareInterface> */
+    private $globalMiddlewares = [];
 
     /** @var array<class-string<MiddlewareInterface>> */
     private static $defaultMiddlewares = [
@@ -65,6 +68,34 @@ class MiddlewareFactory
     public function __construct(?CacheInterface $cache = null)
     {
         $this->cache = $cache;
+    }
+
+    /**
+     * Register global middleware instance(s).
+     *
+     * @param MiddlewareInterface|array<MiddlewareInterface> $middlewares
+     */
+    public function registerGlobalMiddleware($middlewares): self
+    {
+        if (is_array($middlewares)) {
+            foreach ($middlewares as $middleware) {
+                $this->globalMiddlewares[] = $middleware;
+            }
+        } else {
+            $this->globalMiddlewares[] = $middlewares;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get all registered global middleware instances.
+     *
+     * @return array<MiddlewareInterface>
+     */
+    public function getGlobalMiddlewares(): array
+    {
+        return $this->globalMiddlewares;
     }
 
     /**
@@ -137,7 +168,7 @@ class MiddlewareFactory
     public static function registerAlias($alias, ?string $class = null): void
     {
         if (is_array($alias)) {
-            self::$customAliases = array_merge(self::$customAliases, $alias);
+            self::$customAliases = Arr::merge(self::$customAliases, $alias);
         } else {
             self::$customAliases[$alias] = $class;
         }
@@ -158,7 +189,7 @@ class MiddlewareFactory
      */
     public function getAliases(): array
     {
-        return array_merge(
+        return Arr::merge(
             $this->buildAliases(self::$defaultMiddlewares),
             self::$customAliases
         );
@@ -184,7 +215,7 @@ class MiddlewareFactory
 
         // YAML key-value format: ["SetHost" => "api.example.com"] or ["Timeout" => 30]
         if ($this->isYamlKeyValueFormat($config)) {
-            $name = array_key_first($config);
+            $name = Arr::firstKey($config);
             $value = $config[$name];
 
             return is_array($value)
@@ -211,7 +242,7 @@ class MiddlewareFactory
             return false;
         }
 
-        $key = array_key_first($config);
+        $key = Arr::firstKey($config);
 
         return is_string($key) && ! is_numeric($key);
     }
@@ -263,7 +294,7 @@ class MiddlewareFactory
     {
         $aliases = [];
         foreach ($classes as $class) {
-            $shortName = Str::afterLast($class, '\\');
+            $shortName = Str::classBasename($class);
             $aliases[$shortName] = $class;
         }
 

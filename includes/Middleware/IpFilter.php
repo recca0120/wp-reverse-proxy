@@ -9,6 +9,9 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
+/**
+ * Filter requests by IP address.
+ */
 class IpFilter implements MiddlewareInterface
 {
     public const MODE_ALLOW = 'allow';
@@ -22,11 +25,13 @@ class IpFilter implements MiddlewareInterface
     private $mode;
 
     /**
-     * @param  string  $modeOrIp  模式 (allow/deny) 或第一個 IP
-     * @param  string  ...$ips  IP 列表
+     * @param string $modeOrIp Mode (options: allow:Allow List|deny:Deny List)
+     * @param string|string[] $ips IP Addresses
      */
-    public function __construct(string $modeOrIp = self::MODE_ALLOW, string ...$ips)
+    public function __construct(string $modeOrIp = self::MODE_ALLOW, ...$ips)
     {
+        $ips = Arr::wrap($ips);
+
         if (Arr::contains([self::MODE_ALLOW, self::MODE_DENY], $modeOrIp)) {
             $this->mode = $modeOrIp;
         } else {

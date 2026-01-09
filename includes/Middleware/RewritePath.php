@@ -8,6 +8,9 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Contracts\RouteAwareInterface;
 use Recca0120\ReverseProxy\Routing\Route;
 
+/**
+ * Rewrite the request path using pattern.
+ */
 class RewritePath implements MiddlewareInterface, RouteAwareInterface
 {
     /** @var string */
@@ -16,6 +19,9 @@ class RewritePath implements MiddlewareInterface, RouteAwareInterface
     /** @var Route */
     private $route;
 
+    /**
+     * @param string $replacement Replacement
+     */
     public function __construct(string $replacement)
     {
         $this->replacement = $replacement;

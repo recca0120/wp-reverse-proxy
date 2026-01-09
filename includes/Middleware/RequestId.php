@@ -6,11 +6,17 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 
+/**
+ * Add a unique request ID header.
+ */
 class RequestId implements MiddlewareInterface
 {
     /** @var string */
     private $headerName;
 
+    /**
+     * @param string $headerName Header Name
+     */
     public function __construct(string $headerName = 'X-Request-ID')
     {
         $this->headerName = $headerName;

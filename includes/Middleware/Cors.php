@@ -8,6 +8,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 
+/**
+ * Add CORS headers to the response.
+ */
 class Cors implements MiddlewareInterface
 {
     /** @var string[] */
@@ -26,9 +29,11 @@ class Cors implements MiddlewareInterface
     private $maxAge;
 
     /**
-     * @param  string[]  $allowedOrigins
-     * @param  string[]  $allowedMethods
-     * @param  string[]  $allowedHeaders
+     * @param string[] $allowedOrigins Allowed Origins
+     * @param string[] $allowedMethods Allowed Methods (options: GET|POST|PUT|PATCH|DELETE|OPTIONS)
+     * @param string[] $allowedHeaders Allowed Headers
+     * @param bool $allowCredentials Allow Credentials
+     * @param int $maxAge Max Age (seconds)
      */
     public function __construct(
         array $allowedOrigins = ['*'],

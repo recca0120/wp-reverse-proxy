@@ -11,6 +11,9 @@ use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 
+/**
+ * Prevent cascading failures.
+ */
 class CircuitBreaker implements MiddlewareInterface, CacheAwareInterface
 {
     use HasCache;
@@ -37,10 +40,10 @@ class CircuitBreaker implements MiddlewareInterface, CacheAwareInterface
     private $failureStatusCodes;
 
     /**
-     * @param  string  $serviceName  服務名稱（用於識別不同的 circuit）
-     * @param  int  $failureThreshold  失敗閾值
-     * @param  int  $resetTimeout  重置超時（秒）
-     * @param  int[]  $failureStatusCodes  視為失敗的狀態碼
+     * @param string $serviceName Service Name
+     * @param int $failureThreshold Failure Threshold
+     * @param int $resetTimeout Reset Timeout (seconds)
+     * @param int[] $failureStatusCodes Failure Status Codes
      */
     public function __construct(
         string $serviceName,

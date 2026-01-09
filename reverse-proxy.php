@@ -3,7 +3,7 @@
 /**
  * Plugin Name: Reverse Proxy
  * Plugin URI: https://github.com/recca0120/wp-reverse-proxy
- * Description: WordPress reverse proxy plugin
+ * Description: Proxy requests to backend servers with configurable routes and middleware support.
  * Version: 1.0.0
  * Author: Recca Tsai
  * Author URI: https://github.com/recca0120
@@ -34,14 +34,7 @@ function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollecti
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
     $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
 
-    $proxy = new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
-    $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
-        new Recca0120\ReverseProxy\Middleware\SanitizeHeaders(),
-        new Recca0120\ReverseProxy\Middleware\ErrorHandling(),
-        new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger()),
-    ]));
-
-    return $proxy;
+    return new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
 }
 
 function reverse_proxy_create_request()
@@ -79,6 +72,24 @@ function reverse_proxy_send_response($response)
     }
 }
 
+function reverse_proxy_create_middleware_manager($cache = null)
+{
+    $manager = apply_filters(
+        'reverse_proxy_middleware_manager',
+        new Recca0120\ReverseProxy\Routing\MiddlewareManager($cache)
+    );
+
+    $manager->registerGlobalMiddleware(
+        apply_filters('reverse_proxy_global_middlewares', [
+            new Recca0120\ReverseProxy\Middleware\SanitizeHeaders(),
+            new Recca0120\ReverseProxy\Middleware\ErrorHandling(),
+            new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger()),
+        ])
+    );
+
+    return $manager;
+}
+
 function reverse_proxy_load_config_routes()
 {
     $routes = apply_filters('reverse_proxy_route_collection', null);
@@ -91,18 +102,16 @@ function reverse_proxy_load_config_routes()
             new Recca0120\ReverseProxy\WordPress\TransientCache()
         );
 
-        $middlewareFactory = apply_filters(
-            'reverse_proxy_middleware_factory',
-            new Recca0120\ReverseProxy\Routing\MiddlewareFactory($cache)
-        );
+        $middlewareManager = reverse_proxy_create_middleware_manager($cache);
 
         $loaders = apply_filters('reverse_proxy_route_loaders', [
             new Recca0120\ReverseProxy\Routing\FileLoader([$directory]),
+            new Recca0120\ReverseProxy\WordPress\WordPressLoader(),
         ]);
 
         $routes = new Recca0120\ReverseProxy\Routing\RouteCollection(
             $loaders,
-            $middlewareFactory,
+            $middlewareManager,
             $cache
         );
     }
@@ -137,3 +146,19 @@ add_action(
     apply_filters('reverse_proxy_action_hook', 'plugins_loaded'),
     'reverse_proxy_handle'
 );
+
+// Load text domain for translations (must be on 'init' hook per WordPress 6.7+)
+add_action('init', function () {
+    load_plugin_textdomain('reverse-proxy', false, dirname(plugin_basename(REVERSE_PROXY_PLUGIN_FILE)) . '/languages');
+});
+
+// Initialize Admin interface (only in admin area)
+if (is_admin()) {
+    add_action('plugins_loaded', function () {
+        $middlewareManager = reverse_proxy_create_middleware_manager();
+        $registry = new Recca0120\ReverseProxy\WordPress\Admin\MiddlewareRegistry($middlewareManager);
+        $routesPage = new Recca0120\ReverseProxy\WordPress\Admin\RoutesPage($registry);
+        $admin = new Recca0120\ReverseProxy\WordPress\Admin\Admin($routesPage);
+        $admin->register();
+    });
+}

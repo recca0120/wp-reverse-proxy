@@ -8,6 +8,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 
+/**
+ * Retry failed requests.
+ */
 class Retry implements MiddlewareInterface
 {
     /** @var int */
@@ -23,9 +26,9 @@ class Retry implements MiddlewareInterface
     private $retryableStatusCodes;
 
     /**
-     * @param  int  $maxRetries  最大重試次數
-     * @param  string[]  $retryableMethods  可重試的 HTTP 方法
-     * @param  int[]  $retryableStatusCodes  可重試的狀態碼
+     * @param int $maxRetries Max Retries
+     * @param string[] $retryableMethods Retryable Methods (options: GET|HEAD|OPTIONS|PUT|DELETE)
+     * @param int[] $retryableStatusCodes Retryable Status Codes
      */
     public function __construct(
         int $maxRetries = 3,

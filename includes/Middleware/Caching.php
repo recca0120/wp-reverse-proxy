@@ -11,6 +11,9 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
+/**
+ * Cache responses.
+ */
 class Caching implements MiddlewareInterface, CacheAwareInterface
 {
     use HasCache;
@@ -19,7 +22,7 @@ class Caching implements MiddlewareInterface, CacheAwareInterface
     private $ttl;
 
     /**
-     * @param  int  $ttl  快取時間（秒）
+     * @param int $ttl TTL (seconds)
      */
     public function __construct(int $ttl = 300)
     {

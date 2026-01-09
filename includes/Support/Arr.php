@@ -72,4 +72,65 @@ class Arr
     {
         return array_key_exists($key, $array);
     }
+
+    /**
+     * Merge two or more arrays.
+     *
+     * @param array<mixed> ...$arrays
+     * @return array<mixed>
+     */
+    public static function merge(array ...$arrays): array
+    {
+        $count = count($arrays);
+
+        if ($count === 0) {
+            return [];
+        }
+
+        if ($count === 1) {
+            return $arrays[0];
+        }
+
+        // Optimize for common 2-array case (avoids spread operator overhead)
+        if ($count === 2) {
+            return array_merge($arrays[0], $arrays[1]);
+        }
+
+        return array_merge(...$arrays);
+    }
+
+    /**
+     * Get the first key from an array (PHP 7.2 compatible).
+     *
+     * @param array<mixed> $array
+     * @return string|int|null
+     */
+    public static function firstKey(array $array)
+    {
+        if (function_exists('array_key_first')) {
+            return array_key_first($array);
+        }
+
+        reset($array);
+
+        return key($array);
+    }
+
+    /**
+     * Normalize variadic arguments - unwrap single array element.
+     *
+     * Supports both: func('a', 'b') and func(['a', 'b'])
+     *
+     * @template T
+     * @param array<T|array<T>> $values
+     * @return array<T>
+     */
+    public static function wrap(array $values): array
+    {
+        if (count($values) === 1 && is_array($values[0])) {
+            return $values[0];
+        }
+
+        return $values;
+    }
 }

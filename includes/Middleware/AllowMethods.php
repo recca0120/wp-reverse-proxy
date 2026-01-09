@@ -8,14 +8,20 @@ use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 
+/**
+ * Restrict allowed HTTP methods.
+ */
 class AllowMethods implements MiddlewareInterface
 {
     /** @var string[] */
     private $allowedMethods;
 
-    public function __construct(string ...$allowedMethods)
+    /**
+     * @param string|string[] $allowedMethods Allowed Methods (options: GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)
+     */
+    public function __construct(...$allowedMethods)
     {
-        $methods = $allowedMethods ?: ['GET'];
+        $methods = Arr::wrap($allowedMethods) ?: ['GET'];
         $this->allowedMethods = array_map('strtoupper', $methods);
     }
 

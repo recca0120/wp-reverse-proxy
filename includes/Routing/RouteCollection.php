@@ -17,8 +17,8 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     /** @var array<RouteLoaderInterface> */
     private $loaders;
 
-    /** @var MiddlewareFactory */
-    private $middlewareFactory;
+    /** @var MiddlewareManager */
+    private $middlewareManager;
 
     /** @var CacheInterface|null */
     private $cache;
@@ -31,12 +31,20 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function __construct(
         array $loaders = [],
-        ?MiddlewareFactory $middlewareFactory = null,
+        ?MiddlewareManager $middlewareManager = null,
         ?CacheInterface $cache = null
     ) {
         $this->loaders = $loaders;
-        $this->middlewareFactory = $middlewareFactory ?? new MiddlewareFactory();
+        $this->middlewareManager = $middlewareManager ?? new MiddlewareManager();
         $this->cache = $cache;
+    }
+
+    /**
+     * Get the middleware manager.
+     */
+    public function getMiddlewareManager(): MiddlewareManager
+    {
+        return $this->middlewareManager;
     }
 
     /**
@@ -205,7 +213,7 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
 
         $path = $this->buildPath($config);
         $target = $config['target'];
-        $middlewares = $this->middlewareFactory->createMany($config['middlewares'] ?? []);
+        $middlewares = $this->middlewareManager->createMany($config['middlewares'] ?? []);
 
         return new Route($path, $target, $middlewares);
     }
