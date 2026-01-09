@@ -431,7 +431,7 @@
         if (!options) return [];
         if (Array.isArray(options)) return options;
 
-        return options.split(',').map(function(opt) {
+        return options.split('|').map(function(opt) {
             var parts = opt.split(':');
             return {
                 value: parts[0].trim(),

@@ -100,4 +100,63 @@ class AnnotationParserTest extends TestCase
         $this->assertEquals('', $result['label']);
         $this->assertTrue($result['skip']);
     }
+
+    public function test_parse_description_single_line()
+    {
+        $docComment = '/** Filter requests by IP address. */';
+
+        $result = $this->parser->parseDescription($docComment);
+
+        $this->assertEquals('Filter requests by IP address.', $result);
+    }
+
+    public function test_parse_description_multi_line()
+    {
+        $docComment = <<<'DOC'
+/**
+ * Filter requests by IP address.
+ * Supports CIDR notation.
+ */
+DOC;
+
+        $result = $this->parser->parseDescription($docComment);
+
+        $this->assertEquals('Filter requests by IP address. Supports CIDR notation.', $result);
+    }
+
+    public function test_parse_description_stops_at_first_tag()
+    {
+        $docComment = <<<'DOC'
+/**
+ * Filter requests by IP address.
+ *
+ * @param string $mode Mode
+ * @param string $ip IP address
+ */
+DOC;
+
+        $result = $this->parser->parseDescription($docComment);
+
+        $this->assertEquals('Filter requests by IP address.', $result);
+    }
+
+    public function test_parse_description_empty()
+    {
+        $docComment = <<<'DOC'
+/**
+ * @param string $mode
+ */
+DOC;
+
+        $result = $this->parser->parseDescription($docComment);
+
+        $this->assertEquals('', $result);
+    }
+
+    public function test_parse_description_no_docblock()
+    {
+        $result = $this->parser->parseDescription('');
+
+        $this->assertEquals('', $result);
+    }
 }

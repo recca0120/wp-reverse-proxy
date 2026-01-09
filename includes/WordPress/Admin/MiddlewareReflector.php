@@ -104,7 +104,7 @@ class MiddlewareReflector
             return '';
         }
 
-        return $this->parseDescription($docComment);
+        return $this->annotationParser->parseDescription($docComment);
     }
 
     /**
@@ -215,15 +215,9 @@ class MiddlewareReflector
         $info = $paramInfos[$name] ?? null;
         $isVariadic = $param->isVariadic();
 
-        // Determine UI type based on PHP type, @param type hint, and options
         $paramType = $info['type'] ?? null;
         $options = $info['options'] ?? null;
-        $uiType = $this->determineUIType($phpType, $paramType, $options);
-
-        // Variadic parameters are always arrays - override scalar types to repeater
-        if ($isVariadic && Arr::contains(['text', 'number', 'checkbox', 'textarea'], $uiType)) {
-            $uiType = 'repeater';
-        }
+        $uiType = $this->resolveUIType($phpType, $paramType, $options, $isVariadic);
 
         $field = [
             'name' => $name,
@@ -231,51 +225,94 @@ class MiddlewareReflector
             'label' => $info['label'] ?? $this->generateLabel($name),
         ];
 
-        // Add options for select/checkboxes
+        $this->addFieldOptions($field, $options, $uiType);
+        $this->addRepeaterInputType($field, $uiType, $paramType, $isVariadic, $phpType);
+        $this->addKeyValueLabels($field, $uiType, $info['labels'] ?? null);
+        $this->addFieldDefault($field, $param, $info, $isVariadic, $uiType);
+
+        return $field;
+    }
+
+    /**
+     * Resolve UI type with variadic override.
+     */
+    private function resolveUIType(string $phpType, ?string $paramType, ?string $options, bool $isVariadic): string
+    {
+        $uiType = $this->determineUIType($phpType, $paramType, $options);
+
+        if ($isVariadic && Arr::contains(['text', 'number', 'checkbox', 'textarea'], $uiType)) {
+            return 'repeater';
+        }
+
+        return $uiType;
+    }
+
+    /**
+     * Add options for select/checkboxes fields.
+     */
+    private function addFieldOptions(array &$field, ?string $options, string $uiType): void
+    {
         if ($options !== null && Arr::contains(['select', 'checkboxes'], $uiType)) {
             $field['options'] = $options;
         }
+    }
 
-        // Add inputType for repeater based on array element type (int[] → number) or variadic type
-        if ($uiType === 'repeater') {
-            $inputType = null;
-            if ($paramType !== null) {
-                $inputType = $this->extractArrayElementType($paramType);
-            } elseif ($isVariadic && $phpType === 'int') {
-                $inputType = 'number';
-            }
-            if ($inputType !== null) {
-                $field['inputType'] = $inputType;
-            }
+    /**
+     * Add inputType for repeater fields.
+     */
+    private function addRepeaterInputType(array &$field, string $uiType, ?string $paramType, bool $isVariadic, string $phpType): void
+    {
+        if ($uiType !== 'repeater') {
+            return;
         }
 
-        // Add keyLabel/valueLabel for keyvalue type from labels
-        $labels = $info['labels'] ?? null;
-        if ($uiType === 'keyvalue' && $labels !== null) {
-            $labelParts = explode('|', $labels);
-            if (count($labelParts) >= 2) {
-                $field['keyLabel'] = trim($labelParts[0]);
-                $field['valueLabel'] = trim($labelParts[1]);
-            }
+        $inputType = null;
+        if ($paramType !== null) {
+            $inputType = $this->extractArrayElementType($paramType);
+        } elseif ($isVariadic && $phpType === 'int') {
+            $inputType = 'number';
         }
 
-        // Add default value if available (prefer PHP default, fallback to PHPDoc default)
-        // Variadic parameters are never required (can be empty), but can have PHPDoc default
+        if ($inputType !== null) {
+            $field['inputType'] = $inputType;
+        }
+    }
+
+    /**
+     * Add keyLabel/valueLabel for keyvalue fields.
+     */
+    private function addKeyValueLabels(array &$field, string $uiType, ?string $labels): void
+    {
+        if ($uiType !== 'keyvalue' || $labels === null) {
+            return;
+        }
+
+        $labelParts = explode('|', $labels);
+        if (count($labelParts) >= 2) {
+            $field['keyLabel'] = trim($labelParts[0]);
+            $field['valueLabel'] = trim($labelParts[1]);
+        }
+    }
+
+    /**
+     * Add default value or required flag.
+     */
+    private function addFieldDefault(array &$field, ReflectionParameter $param, ?array $info, bool $isVariadic, string $uiType): void
+    {
         if ($isVariadic) {
             if (isset($info['default'])) {
                 $field['default'] = $info['default'];
             }
-            // Variadic is never required
-        } elseif ($param->isDefaultValueAvailable()) {
-            $default = $param->getDefaultValue();
-            $field['default'] = $this->formatDefault($default, $uiType);
+            return;
+        }
+
+        if ($param->isDefaultValueAvailable()) {
+            $field['default'] = $this->formatDefault($param->getDefaultValue(), $uiType);
         } elseif (isset($info['default'])) {
             $field['default'] = $info['default'];
         } else {
             $field['required'] = true;
         }
-
-        return $field;
     }
 
     /**
@@ -381,36 +418,6 @@ class MiddlewareReflector
         $name = Str::removeSuffix($name, 'Middleware');
 
         return Str::headline($name, self::$acronyms);
-    }
-
-    /**
-     * Parse description from PHPDoc.
-     */
-    private function parseDescription(string $docComment): string
-    {
-        // Remove /** and */
-        $doc = preg_replace('/^\/\*\*\s*|\s*\*\/$/', '', $docComment);
-
-        // Split into lines
-        $lines = preg_split('/\r?\n/', $doc);
-
-        $description = [];
-        foreach ($lines as $line) {
-            // Remove leading * and whitespace
-            $line = preg_replace('/^\s*\*\s?/', '', $line);
-
-            // Stop at first @tag
-            if (Str::startsWith(trim($line), '@')) {
-                break;
-            }
-
-            $line = trim($line);
-            if ($line !== '') {
-                $description[] = $line;
-            }
-        }
-
-        return implode(' ', $description);
     }
 
     /**

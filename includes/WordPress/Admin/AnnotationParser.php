@@ -2,6 +2,8 @@
 
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
+use Recca0120\ReverseProxy\Support\Str;
+
 /**
  * Parse PHPDoc @param description annotations.
  *
@@ -58,5 +60,41 @@ class AnnotationParser
             'labels' => $labels,
             'skip' => $skip,
         ];
+    }
+
+    /**
+     * Parse description from PHPDoc block.
+     *
+     * Extracts the description text before any @tags.
+     */
+    public function parseDescription(string $docComment): string
+    {
+        if ($docComment === '') {
+            return '';
+        }
+
+        // Remove /** and */
+        $doc = preg_replace('/^\/\*\*\s*|\s*\*\/$/', '', $docComment);
+
+        // Split into lines
+        $lines = preg_split('/\r?\n/', $doc);
+
+        $description = [];
+        foreach ($lines as $line) {
+            // Remove leading * and whitespace
+            $line = preg_replace('/^\s*\*\s?/', '', $line);
+
+            // Stop at first @tag
+            if (Str::startsWith(trim($line), '@')) {
+                break;
+            }
+
+            $line = trim($line);
+            if ($line !== '') {
+                $description[] = $line;
+            }
+        }
+
+        return implode(' ', $description);
     }
 }
