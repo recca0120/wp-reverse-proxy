@@ -138,14 +138,15 @@ add_action(
     'reverse_proxy_handle'
 );
 
-// Initialize Admin interface
+// Register admin routes filter (must be before reverse_proxy_handle)
+// This merges wp_options routes with file-based routes
+$routesPage = new Recca0120\ReverseProxy\WordPress\Admin\RoutesPage();
+$routesPage->registerRoutesFilter();
+
+// Initialize Admin interface (only in admin area)
 if (is_admin()) {
     add_action('plugins_loaded', function () {
         $admin = new Recca0120\ReverseProxy\WordPress\Admin\Admin();
         $admin->register();
-
-        // Register admin routes to be merged with config routes
-        $routesPage = new Recca0120\ReverseProxy\WordPress\Admin\RoutesPage();
-        $routesPage->registerRoutesFilter();
     });
 }
