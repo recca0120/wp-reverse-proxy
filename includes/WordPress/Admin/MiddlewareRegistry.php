@@ -3,6 +3,7 @@
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
 use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareRegistry
@@ -38,7 +39,7 @@ class MiddlewareRegistry
 
         $middlewares = [];
         foreach ($aliases as $name => $class) {
-            if (in_array($name, $globalNames, true)) {
+            if (Arr::contains($globalNames, $name)) {
                 continue;
             }
 
@@ -63,7 +64,7 @@ class MiddlewareRegistry
     {
         return array_map(
             function ($middleware) {
-                return Str::afterLast(get_class($middleware), '\\');
+                return Str::classBasename(get_class($middleware));
             },
             $this->manager->getGlobalMiddlewares()
         );

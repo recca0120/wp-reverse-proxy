@@ -294,7 +294,7 @@ class MiddlewareManager
     {
         $aliases = [];
         foreach ($classes as $class) {
-            $shortName = Str::afterLast($class, '\\');
+            $shortName = Str::classBasename($class);
             $aliases[$shortName] = $class;
         }
 

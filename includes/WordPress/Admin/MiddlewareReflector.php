@@ -5,6 +5,7 @@ namespace Recca0120\ReverseProxy\WordPress\Admin;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionParameter;
+use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareReflector
@@ -182,7 +183,7 @@ class MiddlewareReflector
         // Skip callable, Closure, and interface types
         $skipTypes = ['callable', 'Closure', 'object'];
 
-        if (in_array($typeName, $skipTypes, true)) {
+        if (Arr::contains($skipTypes, $typeName)) {
             return true;
         }
 
@@ -212,7 +213,7 @@ class MiddlewareReflector
         $uiType = $this->determineUIType($phpType, $paramType, $options);
 
         // Variadic parameters are always arrays - override scalar types to repeater
-        if ($isVariadic && in_array($uiType, ['text', 'number', 'checkbox', 'textarea'], true)) {
+        if ($isVariadic && Arr::contains(['text', 'number', 'checkbox', 'textarea'], $uiType)) {
             $uiType = 'repeater';
         }
 
@@ -223,7 +224,7 @@ class MiddlewareReflector
         ];
 
         // Add options for select/checkboxes
-        if ($options !== null && in_array($uiType, ['select', 'checkboxes'], true)) {
+        if ($options !== null && Arr::contains(['select', 'checkboxes'], $uiType)) {
             $field['options'] = $options;
         }
 
@@ -377,21 +378,9 @@ class MiddlewareReflector
      */
     private function generateLabel(string $name): string
     {
-        // Remove common suffixes
-        $name = preg_replace('/Middleware$/', '', $name);
+        $name = Str::removeSuffix($name, 'Middleware');
 
-        // Split camelCase into words
-        $words = preg_replace('/([a-z])([A-Z])/', '$1 $2', $name);
-
-        // Capitalize and replace acronyms
-        $parts = explode(' ', $words);
-        $parts = array_map(function ($word) {
-            $lower = strtolower($word);
-
-            return self::$acronyms[$lower] ?? ucfirst($lower);
-        }, $parts);
-
-        return trim(implode(' ', $parts));
+        return Str::headline($name, self::$acronyms);
     }
 
     /**

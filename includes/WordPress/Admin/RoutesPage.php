@@ -2,6 +2,8 @@
 
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
+use Recca0120\ReverseProxy\Support\Arr;
+
 class RoutesPage
 {
     public const OPTION_NAME = 'reverse_proxy_admin_routes';
@@ -141,7 +143,7 @@ class RoutesPage
             $parsed = parse_url($target);
             if (
                 isset($parsed['scheme']) &&
-                in_array($parsed['scheme'], ['http', 'https'], true) &&
+                Arr::contains(['http', 'https'], $parsed['scheme']) &&
                 !empty($parsed['host']) &&
                 $this->isValidHost($parsed['host'])
             ) {
@@ -154,7 +156,7 @@ class RoutesPage
             $sanitized['methods'] = array_values(array_filter(
                 array_map('strtoupper', $input['methods']),
                 function ($method) {
-                    return in_array($method, self::VALID_METHODS, true);
+                    return Arr::contains(self::VALID_METHODS, $method);
                 }
             ));
         }
