@@ -147,4 +147,24 @@ echo esc_attr(json_encode($currentMiddlewares));
     color: #a00;
     border-color: #a00;
 }
+.middleware-drag-handle {
+    cursor: move;
+    color: #787c82;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+.middleware-drag-handle:hover {
+    color: #2271b1;
+}
+.middleware-item-placeholder {
+    background: #f0f6fc;
+    border: 2px dashed #2271b1;
+    border-radius: 4px;
+    height: 50px;
+    margin-bottom: 10px;
+}
+.ui-sortable-helper {
+    background: #fff;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+}
 </style>

@@ -53,7 +53,7 @@ class Admin
         wp_enqueue_script(
             'reverse-proxy-admin',
             REVERSE_PROXY_PLUGIN_URL . 'assets/js/admin.js',
-            ['jquery'],
+            ['jquery', 'jquery-ui-sortable'],
             REVERSE_PROXY_VERSION,
             true
         );

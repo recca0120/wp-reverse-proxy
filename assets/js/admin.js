@@ -34,6 +34,17 @@
             updateMiddlewareFields($(this));
         });
 
+        // Enable drag-and-drop sorting for middlewares
+        if ($('#middleware-list').length > 0 && $.fn.sortable) {
+            $('#middleware-list').sortable({
+                handle: '.middleware-drag-handle',
+                placeholder: 'middleware-item-placeholder',
+                update: function() {
+                    reindexMiddlewares();
+                }
+            });
+        }
+
         // Toggle route status
         $('.reverse-proxy-toggle').on('click', function() {
             var routeId = $(this).data('route-id');
@@ -111,6 +122,7 @@
 
     function createMiddlewareItem(index, selectedName) {
         var html = '<div class="middleware-item" data-index="' + index + '">';
+        html += '<span class="middleware-drag-handle dashicons dashicons-move" title="Drag to reorder"></span>';
         html += '<select name="route[middlewares][' + index + '][name]" class="middleware-select">';
         html += '<option value="">-- Select Middleware --</option>';
 
@@ -122,8 +134,8 @@
         }
 
         html += '</select>';
-        html += '<div class="middleware-fields"></div>';
         html += '<button type="button" class="button button-small remove-middleware">Remove</button>';
+        html += '<div class="middleware-fields"></div>';
         html += '</div>';
 
         return html;
