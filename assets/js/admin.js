@@ -119,12 +119,15 @@
         html += '<select name="route[middlewares][' + index + '][name]" class="middleware-select">';
         html += '<option value="">-- Select Middleware --</option>';
 
-        for (var name in middlewares) {
-            if (middlewares.hasOwnProperty(name)) {
-                var selected = (name === selectedName) ? ' selected' : '';
-                html += '<option value="' + name + '"' + selected + '>' + middlewares[name].label + '</option>';
-            }
-        }
+        // Sort middleware names alphabetically
+        var sortedNames = Object.keys(middlewares).sort(function(a, b) {
+            return middlewares[a].label.localeCompare(middlewares[b].label);
+        });
+
+        sortedNames.forEach(function(name) {
+            var selected = (name === selectedName) ? ' selected' : '';
+            html += '<option value="' + name + '"' + selected + '>' + middlewares[name].label + '</option>';
+        });
 
         html += '</select>';
         html += '<button type="button" class="button button-small button-link-delete remove-middleware">Remove</button>';
