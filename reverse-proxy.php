@@ -29,64 +29,27 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
-function reverse_proxy_create_psr17_factory()
+function reverse_proxy_handle()
 {
-    return apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
-}
+    // Load routes from config files (JSON/PHP)
+    $configRoutes = reverse_proxy_load_config_routes();
 
-function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollection $routes)
-{
-    $psr17Factory = reverse_proxy_create_psr17_factory();
-    $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
+    // Merge with routes from filter hook (for programmatic routes)
+    $routes = apply_filters('reverse_proxy_routes', $configRoutes);
 
-    return new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
-}
+    $proxy = reverse_proxy_create_proxy($routes);
+    $request = reverse_proxy_create_request();
 
-function reverse_proxy_create_request()
-{
-    $request = apply_filters('reverse_proxy_request', null);
-    if ($request !== null) {
-        return $request;
-    }
+    try {
+        $response = $proxy->handle($request);
 
-    return (new Recca0120\ReverseProxy\Http\ServerRequestFactory(reverse_proxy_create_psr17_factory()))->createFromGlobals();
-}
-
-function reverse_proxy_send_response($response)
-{
-    $response = apply_filters('reverse_proxy_response', $response);
-
-    if (! headers_sent()) {
-        http_response_code($response->getStatusCode());
-        foreach ($response->getHeaders() as $name => $values) {
-            foreach ($values as $value) {
-                header("{$name}: {$value}", false);
-            }
+        if ($response !== null) {
+            reverse_proxy_send_response($response);
         }
+    } catch (Recca0120\ReverseProxy\Exceptions\FallbackException $e) {
+        // Let WordPress handle the request
+        return;
     }
-    echo $response->getBody();
-
-    if (apply_filters('reverse_proxy_should_exit', true)) {
-        exit;
-    }
-}
-
-function reverse_proxy_create_middleware_manager($cache = null)
-{
-    $manager = apply_filters(
-        'reverse_proxy_middleware_manager',
-        new Recca0120\ReverseProxy\Routing\MiddlewareManager($cache)
-    );
-
-    $manager->registerGlobalMiddleware(
-        apply_filters('reverse_proxy_global_middlewares', [
-            new Recca0120\ReverseProxy\Middleware\SanitizeHeaders(),
-            new Recca0120\ReverseProxy\Middleware\ErrorHandling(),
-            new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger()),
-        ])
-    );
-
-    return $manager;
 }
 
 function reverse_proxy_load_config_routes()
@@ -118,26 +81,63 @@ function reverse_proxy_load_config_routes()
     return $routes->load();
 }
 
-function reverse_proxy_handle()
+function reverse_proxy_create_middleware_manager($cache = null)
 {
-    // Load routes from config files (JSON/PHP)
-    $configRoutes = reverse_proxy_load_config_routes();
+    $manager = apply_filters(
+        'reverse_proxy_middleware_manager',
+        new Recca0120\ReverseProxy\Routing\MiddlewareManager($cache)
+    );
 
-    // Merge with routes from filter hook (for programmatic routes)
-    $routes = apply_filters('reverse_proxy_routes', $configRoutes);
+    $manager->registerGlobalMiddleware(
+        apply_filters('reverse_proxy_global_middlewares', [
+            new Recca0120\ReverseProxy\Middleware\SanitizeHeaders(),
+            new Recca0120\ReverseProxy\Middleware\ErrorHandling(),
+            new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger()),
+        ])
+    );
 
-    $proxy = reverse_proxy_create_proxy($routes);
-    $request = reverse_proxy_create_request();
+    return $manager;
+}
 
-    try {
-        $response = $proxy->handle($request);
+function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollection $routes)
+{
+    $psr17Factory = reverse_proxy_create_psr17_factory();
+    $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
 
-        if ($response !== null) {
-            reverse_proxy_send_response($response);
+    return new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
+}
+
+function reverse_proxy_create_psr17_factory()
+{
+    return apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
+}
+
+function reverse_proxy_create_request()
+{
+    $request = apply_filters('reverse_proxy_request', null);
+    if ($request !== null) {
+        return $request;
+    }
+
+    return (new Recca0120\ReverseProxy\Http\ServerRequestFactory(reverse_proxy_create_psr17_factory()))->createFromGlobals();
+}
+
+function reverse_proxy_send_response($response)
+{
+    $response = apply_filters('reverse_proxy_response', $response);
+
+    if (! headers_sent()) {
+        http_response_code($response->getStatusCode());
+        foreach ($response->getHeaders() as $name => $values) {
+            foreach ($values as $value) {
+                header("{$name}: {$value}", false);
+            }
         }
-    } catch (Recca0120\ReverseProxy\Exceptions\FallbackException $e) {
-        // Let WordPress handle the request
-        return;
+    }
+    echo $response->getBody();
+
+    if (apply_filters('reverse_proxy_should_exit', true)) {
+        exit;
     }
 }
 
