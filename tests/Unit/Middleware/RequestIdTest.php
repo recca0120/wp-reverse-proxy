@@ -14,7 +14,7 @@ class RequestIdTest extends TestCase
 
     public function test_it_generates_request_id_when_not_present()
     {
-        $middleware = new RequestId;
+        $middleware = new RequestId();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $capturedRequest = null;
@@ -34,7 +34,7 @@ class RequestIdTest extends TestCase
 
     public function test_it_preserves_existing_request_id()
     {
-        $middleware = new RequestId;
+        $middleware = new RequestId();
         $existingId = 'existing-request-id-123';
         $request = (new ServerRequest('GET', 'https://example.com/api/users'))
             ->withHeader('X-Request-ID', $existingId);
@@ -69,7 +69,7 @@ class RequestIdTest extends TestCase
 
     public function test_generated_id_is_uuid_v4_format()
     {
-        $middleware = new RequestId;
+        $middleware = new RequestId();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
@@ -87,7 +87,7 @@ class RequestIdTest extends TestCase
 
     public function test_each_request_gets_unique_id()
     {
-        $middleware = new RequestId;
+        $middleware = new RequestId();
 
         $ids = [];
         for ($i = 0; $i < 10; $i++) {

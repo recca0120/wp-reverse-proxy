@@ -1,6 +1,6 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Config\Loaders;
+namespace Recca0120\ReverseProxy\Routing\Loaders;
 
 class PhpArrayLoader extends AbstractLoader
 {

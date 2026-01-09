@@ -5,7 +5,8 @@ namespace Recca0120\ReverseProxy\Tests\Integration\Middleware;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\SetHost;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class SetHostTest extends WP_UnitTestCase
@@ -17,7 +18,7 @@ class SetHostTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -35,21 +36,6 @@ class SetHostTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_default_middlewares');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
-    }
-
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
     }
 
     public function test_it_sets_custom_host_header()
@@ -97,5 +83,22 @@ class SetHostTest extends WP_UnitTestCase
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertStringContainsString('127.0.0.1:8080', (string) $lastRequest->getUri());
+    }
+
+    private function givenRoutes(array $routeArray): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routeArray) {
+            $routes = (new RouteCollection())->add($routeArray);
+
+            return $routes;
+        });
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

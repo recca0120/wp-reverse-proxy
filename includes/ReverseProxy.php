@@ -10,9 +10,14 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 class ReverseProxy
 {
+    /** @var RouteCollection */
+    private $routes;
+
     /** @var ClientInterface */
     private $client;
 
@@ -26,10 +31,12 @@ class ReverseProxy
     private $globalMiddlewares = [];
 
     public function __construct(
+        RouteCollection $routes,
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory
     ) {
+        $this->routes = $routes;
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
@@ -52,12 +59,9 @@ class ReverseProxy
         return $this;
     }
 
-    /**
-     * @param  Route[]  $routes
-     */
-    public function handle(ServerRequestInterface $request, array $routes): ?ResponseInterface
+    public function handle(ServerRequestInterface $request): ?ResponseInterface
     {
-        foreach ($routes as $route) {
+        foreach ($this->routes as $route) {
             $targetUrl = $route->matches($request);
             if ($targetUrl !== null) {
                 return $this->proxy($request, $route, $targetUrl);

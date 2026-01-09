@@ -15,7 +15,7 @@ class ErrorHandlingTest extends TestCase
 {
     public function test_it_returns_response_when_no_exception()
     {
-        $middleware = new ErrorHandling;
+        $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
@@ -28,12 +28,11 @@ class ErrorHandlingTest extends TestCase
 
     public function test_it_returns_502_when_network_exception_occurs()
     {
-        $middleware = new ErrorHandling;
+        $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
-            throw new class(new Request('GET', 'https://example.com'), 'Connection refused') extends \Exception implements NetworkExceptionInterface
-            {
+            throw new class (new Request('GET', 'https://example.com'), 'Connection refused') extends \Exception implements NetworkExceptionInterface {
                 private $request;
 
                 public function __construct(RequestInterface $request, string $message)
@@ -54,11 +53,11 @@ class ErrorHandlingTest extends TestCase
 
     public function test_it_returns_502_when_client_exception_occurs()
     {
-        $middleware = new ErrorHandling;
+        $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
-            throw new class('Request timeout') extends \Exception implements ClientExceptionInterface {};
+            throw new class ('Request timeout') extends \Exception implements ClientExceptionInterface {};
         });
 
         $this->assertEquals(502, $response->getStatusCode());
@@ -66,11 +65,11 @@ class ErrorHandlingTest extends TestCase
 
     public function test_it_returns_json_error_body()
     {
-        $middleware = new ErrorHandling;
+        $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
-            throw new class('Connection refused') extends \Exception implements ClientExceptionInterface {};
+            throw new class ('Connection refused') extends \Exception implements ClientExceptionInterface {};
         });
 
         $body = json_decode((string) $response->getBody(), true);
@@ -81,11 +80,11 @@ class ErrorHandlingTest extends TestCase
 
     public function test_it_sets_json_content_type_header()
     {
-        $middleware = new ErrorHandling;
+        $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $response = $middleware->process($request, function ($req) {
-            throw new class('Error') extends \Exception implements ClientExceptionInterface {};
+            throw new class ('Error') extends \Exception implements ClientExceptionInterface {};
         });
 
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
@@ -93,7 +92,7 @@ class ErrorHandlingTest extends TestCase
 
     public function test_it_rethrows_non_client_exceptions()
     {
-        $middleware = new ErrorHandling;
+        $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $this->expectException(\RuntimeException::class);

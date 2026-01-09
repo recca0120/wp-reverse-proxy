@@ -179,7 +179,7 @@ class ProxyHeadersTest extends TestCase
 
     public function test_it_uses_server_params_when_no_options_provided(): void
     {
-        $middleware = new ProxyHeaders;
+        $middleware = new ProxyHeaders();
         $request = new ServerRequest(
             'GET',
             'https://target.example.com/api/users',

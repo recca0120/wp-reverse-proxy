@@ -5,7 +5,8 @@ namespace Recca0120\ReverseProxy\Tests\Integration\Middleware;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\RequestId;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class RequestIdTest extends WP_UnitTestCase
@@ -17,7 +18,7 @@ class RequestIdTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -37,31 +38,11 @@ class RequestIdTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function givenResponse(Response $response): void
-    {
-        $this->mockClient->addResponse($response);
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
-    }
-
     public function test_it_generates_request_id_and_forwards_to_backend()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new RequestId,
+                new RequestId(),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -79,7 +60,7 @@ class RequestIdTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new RequestId,
+                new RequestId(),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -106,7 +87,7 @@ class RequestIdTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new RequestId,
+                new RequestId(),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{"data":"test"}'));
@@ -144,5 +125,27 @@ class RequestIdTest extends WP_UnitTestCase
 
         $this->assertNotNull($capturedResponse);
         $this->assertNotEmpty($capturedResponse->getHeaderLine('X-Correlation-ID'));
+    }
+
+    private function givenRoutes(array $routeArray): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routeArray) {
+            $routes = (new RouteCollection())->add($routeArray);
+
+            return $routes;
+        });
+    }
+
+    private function givenResponse(Response $response): void
+    {
+        $this->mockClient->addResponse($response);
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

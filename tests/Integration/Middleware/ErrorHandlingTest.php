@@ -6,7 +6,8 @@ use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class ErrorHandlingTest extends WP_UnitTestCase
@@ -18,7 +19,7 @@ class ErrorHandlingTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -36,21 +37,6 @@ class ErrorHandlingTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_default_middlewares');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
-    }
-
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
     }
 
     public function test_it_passes_through_successful_requests()
@@ -130,5 +116,22 @@ class ErrorHandlingTest extends WP_UnitTestCase
 
         // Should not throw, should return 502
         $this->assertEquals(502, $capturedResponse->getStatusCode());
+    }
+
+    private function givenRoutes(array $routeArray): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routeArray) {
+            $routes = (new RouteCollection())->add($routeArray);
+
+            return $routes;
+        });
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }

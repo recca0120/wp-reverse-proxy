@@ -29,16 +29,16 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
-function reverse_proxy_create_proxy()
+function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollection $routes)
 {
-    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
+    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
     $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
 
-    $proxy = new Recca0120\ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
+    $proxy = new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
     $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
-        new Recca0120\ReverseProxy\Middleware\SanitizeHeaders,
-        new Recca0120\ReverseProxy\Middleware\ErrorHandling,
-        new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger),
+        new Recca0120\ReverseProxy\Middleware\SanitizeHeaders(),
+        new Recca0120\ReverseProxy\Middleware\ErrorHandling(),
+        new Recca0120\ReverseProxy\Middleware\Logging(new Recca0120\ReverseProxy\WordPress\Logger()),
     ]));
 
     return $proxy;
@@ -51,7 +51,7 @@ function reverse_proxy_create_request()
         return $request;
     }
 
-    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
+    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
 
     return (new Recca0120\ReverseProxy\Http\ServerRequestFactory($psr17Factory))->createFromGlobals();
 }
@@ -81,44 +81,44 @@ function reverse_proxy_send_response($response)
 
 function reverse_proxy_load_config_routes()
 {
-    $configLoader = apply_filters('reverse_proxy_config_loader', null);
+    $routes = apply_filters('reverse_proxy_route_collection', null);
 
-    if ($configLoader === null) {
+    if ($routes === null) {
         $middlewareFactory = apply_filters(
             'reverse_proxy_middleware_factory',
-            new Recca0120\ReverseProxy\Config\MiddlewareFactory
+            new Recca0120\ReverseProxy\Routing\MiddlewareFactory()
         );
 
-        $configLoader = new Recca0120\ReverseProxy\Config\ConfigLoader(
+        $routes = new Recca0120\ReverseProxy\Routing\RouteCollection(
             [
-                new Recca0120\ReverseProxy\Config\Loaders\JsonLoader,
-                new Recca0120\ReverseProxy\Config\Loaders\YamlLoader,
-                new Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader,
+                new Recca0120\ReverseProxy\Routing\Loaders\JsonLoader(),
+                new Recca0120\ReverseProxy\Routing\Loaders\YamlLoader(),
+                new Recca0120\ReverseProxy\Routing\Loaders\PhpArrayLoader(),
             ],
             $middlewareFactory,
-            apply_filters('reverse_proxy_config_cache', null)
+            apply_filters('reverse_proxy_route_cache', null)
         );
     }
 
-    $directory = apply_filters('reverse_proxy_config_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
-    $pattern = apply_filters('reverse_proxy_config_pattern', '*.{json,yaml,yml,php}');
+    $directory = apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
+    $pattern = apply_filters('reverse_proxy_routes_pattern', '*.{json,yaml,yml,php}');
 
-    return $configLoader->loadFromDirectory($directory, $pattern);
+    return $routes->loadFromDirectory($directory, $pattern);
 }
 
 function reverse_proxy_handle()
 {
-    $proxy = reverse_proxy_create_proxy();
-    $request = reverse_proxy_create_request();
-
     // Load routes from config files (JSON/PHP)
     $configRoutes = reverse_proxy_load_config_routes();
 
     // Merge with routes from filter hook (for programmatic routes)
     $routes = apply_filters('reverse_proxy_routes', $configRoutes);
 
+    $proxy = reverse_proxy_create_proxy($routes);
+    $request = reverse_proxy_create_request();
+
     try {
-        $response = $proxy->handle($request, $routes);
+        $response = $proxy->handle($request);
 
         if ($response !== null) {
             reverse_proxy_send_response($response);

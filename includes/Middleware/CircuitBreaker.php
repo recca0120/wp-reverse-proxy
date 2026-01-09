@@ -12,11 +12,11 @@ use Recca0120\ReverseProxy\WordPress\TransientCache;
 
 class CircuitBreaker implements MiddlewareInterface
 {
-    const STATE_CLOSED = 'closed';
+    public const STATE_CLOSED = 'closed';
 
-    const STATE_OPEN = 'open';
+    public const STATE_OPEN = 'open';
 
-    const STATE_HALF_OPEN = 'half_open';
+    public const STATE_HALF_OPEN = 'half_open';
 
     /** @var int */
     public $priority = -70;

@@ -15,7 +15,7 @@ class RewriteBodyTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->streamFactory = new Psr17Factory;
+        $this->streamFactory = new Psr17Factory();
     }
 
     public function test_it_rewrites_urls_in_html_response(): void

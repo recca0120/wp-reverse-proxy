@@ -1,10 +1,10 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Config\Loaders;
+namespace Recca0120\ReverseProxy\Routing\Loaders;
 
-use Recca0120\ReverseProxy\Contracts\ConfigLoaderInterface;
+use Recca0120\ReverseProxy\Contracts\FileLoaderInterface;
 
-abstract class AbstractLoader implements ConfigLoaderInterface
+abstract class AbstractLoader implements FileLoaderInterface
 {
     /**
      * Load configuration from file.

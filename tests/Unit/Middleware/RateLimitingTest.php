@@ -19,11 +19,6 @@ class RateLimitingTest extends TestCase
         $this->cache = $this->createMock(CacheInterface::class);
     }
 
-    private function createRequest(string $ip = '192.168.1.100'): ServerRequest
-    {
-        return new ServerRequest('GET', 'https://example.com/api/users', [], null, '1.1', ['REMOTE_ADDR' => $ip]);
-    }
-
     public function test_it_allows_request_within_limit()
     {
         $this->cache->method('get')->willReturn(null);
@@ -160,5 +155,10 @@ class RateLimitingTest extends TestCase
         });
 
         $this->assertEquals('4', $response->getHeaderLine('X-RateLimit-Remaining'));
+    }
+
+    private function createRequest(string $ip = '192.168.1.100'): ServerRequest
+    {
+        return new ServerRequest('GET', 'https://example.com/api/users', [], null, '1.1', ['REMOTE_ADDR' => $ip]);
     }
 }

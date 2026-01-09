@@ -239,20 +239,18 @@ Multiple formats supported, can be mixed:
 
 ```php
 // mu-plugins/reverse-proxy.php
-add_filter('reverse_proxy_middleware_factory', function ($factory) {
-    // Option 1: Register one by one (supports method chaining)
-    $factory->registerAlias('MyAuth', MyAuthMiddleware::class)
-        ->registerAlias('CustomCache', MyCacheMiddleware::class);
+use Recca0120\ReverseProxy\Routing\MiddlewareFactory;
 
-    // Option 2: Batch registration (array format)
-    $factory->registerAlias([
-        'MyAuth' => MyAuthMiddleware::class,
-        'CustomCache' => MyCacheMiddleware::class,
-        'RateLimit' => MyRateLimitMiddleware::class,
-    ]);
+// Option 1: Register one by one
+MiddlewareFactory::registerAlias('MyAuth', MyAuthMiddleware::class);
+MiddlewareFactory::registerAlias('CustomCache', MyCacheMiddleware::class);
 
-    return $factory;
-});
+// Option 2: Batch registration (array format)
+MiddlewareFactory::registerAlias([
+    'MyAuth' => MyAuthMiddleware::class,
+    'CustomCache' => MyCacheMiddleware::class,
+    'RateLimit' => MyRateLimitMiddleware::class,
+]);
 ```
 
 Then use in config files:
@@ -297,12 +295,13 @@ Create a configuration file at `wp-content/mu-plugins/reverse-proxy-config.php`:
  * Description: Custom reverse proxy routes configuration
  */
 
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
-        new Route('/api/*', 'https://api.example.com'),
-    ];
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add(new Route('/api/*', 'https://api.example.com'));
+
+    return $routes;
 });
 ```
 
@@ -313,10 +312,19 @@ add_filter('reverse_proxy_routes', function () {
 Config files and Filter Hooks can be used together. Routes from config files are loaded first, then merged or modified via the `reverse_proxy_routes` filter:
 
 ```php
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+
 // Add or modify routes on top of config file routes
-add_filter('reverse_proxy_routes', function ($routes) {
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
     // Add additional routes
-    $routes[] = new Route('/custom/*', 'https://custom.example.com');
+    $routes->add(new Route('/custom/*', 'https://custom.example.com'));
+
+    // Or add multiple routes at once
+    $routes->add([
+        new Route('/v1/*', 'https://v1.example.com'),
+        new Route('/v2/*', 'https://v2.example.com'),
+    ]);
 
     return $routes;
 });
@@ -341,33 +349,36 @@ add_filter('reverse_proxy_routes', function ($routes) {
 Routes are matched in order (first match wins):
 
 ```php
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
-        // More specific routes first
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    // More specific routes first
+    $routes->add([
         new Route('/api/v2/*', 'https://api-v2.example.com'),
         // Fallback for other API routes
         new Route('/api/*', 'https://api.example.com'),
-    ];
+    ]);
+
+    return $routes;
 });
 ```
 
 ### With Middlewares
 
 ```php
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
-use Recca0120\ReverseProxy\Middleware\RewritePath;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
-        new Route('/api/*', 'https://backend.example.com', [
-            new ProxyHeaders(),
-            new SetHost('custom-host.com'),
-        ]),
-    ];
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add(new Route('/api/*', 'https://backend.example.com', [
+        new ProxyHeaders(),
+        new SetHost('custom-host.com'),
+    ]));
+
+    return $routes;
 });
 ```
 
@@ -405,15 +416,18 @@ new Route('GET|POST|PUT|DELETE /api/*', 'https://backend.example.com');
 Route different HTTP methods to different backends:
 
 ```php
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add([
         // Read operations → read replica
         new Route('GET /api/users/*', 'https://read-replica.example.com'),
         // Write operations → primary server
         new Route('POST|PUT|DELETE /api/users/*', 'https://primary.example.com'),
-    ];
+    ]);
+
+    return $routes;
 });
 ```
 
@@ -1014,17 +1028,18 @@ location ^~ /api/v1 {
 WordPress equivalent:
 
 ```php
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
-        new Route('/api/v1/*', 'https://127.0.0.1:8080', [
-            new ProxyHeaders(),
-            new SetHost('api.example.com'),
-        ]),
-    ];
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add(new Route('/api/v1/*', 'https://127.0.0.1:8080', [
+        new ProxyHeaders(),
+        new SetHost('api.example.com'),
+    ]));
+
+    return $routes;
 });
 ```
 
@@ -1209,15 +1224,16 @@ If you don't need other WordPress plugin features, execute directly in mu-plugin
 <?php
 // wp-content/mu-plugins/reverse-proxy-early.php
 
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 require_once WP_CONTENT_DIR.'/plugins/reverse-proxy/reverse-proxy.php';
 
 // Register routes
-add_filter('reverse_proxy_routes', function () {
-    return [
-        new Route('/api/*', 'https://api.example.com'),
-    ];
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add(new Route('/api/*', 'https://api.example.com'));
+
+    return $routes;
 });
 
 // Execute directly (skip subsequent WordPress loading)

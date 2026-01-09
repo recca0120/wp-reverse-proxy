@@ -6,7 +6,7 @@ use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Recca0120\ReverseProxy\Middleware\RewritePath;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
 
 class RewritePathTest extends TestCase
 {

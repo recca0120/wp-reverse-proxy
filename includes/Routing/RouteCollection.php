@@ -1,15 +1,19 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Config;
+namespace Recca0120\ReverseProxy\Routing;
 
+use ArrayAccess;
+use ArrayIterator;
+use Countable;
 use InvalidArgumentException;
+use IteratorAggregate;
 use Psr\SimpleCache\CacheInterface;
-use Recca0120\ReverseProxy\Contracts\ConfigLoaderInterface;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Contracts\FileLoaderInterface;
+use Traversable;
 
-class ConfigLoader
+class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
 {
-    /** @var array<ConfigLoaderInterface> */
+    /** @var array<FileLoaderInterface> */
     private $loaders;
 
     /** @var MiddlewareFactory */
@@ -18,34 +22,158 @@ class ConfigLoader
     /** @var CacheInterface|null */
     private $cache;
 
+    /** @var array<Route> */
+    private $routes = [];
+
     /**
-     * @param  array<ConfigLoaderInterface>  $loaders
+     * @param  array<FileLoaderInterface>  $loaders
      */
     public function __construct(
-        array $loaders,
-        MiddlewareFactory $middlewareFactory,
+        array $loaders = [],
+        ?MiddlewareFactory $middlewareFactory = null,
         ?CacheInterface $cache = null
     ) {
         $this->loaders = $loaders;
-        $this->middlewareFactory = $middlewareFactory;
+        $this->middlewareFactory = $middlewareFactory ?? new MiddlewareFactory();
         $this->cache = $cache;
     }
 
     /**
-     * Load routes from a directory.
+     * Add route(s) to the collection.
+     *
+     * @param  Route|array<Route>  $routes
+     */
+    public function add($routes): self
+    {
+        if (is_array($routes)) {
+            foreach ($routes as $route) {
+                $this->routes[] = $route;
+            }
+        } else {
+            $this->routes[] = $routes;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get all routes.
      *
      * @return array<Route>
      */
-    public function loadFromDirectory(string $directory, string $pattern = '*.routes.*'): array
+    public function all(): array
+    {
+        return $this->routes;
+    }
+
+    /**
+     * Get iterator for routes.
+     */
+    public function getIterator(): Traversable
+    {
+        return new ArrayIterator($this->routes);
+    }
+
+    /**
+     * Count routes.
+     */
+    public function count(): int
+    {
+        return count($this->routes);
+    }
+
+    /**
+     * Check if offset exists.
+     *
+     * @param  mixed  $offset
+     */
+    public function offsetExists($offset): bool
+    {
+        return isset($this->routes[$offset]);
+    }
+
+    /**
+     * Get route at offset.
+     *
+     * @param  mixed  $offset
+     * @return Route|null
+     */
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset)
+    {
+        return $this->routes[$offset] ?? null;
+    }
+
+    /**
+     * Set route at offset.
+     *
+     * @param  mixed  $offset
+     * @param  mixed  $value
+     */
+    public function offsetSet($offset, $value): void
+    {
+        if ($offset === null) {
+            $this->routes[] = $value;
+        } else {
+            $this->routes[$offset] = $value;
+        }
+    }
+
+    /**
+     * Unset route at offset.
+     *
+     * @param  mixed  $offset
+     */
+    public function offsetUnset($offset): void
+    {
+        unset($this->routes[$offset]);
+    }
+
+    /**
+     * Load routes from a directory.
+     */
+    public function loadFromDirectory(string $directory, string $pattern = '*.routes.*'): self
     {
         $files = is_dir($directory) ? $this->globFiles($directory, $pattern) : [];
 
-        $routes = [];
         foreach ($files as $file) {
-            $routes = array_merge($routes, $this->loadFromFile($file));
+            $this->loadFromFile($file);
         }
 
-        return $routes;
+        return $this;
+    }
+
+    /**
+     * Load routes from a single file.
+     */
+    public function loadFromFile(string $file): self
+    {
+        $routes = $this->remember($file, function () use ($file) {
+            $config = $this->loadConfig($file);
+            if (empty($config) || ! isset($config['routes'])) {
+                return [];
+            }
+
+            return $this->createRoutes($config['routes']);
+        });
+
+        foreach ($routes as $route) {
+            $this->add($route);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Clear all cached routes.
+     */
+    public function clearCache(): void
+    {
+        if ($this->cache === null) {
+            return;
+        }
+
+        $this->cache->clear();
     }
 
     /**
@@ -86,23 +214,6 @@ class ConfigLoader
     }
 
     /**
-     * Load routes from a single file.
-     *
-     * @return array<Route>
-     */
-    public function loadFromFile(string $file): array
-    {
-        return $this->remember($file, function () use ($file) {
-            $config = $this->loadConfig($file);
-            if (empty($config) || ! isset($config['routes'])) {
-                return [];
-            }
-
-            return $this->createRoutes($config['routes']);
-        });
-    }
-
-    /**
      * Get value from cache or execute callback and store result.
      * Uses file modification time for cache invalidation.
      *
@@ -129,18 +240,6 @@ class ConfigLoader
         $this->cache->set($key, ['mtime' => $mtime, 'data' => $data]);
 
         return $data;
-    }
-
-    /**
-     * Clear all cached routes.
-     */
-    public function clearCache(): void
-    {
-        if ($this->cache === null) {
-            return;
-        }
-
-        $this->cache->clear();
     }
 
     /**

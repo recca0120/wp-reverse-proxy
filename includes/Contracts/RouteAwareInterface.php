@@ -2,7 +2,7 @@
 
 namespace Recca0120\ReverseProxy\Contracts;
 
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
 
 interface RouteAwareInterface
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Tests\Unit\Config\Loaders;
+namespace Recca0120\ReverseProxy\Tests\Unit\Routing\Loaders;
 
 use PHPUnit\Framework\TestCase;
-use Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader;
+use Recca0120\ReverseProxy\Routing\Loaders\PhpArrayLoader;
 
 class PhpArrayLoaderTest extends TestCase
 {
@@ -17,7 +17,7 @@ class PhpArrayLoaderTest extends TestCase
 
     public function test_supports_php_extension(): void
     {
-        $loader = new PhpArrayLoader;
+        $loader = new PhpArrayLoader();
 
         $this->assertTrue($loader->supports('/path/to/routes.php'));
         $this->assertTrue($loader->supports('/path/to/reverse-proxy-routes.php'));
@@ -25,7 +25,7 @@ class PhpArrayLoaderTest extends TestCase
 
     public function test_does_not_support_json_extension(): void
     {
-        $loader = new PhpArrayLoader;
+        $loader = new PhpArrayLoader();
 
         $this->assertFalse($loader->supports('/path/to/routes.json'));
         $this->assertFalse($loader->supports('/path/to/config.yaml'));
@@ -34,7 +34,7 @@ class PhpArrayLoaderTest extends TestCase
 
     public function test_load_php_file_returning_array(): void
     {
-        $loader = new PhpArrayLoader;
+        $loader = new PhpArrayLoader();
         $result = $loader->load($this->fixturesPath.'/valid-routes.php');
 
         $this->assertIsArray($result);

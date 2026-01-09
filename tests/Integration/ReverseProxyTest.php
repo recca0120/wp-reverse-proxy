@@ -12,7 +12,8 @@ use Recca0120\ReverseProxy\Middleware\AllowMethods;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SetHost;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class ReverseProxyTest extends WP_UnitTestCase
@@ -24,7 +25,7 @@ class ReverseProxyTest extends WP_UnitTestCase
     {
         parent::setUp();
 
-        $this->mockClient = new MockClient;
+        $this->mockClient = new MockClient();
 
         // 注入 Mock Client 到插件
         add_filter('reverse_proxy_http_client', function () {
@@ -42,26 +43,6 @@ class ReverseProxyTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_should_exit');
         remove_all_filters('reverse_proxy_request');
         parent::tearDown();
-    }
-
-    private function givenRoutes(array $routes): void
-    {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
-            return $routes;
-        });
-    }
-
-    private function givenResponse(Response $response): void
-    {
-        $this->mockClient->addResponse($response);
-    }
-
-    private function whenRequesting(string $path): string
-    {
-        ob_start();
-        $this->go_to($path);
-
-        return ob_get_clean();
     }
 
     public function test_it_proxies_request_matching_route_to_target_server()
@@ -117,7 +98,7 @@ class ReverseProxyTest extends WP_UnitTestCase
             'CONTENT_TYPE' => 'application/json',
         ];
         add_filter('reverse_proxy_request', function () use ($serverParams, $requestBody) {
-            $factory = new ServerRequestFactory(new Psr17Factory);
+            $factory = new ServerRequestFactory(new Psr17Factory());
 
             return $factory->create($serverParams, $requestBody);
         });
@@ -392,7 +373,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new ProxyHeaders,
+                new ProxyHeaders(),
             ]),
         ]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -432,7 +413,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->givenRoutes([
             new Route('/api/v1/*', 'https://127.0.0.1:8080', [
                 new RewritePath('/v1/$1'),
-                new ProxyHeaders,
+                new ProxyHeaders(),
                 new SetHost('api.example.com'),
             ]),
         ]);
@@ -548,5 +529,27 @@ class ReverseProxyTest extends WP_UnitTestCase
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertNotFalse($lastRequest);
         $this->assertEquals('{"users":[]}', $output);
+    }
+
+    private function givenRoutes(array $routeArray): void
+    {
+        add_filter('reverse_proxy_routes', function () use ($routeArray) {
+            $routes = (new RouteCollection())->add($routeArray);
+
+            return $routes;
+        });
+    }
+
+    private function givenResponse(Response $response): void
+    {
+        $this->mockClient->addResponse($response);
+    }
+
+    private function whenRequesting(string $path): string
+    {
+        ob_start();
+        $this->go_to($path);
+
+        return ob_get_clean();
     }
 }
