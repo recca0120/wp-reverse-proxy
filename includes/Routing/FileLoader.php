@@ -7,6 +7,7 @@ use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Routing\Loaders\JsonLoader;
 use Recca0120\ReverseProxy\Routing\Loaders\PhpArrayLoader;
 use Recca0120\ReverseProxy\Routing\Loaders\YamlLoader;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class FileLoader implements RouteLoaderInterface
 {
@@ -36,15 +37,9 @@ class FileLoader implements RouteLoaderInterface
      */
     public function load(): array
     {
-        $configs = [];
-
-        foreach ($this->getAllFiles() as $file) {
-            foreach ($this->loadFromFile($file) as $config) {
-                $configs[] = $config;
-            }
-        }
-
-        return $configs;
+        return Arr::flatMap($this->getAllFiles(), function ($file) {
+            return $this->loadFromFile($file);
+        });
     }
 
     /**
@@ -135,20 +130,13 @@ class FileLoader implements RouteLoaderInterface
             return $this->pattern;
         }
 
-        $extensions = [];
-        foreach ($this->parsers as $parser) {
-            foreach ($parser->getExtensions() as $ext) {
-                $extensions[] = $ext;
-            }
-        }
+        $extensions = array_unique(Arr::flatMap($this->parsers, function ($parser) {
+            return $parser->getExtensions();
+        }));
 
-        $extensions = array_unique($extensions);
-
-        if (count($extensions) === 1) {
-            $this->pattern = '*.' . $extensions[0];
-        } else {
-            $this->pattern = '*.{' . implode(',', $extensions) . '}';
-        }
+        $this->pattern = count($extensions) === 1
+            ? '*.' . $extensions[0]
+            : '*.{' . implode(',', $extensions) . '}';
 
         return $this->pattern;
     }
@@ -193,14 +181,9 @@ class FileLoader implements RouteLoaderInterface
         }
 
         if (preg_match('/\{([^}]+)\}/', $pattern, $matches)) {
-            $files = [];
-            foreach (explode(',', $matches[1]) as $alt) {
-                foreach ($this->safeGlob(str_replace($matches[0], $alt, $fullPattern)) as $file) {
-                    $files[] = $file;
-                }
-            }
-
-            return array_unique($files);
+            return array_unique(Arr::flatMap(explode(',', $matches[1]), function ($alt) use ($matches, $fullPattern) {
+                return $this->safeGlob(str_replace($matches[0], $alt, $fullPattern));
+            }));
         }
 
         return $this->safeGlob($fullPattern);
