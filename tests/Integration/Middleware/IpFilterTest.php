@@ -5,7 +5,7 @@ namespace Recca0120\ReverseProxy\Tests\Integration\Middleware;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\IpFilter;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
 use WP_UnitTestCase;
 
 class IpFilterTest extends WP_UnitTestCase

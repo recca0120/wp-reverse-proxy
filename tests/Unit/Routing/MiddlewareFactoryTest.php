@@ -1,10 +1,9 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Tests\Unit\Config;
+namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Recca0120\ReverseProxy\Config\MiddlewareFactory;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Middleware\AllowMethods;
 use Recca0120\ReverseProxy\Middleware\Fallback;
@@ -12,6 +11,7 @@ use Recca0120\ReverseProxy\Middleware\IpFilter;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
+use Recca0120\ReverseProxy\Routing\MiddlewareFactory;
 
 class MiddlewareFactoryTest extends TestCase
 {

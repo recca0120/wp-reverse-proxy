@@ -1,13 +1,13 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Tests\Unit;
+namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
 
 class RouteTest extends TestCase
 {

@@ -12,7 +12,7 @@ use Recca0120\ReverseProxy\Middleware\AllowMethods;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SetHost;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
 use WP_UnitTestCase;
 
 class ReverseProxyTest extends WP_UnitTestCase

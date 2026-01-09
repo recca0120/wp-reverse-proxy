@@ -1,20 +1,20 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Tests\Unit\Config;
+namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use InvalidArgumentException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
-use Recca0120\ReverseProxy\Config\ConfigLoader;
-use Recca0120\ReverseProxy\Config\Loaders\JsonLoader;
-use Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader;
-use Recca0120\ReverseProxy\Config\Loaders\YamlLoader;
-use Recca0120\ReverseProxy\Config\MiddlewareFactory;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Loaders\JsonLoader;
+use Recca0120\ReverseProxy\Routing\Loaders\PhpArrayLoader;
+use Recca0120\ReverseProxy\Routing\Loaders\YamlLoader;
+use Recca0120\ReverseProxy\Routing\MiddlewareFactory;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteLoader;
 
-class ConfigLoaderTest extends TestCase
+class RouteLoaderTest extends TestCase
 {
     /** @var string */
     private $fixturesPath;
@@ -51,7 +51,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertCount(1, $routes);
@@ -64,7 +64,7 @@ class ConfigLoaderTest extends TestCase
         $yaml = "routes:\n  - path: /api/*\n    target: https://api.example.com\n";
         file_put_contents($filePath, $yaml);
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertCount(1, $routes);
@@ -89,7 +89,7 @@ class ConfigLoaderTest extends TestCase
         ]);
         file_put_contents($filePath, $yaml);
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertCount(2, $routes);
@@ -109,7 +109,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ];');
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertCount(1, $routes);
@@ -130,7 +130,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ];');
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromDirectory($this->fixturesPath, '*.routes.*');
 
         $this->assertCount(2, $routes);
@@ -150,7 +150,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromDirectory($this->fixturesPath, '*.routes.json');
 
         $this->assertCount(2, $routes);
@@ -168,7 +168,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertCount(1, $routes);
@@ -188,7 +188,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertCount(1, $routes);
@@ -210,7 +210,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile($filePath);
 
         $middlewares = $routes[0]->getMiddlewares();
@@ -229,7 +229,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Route configuration must have a "path" field');
@@ -248,7 +248,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Route configuration must have a "target" field');
@@ -268,7 +268,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid target URL');
@@ -293,7 +293,7 @@ class ConfigLoaderTest extends TestCase
             ->once()
             ->andReturn(['mtime' => $mtime, 'data' => $cachedRoutes]);
 
-        $loader = $this->createConfigLoader($cache);
+        $loader = $this->createRouteLoader($cache);
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertSame($cachedRoutes, $routes);
@@ -317,7 +317,7 @@ class ConfigLoaderTest extends TestCase
             ->andReturn(['mtime' => $oldMtime, 'data' => $cachedRoutes]);
         $cache->shouldReceive('set')->once();
 
-        $loader = $this->createConfigLoader($cache);
+        $loader = $this->createRouteLoader($cache);
         $routes = $loader->loadFromFile($filePath);
 
         // Should load fresh data, not cached
@@ -338,7 +338,7 @@ class ConfigLoaderTest extends TestCase
         $cache->shouldReceive('get')->once()->andReturnNull();
         $cache->shouldReceive('set')->once();
 
-        $loader = $this->createConfigLoader($cache);
+        $loader = $this->createRouteLoader($cache);
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertCount(1, $routes);
@@ -353,7 +353,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader(null);
+        $loader = $this->createRouteLoader(null);
         $routes = $loader->loadFromFile($filePath);
 
         $this->assertCount(1, $routes);
@@ -361,7 +361,7 @@ class ConfigLoaderTest extends TestCase
 
     public function test_returns_empty_array_for_nonexistent_file(): void
     {
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile('/nonexistent/path/routes.json');
 
         $this->assertIsArray($routes);
@@ -375,7 +375,7 @@ class ConfigLoaderTest extends TestCase
             mkdir($emptyDir, 0755, true);
         }
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromDirectory($emptyDir, '*.routes.*');
 
         $this->assertIsArray($routes);
@@ -401,7 +401,7 @@ class ConfigLoaderTest extends TestCase
         // Should not match .txt files
         file_put_contents($this->fixturesPath.'/ignore.txt', 'should be ignored');
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromDirectory($this->fixturesPath, '*.{json,php}');
 
         $this->assertCount(2, $routes);
@@ -421,7 +421,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ];');
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
 
         // Test that brace expansion pattern works
         $routes = $loader->loadFromDirectory($this->fixturesPath, '*.{json,php}');
@@ -442,7 +442,7 @@ class ConfigLoaderTest extends TestCase
             ],
         ]));
 
-        $loader = $this->createConfigLoader();
+        $loader = $this->createRouteLoader();
         $routes = $loader->loadFromFile($filePath);
 
         $middlewares = $routes[0]->getMiddlewares();
@@ -453,9 +453,9 @@ class ConfigLoaderTest extends TestCase
         $this->assertContains(ProxyHeaders::class, $classes);
     }
 
-    private function createConfigLoader(?CacheInterface $cache = null): ConfigLoader
+    private function createRouteLoader(?CacheInterface $cache = null): RouteLoader
     {
-        return new ConfigLoader(
+        return new RouteLoader(
             [new JsonLoader(), new YamlLoader(), new PhpArrayLoader()],
             new MiddlewareFactory(),
             $cache

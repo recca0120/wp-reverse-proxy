@@ -1,6 +1,6 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Config\Loaders;
+namespace Recca0120\ReverseProxy\Routing\Loaders;
 
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;

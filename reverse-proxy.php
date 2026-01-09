@@ -81,29 +81,29 @@ function reverse_proxy_send_response($response)
 
 function reverse_proxy_load_config_routes()
 {
-    $configLoader = apply_filters('reverse_proxy_config_loader', null);
+    $routeLoader = apply_filters('reverse_proxy_route_loader', null);
 
-    if ($configLoader === null) {
+    if ($routeLoader === null) {
         $middlewareFactory = apply_filters(
             'reverse_proxy_middleware_factory',
-            new Recca0120\ReverseProxy\Config\MiddlewareFactory()
+            new Recca0120\ReverseProxy\Routing\MiddlewareFactory()
         );
 
-        $configLoader = new Recca0120\ReverseProxy\Config\ConfigLoader(
+        $routeLoader = new Recca0120\ReverseProxy\Routing\RouteLoader(
             [
-                new Recca0120\ReverseProxy\Config\Loaders\JsonLoader(),
-                new Recca0120\ReverseProxy\Config\Loaders\YamlLoader(),
-                new Recca0120\ReverseProxy\Config\Loaders\PhpArrayLoader(),
+                new Recca0120\ReverseProxy\Routing\Loaders\JsonLoader(),
+                new Recca0120\ReverseProxy\Routing\Loaders\YamlLoader(),
+                new Recca0120\ReverseProxy\Routing\Loaders\PhpArrayLoader(),
             ],
             $middlewareFactory,
-            apply_filters('reverse_proxy_config_cache', null)
+            apply_filters('reverse_proxy_route_cache', null)
         );
     }
 
-    $directory = apply_filters('reverse_proxy_config_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
-    $pattern = apply_filters('reverse_proxy_config_pattern', '*.{json,yaml,yml,php}');
+    $directory = apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
+    $pattern = apply_filters('reverse_proxy_routes_pattern', '*.{json,yaml,yml,php}');
 
-    return $configLoader->loadFromDirectory($directory, $pattern);
+    return $routeLoader->loadFromDirectory($directory, $pattern);
 }
 
 function reverse_proxy_handle()

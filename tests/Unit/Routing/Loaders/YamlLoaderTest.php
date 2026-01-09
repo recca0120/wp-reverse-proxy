@@ -1,9 +1,9 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Tests\Unit\Config\Loaders;
+namespace Recca0120\ReverseProxy\Tests\Unit\Routing\Loaders;
 
 use PHPUnit\Framework\TestCase;
-use Recca0120\ReverseProxy\Config\Loaders\YamlLoader;
+use Recca0120\ReverseProxy\Routing\Loaders\YamlLoader;
 
 class YamlLoaderTest extends TestCase
 {

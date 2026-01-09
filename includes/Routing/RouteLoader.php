@@ -1,15 +1,14 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Config;
+namespace Recca0120\ReverseProxy\Routing;
 
 use InvalidArgumentException;
 use Psr\SimpleCache\CacheInterface;
-use Recca0120\ReverseProxy\Contracts\ConfigLoaderInterface;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Contracts\FileLoaderInterface;
 
-class ConfigLoader
+class RouteLoader
 {
-    /** @var array<ConfigLoaderInterface> */
+    /** @var array<FileLoaderInterface> */
     private $loaders;
 
     /** @var MiddlewareFactory */
@@ -19,7 +18,7 @@ class ConfigLoader
     private $cache;
 
     /**
-     * @param  array<ConfigLoaderInterface>  $loaders
+     * @param  array<FileLoaderInterface>  $loaders
      */
     public function __construct(
         array $loaders,

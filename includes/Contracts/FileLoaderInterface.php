@@ -2,7 +2,7 @@
 
 namespace Recca0120\ReverseProxy\Contracts;
 
-interface ConfigLoaderInterface
+interface FileLoaderInterface
 {
     /**
      * Check if this loader supports the given file.

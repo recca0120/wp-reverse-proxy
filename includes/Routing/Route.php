@@ -1,6 +1,6 @@
 <?php
 
-namespace Recca0120\ReverseProxy;
+namespace Recca0120\ReverseProxy\Routing;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\RouteAwareInterface;

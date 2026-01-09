@@ -6,7 +6,7 @@ use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
 use WP_UnitTestCase;
 
 class ErrorHandlingTest extends WP_UnitTestCase

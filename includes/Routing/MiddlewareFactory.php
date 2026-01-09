@@ -1,6 +1,6 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Config;
+namespace Recca0120\ReverseProxy\Routing;
 
 use InvalidArgumentException;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;

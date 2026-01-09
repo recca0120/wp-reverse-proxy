@@ -6,7 +6,7 @@ use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\RewriteBody;
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
 use WP_UnitTestCase;
 
 class RewriteBodyTest extends WP_UnitTestCase
