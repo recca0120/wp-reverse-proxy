@@ -5,6 +5,7 @@
     'use strict';
 
     var __ = wp.i18n.__;
+    var middlewareItemTemplate = wp.template('middleware-item');
     var middlewareIndex = 0;
     var middlewares = window.reverseProxyAdmin ? window.reverseProxyAdmin.middlewares : {};
     var existingMiddlewares = window.reverseProxyAdmin ? window.reverseProxyAdmin.existingMiddlewares : [];
@@ -114,29 +115,19 @@
     }
 
     function createMiddlewareItem(index, selectedName) {
-        var html = '<div class="middleware-item" data-index="' + index + '">';
-        html += '<div class="middleware-header">';
-        html += '<span class="middleware-drag-handle dashicons dashicons-move" title="' + __('Drag to reorder', 'reverse-proxy') + '"></span>';
-        html += '<select name="route[middlewares][' + index + '][name]" class="middleware-select">';
-        html += '<option value="">' + __('-- Select Middleware --', 'reverse-proxy') + '</option>';
-
         // Sort middleware names alphabetically
-        var sortedNames = Object.keys(middlewares).sort(function(a, b) {
+        var sortedMiddlewares = {};
+        Object.keys(middlewares).sort(function(a, b) {
             return middlewares[a].label.localeCompare(middlewares[b].label);
+        }).forEach(function(name) {
+            sortedMiddlewares[name] = middlewares[name];
         });
 
-        sortedNames.forEach(function(name) {
-            var selected = (name === selectedName) ? ' selected' : '';
-            html += '<option value="' + name + '"' + selected + '>' + middlewares[name].label + '</option>';
+        return middlewareItemTemplate({
+            index: index,
+            middlewares: sortedMiddlewares,
+            selected: selectedName || ''
         });
-
-        html += '</select>';
-        html += '<button type="button" class="button button-small button-link-delete remove-middleware">' + __('Remove', 'reverse-proxy') + '</button>';
-        html += '</div>';
-        html += '<div class="middleware-body"></div>';
-        html += '</div>';
-
-        return html;
     }
 
     function reindexMiddlewares() {
