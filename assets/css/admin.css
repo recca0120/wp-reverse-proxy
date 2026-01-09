@@ -1,0 +1,55 @@
+/**
+ * Reverse Proxy Admin Styles
+ */
+
+.reverse-proxy-admin .column-status {
+    width: 60px;
+}
+
+.reverse-proxy-admin .column-path,
+.reverse-proxy-admin .column-target {
+    width: 25%;
+}
+
+.reverse-proxy-admin .column-methods {
+    width: 120px;
+}
+
+.reverse-proxy-admin .column-middlewares {
+    width: 100px;
+}
+
+.reverse-proxy-admin .column-actions {
+    width: 200px;
+}
+
+.middleware-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.middleware-item .middleware-select {
+    min-width: 200px;
+}
+
+.middleware-item .middleware-fields {
+    margin: 10px 0;
+}
+
+.middleware-item .middleware-fields label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.middleware-item .middleware-fields input,
+.middleware-item .middleware-fields textarea {
+    width: 100%;
+    max-width: 400px;
+}
+
+#middleware-advanced-mode textarea {
+    font-family: monospace;
+}

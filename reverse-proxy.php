@@ -137,3 +137,15 @@ add_action(
     apply_filters('reverse_proxy_action_hook', 'plugins_loaded'),
     'reverse_proxy_handle'
 );
+
+// Initialize Admin interface
+if (is_admin()) {
+    add_action('plugins_loaded', function () {
+        $admin = new Recca0120\ReverseProxy\WordPress\Admin\Admin();
+        $admin->register();
+
+        // Register admin routes to be merged with config routes
+        $routesPage = new Recca0120\ReverseProxy\WordPress\Admin\RoutesPage();
+        $routesPage->registerRoutesFilter();
+    });
+}
