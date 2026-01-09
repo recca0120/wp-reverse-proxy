@@ -38,12 +38,29 @@ class ProxyHeadersTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_should_exit');
         remove_all_filters('reverse_proxy_response');
         remove_all_filters('reverse_proxy_default_middlewares');
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['SERVER_PORT'], $_SERVER['HTTPS']);
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['SERVER_PORT'], $_SERVER['HTTPS'], $_SERVER['HTTP_X_REAL_IP']);
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
     }
 
-    public function test_it_adds_x_real_ip_header()
+    public function test_it_preserves_existing_x_real_ip_header()
+    {
+        $this->givenRoutes([
+            new Route('/api/*', 'https://backend.example.com', [
+                new ProxyHeaders(),
+            ]),
+        ]);
+        $this->mockClient->addResponse(new Response(200, [], '{}'));
+
+        // Add X-Real-IP to the incoming request
+        $this->whenRequesting('/api/users', 'GET', ['HTTP_X_REAL_IP' => '1.2.3.4']);
+
+        $lastRequest = $this->mockClient->getLastRequest();
+        // X-Real-IP should be preserved, not overwritten
+        $this->assertEquals('1.2.3.4', $lastRequest->getHeaderLine('X-Real-IP'));
+    }
+
+    public function test_it_does_not_add_x_real_ip_header_when_not_present()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -55,7 +72,8 @@ class ProxyHeadersTest extends WP_UnitTestCase
         $this->whenRequesting('/api/users');
 
         $lastRequest = $this->mockClient->getLastRequest();
-        $this->assertEquals('192.168.1.100', $lastRequest->getHeaderLine('X-Real-IP'));
+        // X-Real-IP should not be added by ProxyHeaders
+        $this->assertEquals('', $lastRequest->getHeaderLine('X-Real-IP'));
     }
 
     public function test_it_adds_x_forwarded_for_header()
@@ -112,8 +130,13 @@ class ProxyHeadersTest extends WP_UnitTestCase
         });
     }
 
-    private function whenRequesting(string $path): string
+    private function whenRequesting(string $path, string $method = 'GET', array $headers = []): string
     {
+        $_SERVER['REQUEST_METHOD'] = $method;
+        foreach ($headers as $key => $value) {
+            $_SERVER[$key] = $value;
+        }
+
         ob_start();
         $this->go_to($path);
 

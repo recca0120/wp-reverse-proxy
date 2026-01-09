@@ -9,13 +9,28 @@ use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 
 class ProxyHeadersTest extends TestCase
 {
-    public function test_it_sets_x_real_ip_header(): void
+    public function test_it_preserves_existing_x_real_ip_header(): void
+    {
+        $middleware = new ProxyHeaders();
+        $request = (new ServerRequest('GET', 'https://target.example.com/api/users'))
+            ->withHeader('X-Real-IP', '1.2.3.4');
+
+        $middleware->process($request, function ($req) {
+            // X-Real-IP should be preserved from original request, not overwritten
+            $this->assertEquals('1.2.3.4', $req->getHeaderLine('X-Real-IP'));
+
+            return new Response(200);
+        });
+    }
+
+    public function test_it_does_not_set_x_real_ip_header_when_not_present(): void
     {
         $middleware = new ProxyHeaders(['clientIp' => '192.168.1.100']);
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
-            $this->assertEquals('192.168.1.100', $req->getHeaderLine('X-Real-IP'));
+            // X-Real-IP should not be set by ProxyHeaders middleware
+            $this->assertEquals('', $req->getHeaderLine('X-Real-IP'));
 
             return new Response(200);
         });
@@ -163,7 +178,6 @@ class ProxyHeadersTest extends TestCase
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
-            $this->assertEquals('192.168.1.100', $req->getHeaderLine('X-Real-IP'));
             $this->assertEquals('192.168.1.100', $req->getHeaderLine('X-Forwarded-For'));
             $this->assertEquals('my-wordpress.com', $req->getHeaderLine('X-Forwarded-Host'));
             $this->assertEquals('https', $req->getHeaderLine('X-Forwarded-Proto'));
@@ -195,7 +209,7 @@ class ProxyHeadersTest extends TestCase
         );
 
         $middleware->process($request, function ($req) {
-            $this->assertEquals('10.0.0.1', $req->getHeaderLine('X-Real-IP'));
+            $this->assertEquals('10.0.0.1', $req->getHeaderLine('X-Forwarded-For'));
             $this->assertEquals('default-host.com', $req->getHeaderLine('X-Forwarded-Host'));
             $this->assertEquals('https', $req->getHeaderLine('X-Forwarded-Proto'));
             $this->assertEquals('443', $req->getHeaderLine('X-Forwarded-Port'));
@@ -209,14 +223,13 @@ class ProxyHeadersTest extends TestCase
         $middleware = new ProxyHeaders([
             'clientIp' => '192.168.1.100',
             'host' => 'my-wordpress.com',
-            'headers' => ['X-Real-IP', 'X-Forwarded-For'],
+            'headers' => ['X-Forwarded-For', 'X-Forwarded-Host'],
         ]);
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
-            $this->assertEquals('192.168.1.100', $req->getHeaderLine('X-Real-IP'));
             $this->assertEquals('192.168.1.100', $req->getHeaderLine('X-Forwarded-For'));
-            $this->assertEquals('', $req->getHeaderLine('X-Forwarded-Host'));
+            $this->assertEquals('my-wordpress.com', $req->getHeaderLine('X-Forwarded-Host'));
             $this->assertEquals('', $req->getHeaderLine('X-Forwarded-Proto'));
             $this->assertEquals('', $req->getHeaderLine('X-Forwarded-Port'));
             $this->assertEquals('', $req->getHeaderLine('Forwarded'));
@@ -237,7 +250,6 @@ class ProxyHeadersTest extends TestCase
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
 
         $middleware->process($request, function ($req) {
-            $this->assertEquals('192.168.1.100', $req->getHeaderLine('X-Real-IP'));
             $this->assertEquals('192.168.1.100', $req->getHeaderLine('X-Forwarded-For'));
             $this->assertEquals('my-wordpress.com', $req->getHeaderLine('X-Forwarded-Host'));
             $this->assertEquals('https', $req->getHeaderLine('X-Forwarded-Proto'));
