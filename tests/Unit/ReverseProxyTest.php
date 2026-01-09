@@ -442,10 +442,7 @@ class ReverseProxyTest extends TestCase
 
     private function createProxy(array $routeArray): ReverseProxy
     {
-        $routes = new RouteCollection();
-        foreach ($routeArray as $route) {
-            $routes->add($route);
-        }
+        $routes = (new RouteCollection())->add($routeArray);
 
         return new ReverseProxy(
             $routes,

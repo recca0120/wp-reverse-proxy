@@ -39,11 +39,19 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
-     * Add a route to the collection.
+     * Add route(s) to the collection.
+     *
+     * @param  Route|array<Route>  $routes
      */
-    public function add(Route $route): self
+    public function add($routes): self
     {
-        $this->routes[] = $route;
+        if (is_array($routes)) {
+            foreach ($routes as $route) {
+                $this->routes[] = $route;
+            }
+        } else {
+            $this->routes[] = $routes;
+        }
 
         return $this;
     }

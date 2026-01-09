@@ -127,10 +127,7 @@ class AllowMethodsTest extends WP_UnitTestCase
     private function givenRoutes(array $routeArray): void
     {
         add_filter('reverse_proxy_routes', function () use ($routeArray) {
-            $routes = new RouteCollection();
-            foreach ($routeArray as $route) {
-                $routes->add($route);
-            }
+            $routes = (new RouteCollection())->add($routeArray);
 
             return $routes;
         });
