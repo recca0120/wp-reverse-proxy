@@ -10,6 +10,9 @@ use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareReflector
 {
+    /** @var AnnotationParser */
+    private $annotationParser;
+
     /** @var array<string, string> */
     private static $typeMap = [
         'int' => 'number',
@@ -42,6 +45,11 @@ class MiddlewareReflector
         'php' => 'PHP',
         'phpdoc' => 'PHPDoc',
     ];
+
+    public function __construct(?AnnotationParser $annotationParser = null)
+    {
+        $this->annotationParser = $annotationParser ?? new AnnotationParser();
+    }
 
     /**
      * Reflect a middleware class and extract UI field definitions.
@@ -431,59 +439,14 @@ class MiddlewareReflector
                 $name = $match[2];
                 $description = isset($match[3]) ? trim($match[3]) : '';
 
-                $params[$name] = $this->parseParamDescription($description, $name, $type);
+                $parsed = $this->annotationParser->parse($description);
+                $parsed['type'] = $type;
+                $parsed['label'] = $parsed['label'] ?: $this->generateLabel($name);
+
+                $params[$name] = $parsed;
             }
         }
 
         return $params;
-    }
-
-    /**
-     * Parse @param description to extract label, options, default, skip, and labels.
-     *
-     * Format: "Label (options: a|b) (default: value) (labels: key|value) (skip)"
-     */
-    private function parseParamDescription(string $description, string $name, string $type): array
-    {
-        $label = $description;
-        $options = null;
-        $default = null;
-        $skip = false;
-        $labels = null;
-
-        // Extract (skip)
-        if (preg_match('/\(skip\)/i', $description)) {
-            $skip = true;
-            $label = trim(preg_replace('/\(skip\)/i', '', $label));
-        }
-
-        // Extract (default: value)
-        if (preg_match('/\(default:\s*([^)]+)\)/', $description, $defaultMatch)) {
-            $default = trim($defaultMatch[1]);
-            $label = trim(preg_replace('/\(default:\s*[^)]+\)/', '', $label));
-        }
-
-        // Extract (options: a|b|c)
-        if (preg_match('/\(options:\s*([^)]+)\)/', $description, $optionsMatch)) {
-            $options = trim($optionsMatch[1]);
-            $label = trim(preg_replace('/\(options:\s*[^)]+\)/', '', $label));
-        }
-
-        // Extract (labels: key|value) for keyvalue type (use \( \) to escape parentheses)
-        if (preg_match('/\(labels:\s*((?:[^)\\\\]|\\\\.)+)\)/', $description, $labelsMatch)) {
-            $labels = trim($labelsMatch[1]);
-            // Unescape \( and \) in labels
-            $labels = str_replace(['\\(', '\\)'], ['(', ')'], $labels);
-            $label = trim(preg_replace('/\(labels:\s*(?:[^)\\\\]|\\\\.)+\)/', '', $label));
-        }
-
-        return [
-            'type' => $type,
-            'label' => $label ?: $this->generateLabel($name),
-            'options' => $options,
-            'default' => $default,
-            'skip' => $skip,
-            'labels' => $labels,
-        ];
     }
 }
