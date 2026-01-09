@@ -98,8 +98,6 @@ class ProxyHeaders implements MiddlewareInterface
         string $host,
         string $scheme
     ): string {
-        $existing = $request->getHeaderLine('Forwarded');
-
         $parts = [];
         if ($clientIp !== '') {
             $parts[] = Str::contains($clientIp, ':')
@@ -113,23 +111,26 @@ class ProxyHeaders implements MiddlewareInterface
             $parts[] = 'proto='.$scheme;
         }
 
-        $current = implode(';', $parts);
-
-        if ($existing === '' || $current === '') {
-            return $existing ?: $current;
-        }
-
-        return $existing.', '.$current;
+        return $this->appendHeaderValue(
+            $request->getHeaderLine('Forwarded'),
+            implode(';', $parts)
+        );
     }
 
     private function buildForwardedFor(ServerRequestInterface $request, string $clientIp): string
     {
-        $existing = $request->getHeaderLine('X-Forwarded-For');
+        return $this->appendHeaderValue(
+            $request->getHeaderLine('X-Forwarded-For'),
+            $clientIp
+        );
+    }
 
-        if ($existing === '' || $clientIp === '') {
-            return $existing ?: $clientIp;
+    private function appendHeaderValue(string $existing, string $new): string
+    {
+        if ($existing === '' || $new === '') {
+            return $existing !== '' ? $existing : $new;
         }
 
-        return "{$existing}, {$clientIp}";
+        return $existing.', '.$new;
     }
 }

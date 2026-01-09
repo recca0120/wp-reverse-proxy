@@ -8,6 +8,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 use Recca0120\ReverseProxy\WordPress\TransientCache;
 
 class Caching implements MiddlewareInterface
@@ -62,23 +63,24 @@ class Caching implements MiddlewareInterface
 
     private function isCacheable(ResponseInterface $response): bool
     {
-        $statusCode = $response->getStatusCode();
-
-        // 只快取 200 OK
-        if ($statusCode !== 200) {
+        if ($response->getStatusCode() !== 200) {
             return false;
         }
 
-        // 檢查 Cache-Control header
-        $cacheControl = $response->getHeaderLine('Cache-Control');
-        if (stripos($cacheControl, 'no-cache') !== false
-            || stripos($cacheControl, 'no-store') !== false
-            || stripos($cacheControl, 'private') !== false
-        ) {
-            return false;
+        return ! $this->hasNoCacheDirective($response->getHeaderLine('Cache-Control'));
+    }
+
+    private function hasNoCacheDirective(string $cacheControl): bool
+    {
+        $cacheControl = strtolower($cacheControl);
+
+        foreach (['no-cache', 'no-store', 'private'] as $directive) {
+            if (Str::contains($cacheControl, $directive)) {
+                return true;
+            }
         }
 
-        return true;
+        return false;
     }
 
     private function cacheResponse(string $key, ResponseInterface $response): void
