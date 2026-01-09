@@ -139,6 +139,20 @@ class Route
 
     private function buildTargetUrl(string $path, string $queryString): string
     {
+        // Nginx-style: if target ends with /, strip the matched prefix from path
+        if (substr($this->target, -1) === '/') {
+            $basePath = $this->getBasePath();
+
+            if ($basePath !== '' && strpos($path, $basePath) === 0) {
+                $path = substr($path, strlen($basePath));
+
+                // Ensure path starts with / when not empty, or is / when empty
+                if ($path === '' || $path === false) {
+                    $path = '/';
+                }
+            }
+        }
+
         $url = rtrim($this->target, '/').$path;
 
         if ($queryString !== '') {
@@ -146,5 +160,13 @@ class Route
         }
 
         return $url;
+    }
+
+    /**
+     * Get the base path (pattern without wildcard).
+     */
+    private function getBasePath(): string
+    {
+        return rtrim(preg_replace('/\*+$/', '', $this->path), '/');
     }
 }

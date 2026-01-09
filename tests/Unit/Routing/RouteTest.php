@@ -348,4 +348,76 @@ class RouteTest extends TestCase
         $this->assertEquals('first', $middlewares[0]->name);
         $this->assertEquals('second', $middlewares[1]->name);
     }
+
+    // Nginx-style trailing slash tests
+
+    public function test_target_without_trailing_slash_keeps_full_path()
+    {
+        $route = new Route('/google/*', 'https://www.google.com');
+        $request = new ServerRequest('GET', '/google/search');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/google/search', $result);
+    }
+
+    public function test_target_with_trailing_slash_strips_prefix()
+    {
+        $route = new Route('/google/*', 'https://www.google.com/');
+        $request = new ServerRequest('GET', '/google/search');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/search', $result);
+    }
+
+    public function test_target_with_trailing_slash_strips_prefix_and_preserves_query()
+    {
+        $route = new Route('/google/*', 'https://www.google.com/');
+        $request = new ServerRequest('GET', '/google/search?q=test&lang=en');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/search?q=test&lang=en', $result);
+    }
+
+    public function test_target_with_trailing_slash_handles_root_path()
+    {
+        $route = new Route('/google/*', 'https://www.google.com/');
+        $request = new ServerRequest('GET', '/google/');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/', $result);
+    }
+
+    public function test_target_with_trailing_slash_handles_exact_match()
+    {
+        $route = new Route('/google', 'https://www.google.com/');
+        $request = new ServerRequest('GET', '/google');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/', $result);
+    }
+
+    public function test_target_with_trailing_slash_handles_nested_path()
+    {
+        $route = new Route('/api/v1/*', 'https://backend.example.com/');
+        $request = new ServerRequest('GET', '/api/v1/users/123/profile');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://backend.example.com/users/123/profile', $result);
+    }
+
+    public function test_target_with_trailing_slash_and_target_path()
+    {
+        $route = new Route('/old-api/*', 'https://backend.example.com/new-api/');
+        $request = new ServerRequest('GET', '/old-api/users');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://backend.example.com/new-api/users', $result);
+    }
 }
