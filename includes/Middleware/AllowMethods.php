@@ -9,7 +9,7 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 
 /**
- * @UIDescription("Restrict allowed HTTP methods")
+ * Restrict allowed HTTP methods.
  */
 class AllowMethods implements MiddlewareInterface
 {
@@ -17,9 +17,7 @@ class AllowMethods implements MiddlewareInterface
     private $allowedMethods;
 
     /**
-     * @param  string|string[]  ...$allowedMethods
-     *
-     * @UIField(name="allowedMethods", type="checkboxes", label="Allowed Methods", options="GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS", default="GET")
+     * @param string|string[] $allowedMethods Allowed Methods (options: GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)
      */
     public function __construct(...$allowedMethods)
     {

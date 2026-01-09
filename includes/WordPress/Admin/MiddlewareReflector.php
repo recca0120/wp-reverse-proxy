@@ -21,6 +21,27 @@ class MiddlewareReflector
         'array' => 'textarea',
     ];
 
+    /** @var array<string, string> */
+    private static $acronyms = [
+        'id' => 'ID',
+        'ip' => 'IP',
+        'url' => 'URL',
+        'uri' => 'URI',
+        'api' => 'API',
+        'cors' => 'CORS',
+        'http' => 'HTTP',
+        'https' => 'HTTPS',
+        'html' => 'HTML',
+        'css' => 'CSS',
+        'js' => 'JS',
+        'json' => 'JSON',
+        'xml' => 'XML',
+        'sql' => 'SQL',
+        'ttl' => 'TTL',
+        'php' => 'PHP',
+        'phpdoc' => 'PHPDoc',
+    ];
+
     /**
      * Reflect a middleware class and extract UI field definitions.
      *
@@ -56,24 +77,15 @@ class MiddlewareReflector
     }
 
     /**
-     * Extract label from @UILabel annotation or generate from class name.
+     * Extract label from class name.
      */
     private function extractLabel(ReflectionClass $class): string
     {
-        $docComment = $class->getDocComment();
-
-        if ($docComment !== false) {
-            // Try to find @UILabel annotation
-            if (preg_match('/@UILabel\s*\(\s*"([^"]+)"\s*\)/', $docComment, $match)) {
-                return $match[1];
-            }
-        }
-
         return $this->generateLabel($class->getShortName());
     }
 
     /**
-     * Extract description from @UIDescription annotation or class PHPDoc.
+     * Extract description from class PHPDoc.
      */
     private function extractDescription(ReflectionClass $class): string
     {
@@ -83,16 +95,11 @@ class MiddlewareReflector
             return '';
         }
 
-        // Try to find @UIDescription annotation first
-        if (preg_match('/@UIDescription\s*\(\s*"([^"]+)"\s*\)/', $docComment, $match)) {
-            return $match[1];
-        }
-
         return $this->parseDescription($docComment);
     }
 
     /**
-     * Extract fields from @UIField annotations or constructor parameters.
+     * Extract fields from @param annotations or constructor parameters.
      *
      * @return array<array>
      */
@@ -104,146 +111,228 @@ class MiddlewareReflector
             return [];
         }
 
-        // Check for @UINoFields annotation - explicitly no fields
-        if ($this->hasNoFieldsAnnotation($class, $constructor)) {
-            return [];
-        }
-
-        // Try to parse @UIField annotations first
-        $uiFields = $this->parseUIFieldAnnotations($constructor);
-
-        if (!empty($uiFields)) {
-            return $uiFields;
-        }
-
-        // Fallback to auto-generating from parameters
         return $this->extractFieldsFromParameters($constructor);
     }
 
     /**
-     * Check if class or constructor has @UINoFields annotation.
-     */
-    private function hasNoFieldsAnnotation(ReflectionClass $class, ReflectionMethod $constructor): bool
-    {
-        $classDoc = $class->getDocComment();
-        $constructorDoc = $constructor->getDocComment();
-
-        return ($classDoc !== false && strpos($classDoc, '@UINoFields') !== false)
-            || ($constructorDoc !== false && strpos($constructorDoc, '@UINoFields') !== false);
-    }
-
-    /**
-     * Parse @UIField annotations from constructor PHPDoc.
-     *
-     * Format: @UIField(name="fieldName", type="text", label="Field Label", default="value", required=true)
-     *
-     * @return array<array>
-     */
-    private function parseUIFieldAnnotations(ReflectionMethod $method): array
-    {
-        $docComment = $method->getDocComment();
-
-        if ($docComment === false) {
-            return [];
-        }
-
-        $fields = [];
-
-        // Match @UIField(...) annotations - handle nested parentheses in quoted strings
-        if (preg_match_all('/@UIField\s*\((.+?)\)\s*(?:\*|$)/s', $docComment, $matches)) {
-            foreach ($matches[1] as $annotationContent) {
-                $field = $this->parseAnnotationAttributes($annotationContent);
-                if (!empty($field['name'])) {
-                    $fields[] = $field;
-                }
-            }
-        }
-
-        return $fields;
-    }
-
-    /**
-     * Parse annotation attributes from string like: name="value", type="text"
-     */
-    private function parseAnnotationAttributes(string $content): array
-    {
-        $field = [];
-
-        // Match key="value" or key=value patterns
-        if (preg_match_all('/(\w+)\s*=\s*(?:"([^"]*)"|(\d+(?:\.\d+)?)|(\w+))/', $content, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $key = $match[1];
-                // Priority: quoted string, number, unquoted value
-                $value = $match[2] !== '' ? $match[2] : ($match[3] !== '' ? $match[3] : $match[4]);
-
-                // Convert numeric strings to numbers
-                if (is_numeric($value)) {
-                    $value = strpos($value, '.') !== false ? (float) $value : (int) $value;
-                }
-
-                // Convert boolean strings
-                if ($value === 'true') {
-                    $value = true;
-                } elseif ($value === 'false') {
-                    $value = false;
-                }
-
-                $field[$key] = $value;
-            }
-        }
-
-        return $field;
-    }
-
-    /**
-     * Extract fields from constructor parameters (fallback method).
+     * Extract fields from constructor parameters using @param annotations.
      *
      * @return array<array>
      */
     private function extractFieldsFromParameters(ReflectionMethod $constructor): array
     {
-        $paramDescriptions = $this->parseParamDescriptions($constructor);
+        $docComment = $constructor->getDocComment() ?: '';
+        $paramInfos = $this->parseParamAnnotations($constructor);
         $fields = [];
 
         foreach ($constructor->getParameters() as $param) {
-            $fields[] = $this->buildField($param, $paramDescriptions);
+            $name = $param->getName();
+            $info = $paramInfos[$name] ?? null;
+
+            // Skip non-UI types (callable, object, interfaces)
+            if ($this->shouldSkipParameter($param)) {
+                continue;
+            }
+
+            // Skip parameters marked with (skip)
+            if ($info !== null && !empty($info['skip'])) {
+                continue;
+            }
+
+            // Skip complex config parameters (has @type block)
+            if ($this->hasTypeBlock($docComment, $name)) {
+                continue;
+            }
+
+            $fields[] = $this->buildField($param, $paramInfos);
         }
 
         return $fields;
     }
 
     /**
-     * Build field definition from a parameter.
+     * Check if parameter has @type block in PHPDoc (complex config object).
+     *
+     * Example:
+     * @param array $options {
+     *     @type string $key Description
+     * }
      */
-    private function buildField(ReflectionParameter $param, array $descriptions): array
+    private function hasTypeBlock(string $docComment, string $paramName): bool
+    {
+        // Match: @param ... $name ... { ... @type (handles types with spaces like "array<string, mixed>")
+        $pattern = '/@param\s+.+?\$' . preg_quote($paramName, '/') . '\s+.*?\{[\s\S]*?@type/';
+
+        return (bool) preg_match($pattern, $docComment);
+    }
+
+    /**
+     * Check if parameter should be skipped (not shown in UI).
+     */
+    private function shouldSkipParameter(ReflectionParameter $param): bool
+    {
+        $type = $param->getType();
+
+        if ($type === null) {
+            return false;
+        }
+
+        $typeName = method_exists($type, 'getName') ? $type->getName() : (string) $type;
+
+        // Skip callable, Closure, and interface types
+        $skipTypes = ['callable', 'Closure', 'object'];
+
+        if (in_array($typeName, $skipTypes, true)) {
+            return true;
+        }
+
+        // Skip interface types (ends with Interface)
+        if (Str::endsWith($typeName, 'Interface')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Build field definition from a parameter.
+     *
+     * @param array<string, array{type: string, label: string, options: string|null}> $paramInfos
+     */
+    private function buildField(ReflectionParameter $param, array $paramInfos): array
     {
         $name = $param->getName();
-        $type = $this->resolveType($param);
+        $phpType = $this->resolveType($param);
+        $info = $paramInfos[$name] ?? null;
+        $isVariadic = $param->isVariadic();
+
+        // Determine UI type based on PHP type, @param type hint, and options
+        $paramType = $info['type'] ?? null;
+        $options = $info['options'] ?? null;
+        $uiType = $this->determineUIType($phpType, $paramType, $options);
+
+        // Variadic parameters are always arrays - override scalar types to repeater
+        if ($isVariadic && in_array($uiType, ['text', 'number', 'checkbox', 'textarea'], true)) {
+            $uiType = 'repeater';
+        }
 
         $field = [
             'name' => $name,
-            'type' => $this->mapType($type),
-            'label' => $this->generateLabel($name),
+            'type' => $uiType,
+            'label' => $info['label'] ?? $this->generateLabel($name),
         ];
 
-        // Add description if available
-        if (isset($descriptions[$name])) {
-            $field['description'] = $descriptions[$name];
+        // Add options for select/checkboxes
+        if ($options !== null && in_array($uiType, ['select', 'checkboxes'], true)) {
+            $field['options'] = $options;
         }
 
-        // Add default value if available
-        if ($param->isDefaultValueAvailable()) {
-            $default = $param->getDefaultValue();
-            if ($type === 'array' && is_array($default)) {
-                $field['default'] = implode("\n", $default);
-            } else {
-                $field['default'] = $default;
+        // Add inputType for repeater based on array element type (int[] → number) or variadic type
+        if ($uiType === 'repeater') {
+            $inputType = null;
+            if ($paramType !== null) {
+                $inputType = $this->extractArrayElementType($paramType);
+            } elseif ($isVariadic && $phpType === 'int') {
+                $inputType = 'number';
             }
+            if ($inputType !== null) {
+                $field['inputType'] = $inputType;
+            }
+        }
+
+        // Add keyLabel/valueLabel for keyvalue type from labels
+        $labels = $info['labels'] ?? null;
+        if ($uiType === 'keyvalue' && $labels !== null) {
+            $labelParts = explode('|', $labels);
+            if (count($labelParts) >= 2) {
+                $field['keyLabel'] = trim($labelParts[0]);
+                $field['valueLabel'] = trim($labelParts[1]);
+            }
+        }
+
+        // Add default value if available (prefer PHP default, fallback to PHPDoc default)
+        // Variadic parameters are never required (can be empty), but can have PHPDoc default
+        if ($isVariadic) {
+            if (isset($info['default'])) {
+                $field['default'] = $info['default'];
+            }
+            // Variadic is never required
+        } elseif ($param->isDefaultValueAvailable()) {
+            $default = $param->getDefaultValue();
+            $field['default'] = $this->formatDefault($default, $uiType);
+        } elseif (isset($info['default'])) {
+            $field['default'] = $info['default'];
         } else {
             $field['required'] = true;
         }
 
         return $field;
+    }
+
+    /**
+     * Extract element type from array type hint (e.g., int[] → number, string[] → text).
+     */
+    private function extractArrayElementType(string $paramType): ?string
+    {
+        // Handle int[] or int|int[]
+        if (preg_match('/\bint\b/', $paramType)) {
+            return 'number';
+        }
+
+        return null;
+    }
+
+    /**
+     * Determine UI field type based on PHP type, @param type, and options.
+     */
+    private function determineUIType(string $phpType, ?string $paramType, ?string $options): string
+    {
+        // Check for keyvalue type hint: array<string,string>
+        if ($paramType !== null && preg_match('/^array\s*<\s*string\s*,\s*string\s*>$/', $paramType)) {
+            return 'keyvalue';
+        }
+
+        // Check for typed array from PHPDoc (string[], int[])
+        $hasTypedArray = $paramType !== null && Str::endsWith($paramType, '[]');
+
+        if ($hasTypedArray) {
+            // Typed array with options = checkboxes, without options = repeater
+            return $options !== null ? 'checkboxes' : 'repeater';
+        }
+
+        // Plain array without PHPDoc type hint = textarea (can't distinguish list from key-value)
+        if ($phpType === 'array') {
+            return 'textarea';
+        }
+
+        // String with options = select
+        if ($phpType === 'string' && $options !== null) {
+            return 'select';
+        }
+
+        // Default mapping
+        return self::$typeMap[$phpType] ?? 'text';
+    }
+
+    /**
+     * Format default value based on UI type.
+     *
+     * @param mixed $default
+     * @return mixed
+     */
+    private function formatDefault($default, string $uiType)
+    {
+        if (is_array($default)) {
+            // For checkboxes/repeater, join with comma
+            return implode(',', $default);
+        }
+
+        // Keep boolean as-is for checkbox type
+        if (is_bool($default)) {
+            return $default;
+        }
+
+        return $default;
     }
 
     /**
@@ -281,14 +370,28 @@ class MiddlewareReflector
      * - "host" => "Host"
      * - "allowedOrigins" => "Allowed Origins"
      * - "maxAge" => "Max Age"
+     * - "Cors" => "CORS"
+     * - "RequestId" => "Request ID"
+     * - "IpFilter" => "IP Filter"
+     * - "NoPHPDocMiddleware" => "No PHPDoc"
      */
     private function generateLabel(string $name): string
     {
+        // Remove common suffixes
+        $name = preg_replace('/Middleware$/', '', $name);
+
         // Split camelCase into words
         $words = preg_replace('/([a-z])([A-Z])/', '$1 $2', $name);
 
-        // Capitalize first letter of each word
-        return ucwords($words);
+        // Capitalize and replace acronyms
+        $parts = explode(' ', $words);
+        $parts = array_map(function ($word) {
+            $lower = strtolower($word);
+
+            return self::$acronyms[$lower] ?? ucfirst($lower);
+        }, $parts);
+
+        return trim(implode(' ', $parts));
     }
 
     /**
@@ -322,11 +425,13 @@ class MiddlewareReflector
     }
 
     /**
-     * Parse @param descriptions from method PHPDoc.
+     * Parse @param annotations from method PHPDoc.
      *
-     * @return array<string, string> Map of parameter name => description
+     * Format: @param type $name Label {options} = default
+     *
+     * @return array<string, array{type: string, label: string, options: string|null, default: string|null}>
      */
-    private function parseParamDescriptions(ReflectionMethod $method): array
+    private function parseParamAnnotations(ReflectionMethod $method): array
     {
         $docComment = $method->getDocComment();
 
@@ -334,15 +439,70 @@ class MiddlewareReflector
             return [];
         }
 
-        $descriptions = [];
+        $params = [];
 
         // Match @param type $name description
-        if (preg_match_all('/@param\s+\S+\s+\$(\w+)\s+(.+)$/m', $docComment, $matches, PREG_SET_ORDER)) {
+        // Type can be: string, int, bool, array, string[], array<string, mixed>, etc.
+        // Use .+? to handle types with spaces like "array<string, mixed>"
+        if (preg_match_all('/@param\s+(.+?)\s+\$(\w+)(?:\s+(.*))?$/m', $docComment, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
-                $descriptions[$match[1]] = trim($match[2]);
+                $type = $match[1];
+                $name = $match[2];
+                $description = isset($match[3]) ? trim($match[3]) : '';
+
+                $params[$name] = $this->parseParamDescription($description, $name, $type);
             }
         }
 
-        return $descriptions;
+        return $params;
+    }
+
+    /**
+     * Parse @param description to extract label, options, default, skip, and labels.
+     *
+     * Format: "Label (options: a|b) (default: value) (labels: key|value) (skip)"
+     */
+    private function parseParamDescription(string $description, string $name, string $type): array
+    {
+        $label = $description;
+        $options = null;
+        $default = null;
+        $skip = false;
+        $labels = null;
+
+        // Extract (skip)
+        if (preg_match('/\(skip\)/i', $description)) {
+            $skip = true;
+            $label = trim(preg_replace('/\(skip\)/i', '', $label));
+        }
+
+        // Extract (default: value)
+        if (preg_match('/\(default:\s*([^)]+)\)/', $description, $defaultMatch)) {
+            $default = trim($defaultMatch[1]);
+            $label = trim(preg_replace('/\(default:\s*[^)]+\)/', '', $label));
+        }
+
+        // Extract (options: a|b|c)
+        if (preg_match('/\(options:\s*([^)]+)\)/', $description, $optionsMatch)) {
+            $options = trim($optionsMatch[1]);
+            $label = trim(preg_replace('/\(options:\s*[^)]+\)/', '', $label));
+        }
+
+        // Extract (labels: key|value) for keyvalue type (use \( \) to escape parentheses)
+        if (preg_match('/\(labels:\s*((?:[^)\\\\]|\\\\.)+)\)/', $description, $labelsMatch)) {
+            $labels = trim($labelsMatch[1]);
+            // Unescape \( and \) in labels
+            $labels = str_replace(['\\(', '\\)'], ['(', ')'], $labels);
+            $label = trim(preg_replace('/\(labels:\s*(?:[^)\\\\]|\\\\.)+\)/', '', $label));
+        }
+
+        return [
+            'type' => $type,
+            'label' => $label ?: $this->generateLabel($name),
+            'options' => $options,
+            'default' => $default,
+            'skip' => $skip,
+            'labels' => $labels,
+        ];
     }
 }

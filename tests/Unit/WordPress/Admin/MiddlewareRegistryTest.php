@@ -54,20 +54,20 @@ class MiddlewareRegistryTest extends TestCase
         $available = $this->registry->getAvailable();
 
         $expectedDescriptions = [
-            'ProxyHeaders' => 'Add X-Forwarded-* headers to the proxied request',
-            'SetHost' => 'Override the Host header',
-            'Timeout' => 'Set request timeout',
-            'AllowMethods' => 'Restrict allowed HTTP methods',
-            'RewritePath' => 'Rewrite the request path using pattern',
-            'Cors' => 'Add CORS headers to the response',
-            'RateLimiting' => 'Limit the number of requests',
-            'Caching' => 'Cache responses',
-            'Retry' => 'Retry failed requests',
-            'CircuitBreaker' => 'Prevent cascading failures',
-            'IpFilter' => 'Filter requests by IP address',
-            'RequestId' => 'Add a unique request ID header',
-            'Fallback' => 'Provide fallback response on failure',
-            'RewriteBody' => 'Rewrite response body content',
+            'ProxyHeaders' => 'Add X-Forwarded-* headers to the proxied request.',
+            'SetHost' => 'Override the Host header.',
+            'Timeout' => 'Set request timeout.',
+            'AllowMethods' => 'Restrict allowed HTTP methods.',
+            'RewritePath' => 'Rewrite the request path using pattern.',
+            'Cors' => 'Add CORS headers to the response.',
+            'RateLimiting' => 'Limit the number of requests.',
+            'Caching' => 'Cache responses.',
+            'Retry' => 'Retry failed requests.',
+            'CircuitBreaker' => 'Prevent cascading failures.',
+            'IpFilter' => 'Filter requests by IP address.',
+            'RequestId' => 'Add a unique request ID header.',
+            'Fallback' => 'Provide fallback response on failure.',
+            'RewriteBody' => 'Rewrite response body content.',
         ];
 
         foreach ($expectedDescriptions as $name => $expectedDescription) {
@@ -393,7 +393,7 @@ class MiddlewareRegistryTest extends TestCase
     }
 
     /**
-     * Test middlewares without fields (ProxyHeaders has @UINoFields).
+     * Test middlewares without fields (ProxyHeaders has @type block).
      */
     public function test_middlewares_without_fields()
     {

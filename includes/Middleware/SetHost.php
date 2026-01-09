@@ -7,7 +7,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 
 /**
- * @UIDescription("Override the Host header")
+ * Override the Host header.
  */
 class SetHost implements MiddlewareInterface
 {
@@ -15,7 +15,7 @@ class SetHost implements MiddlewareInterface
     private $host;
 
     /**
-     * @UIField(name="host", type="text", label="Host", required=true)
+     * @param string $host Host
      */
     public function __construct(string $host)
     {

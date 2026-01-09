@@ -9,7 +9,7 @@ use Recca0120\ReverseProxy\Exceptions\FallbackException;
 use Recca0120\ReverseProxy\Support\Arr;
 
 /**
- * @UIDescription("Provide fallback response on failure")
+ * Provide fallback response on failure.
  */
 class Fallback implements MiddlewareInterface
 {
@@ -20,9 +20,7 @@ class Fallback implements MiddlewareInterface
     private $statusCodes;
 
     /**
-     * @param  int|int[]  ...$statusCodes  觸發 fallback 的狀態碼
-     *
-     * @UIField(name="statusCodes", type="repeater", label="Trigger Status Codes", default="404", inputType="number")
+     * @param int|int[] $statusCodes Trigger Status Codes (default: 404)
      */
     public function __construct(...$statusCodes)
     {

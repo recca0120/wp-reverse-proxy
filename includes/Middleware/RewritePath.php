@@ -9,7 +9,7 @@ use Recca0120\ReverseProxy\Contracts\RouteAwareInterface;
 use Recca0120\ReverseProxy\Routing\Route;
 
 /**
- * @UIDescription("Rewrite the request path using pattern")
+ * Rewrite the request path using pattern.
  */
 class RewritePath implements MiddlewareInterface, RouteAwareInterface
 {
@@ -20,7 +20,7 @@ class RewritePath implements MiddlewareInterface, RouteAwareInterface
     private $route;
 
     /**
-     * @UIField(name="replacement", type="text", label="Replacement", required=true)
+     * @param string $replacement Replacement
      */
     public function __construct(string $replacement)
     {

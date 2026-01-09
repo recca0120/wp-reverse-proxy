@@ -4,6 +4,8 @@ namespace Recca0120\ReverseProxy\Tests\Unit\WordPress\Admin;
 
 use PHPUnit\Framework\TestCase;
 use Recca0120\ReverseProxy\Middleware\Cors;
+use Recca0120\ReverseProxy\Middleware\IpFilter;
+use Recca0120\ReverseProxy\Middleware\RequestId;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
 use Recca0120\ReverseProxy\WordPress\Admin\MiddlewareReflector;
@@ -107,23 +109,23 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('checkbox', $allowCredentialsField['type']);
     }
 
-    public function test_it_maps_array_type_to_textarea()
+    public function test_it_maps_array_type_without_phpdoc_to_textarea()
     {
         // Use test fixture to test auto-reflection from parameters
+        // array without PHPDoc type hint should be textarea (can't distinguish list from key-value)
         $info = $this->reflector->reflect(AutoReflectMiddlewareFixture::class);
 
         $allowedOriginsField = $this->findField($info['fields'], 'allowedOrigins');
         $this->assertEquals('textarea', $allowedOriginsField['type']);
     }
 
-    public function test_it_extracts_param_description_from_phpdoc()
+    public function test_it_extracts_param_description_as_label()
     {
         // Use test fixture to test auto-reflection with @param description
         $info = $this->reflector->reflect(ParamDescriptionMiddlewareFixture::class);
 
         $field = $info['fields'][0];
-        $this->assertNotEmpty($field['description']);
-        $this->assertEquals('Timeout in seconds', $field['description']);
+        $this->assertEquals('Timeout in seconds', $field['label']);
     }
 
     public function test_it_generates_class_label_from_class_name()
@@ -136,6 +138,7 @@ class MiddlewareReflectorTest extends TestCase
     public function test_it_handles_class_with_optional_array_parameter()
     {
         // Use test fixture to test auto-reflection with optional array parameter
+        // array without PHPDoc type hint should be textarea
         $info = $this->reflector->reflect(OptionalArrayMiddlewareFixture::class);
 
         $this->assertCount(1, $info['fields']);
@@ -212,44 +215,57 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('text', $info['fields'][0]['type']);
     }
 
-    public function test_it_parses_ui_field_annotations()
+    public function test_it_parses_param_with_options_as_select()
     {
-        $info = $this->reflector->reflect(UIFieldTestMiddleware::class);
-
-        $this->assertCount(2, $info['fields']);
-
-        $this->assertEquals('timeout', $info['fields'][0]['name']);
-        $this->assertEquals('number', $info['fields'][0]['type']);
-        $this->assertEquals('Seconds', $info['fields'][0]['label']);
-        $this->assertEquals(30, $info['fields'][0]['default']);
-
-        $this->assertEquals('delay', $info['fields'][1]['name']);
-        $this->assertEquals('number', $info['fields'][1]['type']);
-        $this->assertEquals('Delay (ms)', $info['fields'][1]['label']);
-        $this->assertEquals(100, $info['fields'][1]['default']);
-    }
-
-    public function test_it_parses_ui_field_with_required()
-    {
-        $info = $this->reflector->reflect(UIFieldRequiredTestMiddleware::class);
+        $info = $this->reflector->reflect(ParamWithOptionsTestMiddleware::class);
 
         $this->assertCount(1, $info['fields']);
-        $this->assertEquals('host', $info['fields'][0]['name']);
-        $this->assertTrue($info['fields'][0]['required']);
+        $this->assertEquals('mode', $info['fields'][0]['name']);
+        $this->assertEquals('select', $info['fields'][0]['type']);
+        $this->assertEquals('Mode', $info['fields'][0]['label']);
+        $this->assertEquals('allow:Allow|deny:Deny', $info['fields'][0]['options']);
     }
 
-    public function test_it_parses_ui_label_annotation()
+    public function test_it_parses_array_with_options_as_checkboxes()
     {
-        $info = $this->reflector->reflect(UILabelTestMiddleware::class);
+        $info = $this->reflector->reflect(ArrayWithOptionsTestMiddleware::class);
 
+        $this->assertCount(1, $info['fields']);
+        $this->assertEquals('methods', $info['fields'][0]['name']);
+        $this->assertEquals('checkboxes', $info['fields'][0]['type']);
+        $this->assertEquals('Allowed Methods', $info['fields'][0]['label']);
+        $this->assertEquals('GET|POST|PUT|DELETE', $info['fields'][0]['options']);
+    }
+
+    public function test_it_parses_keyvalue_type()
+    {
+        $info = $this->reflector->reflect(KeyValueTestMiddleware::class);
+
+        $this->assertCount(1, $info['fields']);
+        $this->assertEquals('replacements', $info['fields'][0]['name']);
+        $this->assertEquals('keyvalue', $info['fields'][0]['type']);
+        $this->assertEquals('Pattern replacements', $info['fields'][0]['label']);
+        $this->assertEquals('Pattern (regex)', $info['fields'][0]['keyLabel']);
+        $this->assertEquals('Replacement', $info['fields'][0]['valueLabel']);
+    }
+
+    public function test_it_generates_label_with_acronyms()
+    {
+        $info = $this->reflector->reflect(Cors::class);
         $this->assertEquals('CORS', $info['label']);
+
+        $info = $this->reflector->reflect(RequestId::class);
+        $this->assertEquals('Request ID', $info['label']);
+
+        $info = $this->reflector->reflect(IpFilter::class);
+        $this->assertEquals('IP Filter', $info['label']);
     }
 
-    public function test_it_parses_ui_description_annotation()
+    public function test_it_parses_phpdoc_description()
     {
-        $info = $this->reflector->reflect(UIDescriptionTestMiddleware::class);
+        $info = $this->reflector->reflect(PHPDocDescriptionTestMiddleware::class);
 
-        $this->assertEquals('Add CORS headers to the response', $info['description']);
+        $this->assertEquals('Add CORS headers to the response.', $info['description']);
     }
 
     public function test_it_falls_back_to_parameters_when_no_ui_field()
@@ -259,6 +275,129 @@ class MiddlewareReflectorTest extends TestCase
 
         $this->assertCount(1, $info['fields']);
         $this->assertEquals('host', $info['fields'][0]['name']);
+    }
+
+    /**
+     * Test class without PHPDoc has empty description.
+     */
+    public function test_no_phpdoc_has_empty_description()
+    {
+        $info = $this->reflector->reflect(NoPHPDocMiddleware::class);
+
+        $this->assertEquals('', $info['description']);
+        $this->assertEquals('No PHPDoc', $info['label']);
+    }
+
+    /**
+     * Test array without PHPDoc should be textarea (can't distinguish list from key-value).
+     */
+    public function test_array_without_phpdoc_is_textarea()
+    {
+        $info = $this->reflector->reflect(ArrayWithoutPHPDocMiddleware::class);
+
+        $this->assertCount(2, $info['fields']);
+
+        $itemsField = $this->findField($info['fields'], 'items');
+        $this->assertEquals('textarea', $itemsField['type']);
+        $this->assertEquals('Items', $itemsField['label']);
+    }
+
+    /**
+     * Test variadic string parameter should be repeater, not required.
+     */
+    public function test_variadic_string_is_repeater_not_required()
+    {
+        $info = $this->reflector->reflect(VariadicStringMiddleware::class);
+
+        $valuesField = $this->findField($info['fields'], 'values');
+        $this->assertEquals('repeater', $valuesField['type']);
+        $this->assertArrayNotHasKey('required', $valuesField);
+    }
+
+    /**
+     * Test variadic int parameter should be repeater with inputType number.
+     */
+    public function test_variadic_int_is_repeater_with_input_type_number()
+    {
+        $info = $this->reflector->reflect(VariadicIntMiddleware::class);
+
+        $numbersField = $this->findField($info['fields'], 'numbers');
+        $this->assertEquals('repeater', $numbersField['type']);
+        $this->assertEquals('number', $numbersField['inputType']);
+        $this->assertArrayNotHasKey('required', $numbersField);
+    }
+
+    /**
+     * Test variadic without type hint should be repeater.
+     */
+    public function test_variadic_without_type_is_repeater()
+    {
+        $info = $this->reflector->reflect(VariadicNoTypeMiddleware::class);
+
+        $argsField = $this->findField($info['fields'], 'args');
+        $this->assertEquals('repeater', $argsField['type']);
+        $this->assertArrayNotHasKey('required', $argsField);
+    }
+
+    /**
+     * Test (skip) in @param description hides the field.
+     */
+    public function test_skip_annotation_hides_field()
+    {
+        $info = $this->reflector->reflect(SkipAnnotationMiddleware::class);
+
+        $this->assertCount(1, $info['fields']);
+        $this->assertEquals('name', $info['fields'][0]['name']);
+        $this->assertNull($this->findField($info['fields'], 'options'));
+    }
+
+    /**
+     * Test (default: value) in @param description sets default.
+     */
+    public function test_default_annotation_sets_default()
+    {
+        $info = $this->reflector->reflect(DefaultAnnotationMiddleware::class);
+
+        $codesField = $this->findField($info['fields'], 'codes');
+        $this->assertEquals('404', $codesField['default']);
+        $this->assertArrayNotHasKey('required', $codesField);
+    }
+
+    /**
+     * Test (options: a|b|c) in @param description sets options for select.
+     */
+    public function test_options_annotation_for_select()
+    {
+        $info = $this->reflector->reflect(OptionsAnnotationSelectMiddleware::class);
+
+        $modeField = $this->findField($info['fields'], 'mode');
+        $this->assertEquals('select', $modeField['type']);
+        $this->assertEquals('allow|deny', $modeField['options']);
+    }
+
+    /**
+     * Test (options: a|b|c) in @param description sets options for checkboxes.
+     */
+    public function test_options_annotation_for_checkboxes()
+    {
+        $info = $this->reflector->reflect(OptionsAnnotationCheckboxesMiddleware::class);
+
+        $methodsField = $this->findField($info['fields'], 'methods');
+        $this->assertEquals('checkboxes', $methodsField['type']);
+        $this->assertEquals('GET|POST|PUT|DELETE', $methodsField['options']);
+    }
+
+    /**
+     * Test multiple annotations combined.
+     */
+    public function test_multiple_annotations_combined()
+    {
+        $info = $this->reflector->reflect(MultipleAnnotationsMiddleware::class);
+
+        $modeField = $this->findField($info['fields'], 'mode');
+        $this->assertEquals('select', $modeField['type']);
+        $this->assertEquals('allow|deny', $modeField['options']);
+        $this->assertEquals('allow', $modeField['default']);
     }
 
     private function findField(array $fields, string $name): ?array
@@ -274,46 +413,49 @@ class MiddlewareReflectorTest extends TestCase
 }
 
 /**
- * Test middleware with @UIField annotations.
+ * Test middleware with @param options (select).
  */
-class UIFieldTestMiddleware
+class ParamWithOptionsTestMiddleware
 {
     /**
-     * @UIField(name="timeout", type="number", label="Seconds", default=30)
-     * @UIField(name="delay", type="number", label="Delay (ms)", default=100)
+     * @param string $mode Mode (options: allow:Allow|deny:Deny)
      */
-    public function __construct(int $seconds = 30)
+    public function __construct(string $mode = 'allow')
     {
     }
 }
 
 /**
- * Test middleware with required @UIField.
+ * Test middleware with array @param options (checkboxes).
  */
-class UIFieldRequiredTestMiddleware
+class ArrayWithOptionsTestMiddleware
 {
     /**
-     * @UIField(name="host", type="text", label="Host", required=true)
+     * @param string[] $methods Allowed Methods (options: GET|POST|PUT|DELETE)
      */
-    public function __construct(string $host)
+    public function __construct(array $methods = ['GET'])
     {
     }
 }
 
 /**
- * @UILabel("CORS")
+ * Test middleware with keyvalue type.
  */
-class UILabelTestMiddleware
+class KeyValueTestMiddleware
 {
-    public function __construct()
+    /**
+     * @param array<string,string> $replacements Pattern replacements (labels: Pattern \(regex\)|Replacement)
+     */
+    public function __construct(array $replacements = [])
     {
     }
 }
 
+
 /**
- * @UIDescription("Add CORS headers to the response")
+ * Add CORS headers to the response.
  */
-class UIDescriptionTestMiddleware
+class PHPDocDescriptionTestMiddleware
 {
     public function __construct()
     {
@@ -362,6 +504,120 @@ class OptionalArrayMiddlewareFixture
 class NoUIFieldMiddlewareFixture
 {
     public function __construct(string $host)
+    {
+    }
+}
+
+// No PHPDoc at all
+class NoPHPDocMiddleware
+{
+    public function __construct(string $name, int $timeout = 30)
+    {
+    }
+}
+
+/**
+ * Test fixture for array without PHPDoc.
+ */
+class ArrayWithoutPHPDocMiddleware
+{
+    public function __construct(string $name, array $items = [])
+    {
+    }
+}
+
+/**
+ * Test fixture for variadic string parameter.
+ */
+class VariadicStringMiddleware
+{
+    public function __construct(string $name, string ...$values)
+    {
+    }
+}
+
+/**
+ * Test fixture for variadic int parameter.
+ */
+class VariadicIntMiddleware
+{
+    public function __construct(string $name, int ...$numbers)
+    {
+    }
+}
+
+/**
+ * Test fixture for variadic without type hint.
+ */
+class VariadicNoTypeMiddleware
+{
+    public function __construct(string $name, ...$args)
+    {
+    }
+}
+
+/**
+ * Test fixture for (skip) annotation.
+ */
+class SkipAnnotationMiddleware
+{
+    /**
+     * @param string $name Name
+     * @param array $options (skip)
+     */
+    public function __construct(string $name, array $options = [])
+    {
+    }
+}
+
+/**
+ * Test fixture for (default: value) annotation.
+ */
+class DefaultAnnotationMiddleware
+{
+    /**
+     * @param int|int[] $codes Status Codes (default: 404)
+     */
+    public function __construct(...$codes)
+    {
+    }
+}
+
+/**
+ * Test fixture for (options:) annotation with select.
+ */
+class OptionsAnnotationSelectMiddleware
+{
+    /**
+     * @param string $mode Mode (options: allow|deny)
+     */
+    public function __construct(string $mode = 'allow')
+    {
+    }
+}
+
+/**
+ * Test fixture for (options:) annotation with checkboxes.
+ */
+class OptionsAnnotationCheckboxesMiddleware
+{
+    /**
+     * @param string[] $methods Methods (options: GET|POST|PUT|DELETE)
+     */
+    public function __construct(array $methods = ['GET'])
+    {
+    }
+}
+
+/**
+ * Test fixture for multiple annotations.
+ */
+class MultipleAnnotationsMiddleware
+{
+    /**
+     * @param string $mode Mode (options: allow|deny) (default: allow)
+     */
+    public function __construct(string $mode = 'allow')
     {
     }
 }

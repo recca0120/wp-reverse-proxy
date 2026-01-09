@@ -9,8 +9,7 @@ use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
 /**
- * @UIDescription("Add X-Forwarded-* headers to the proxied request")
- * @UINoFields
+ * Add X-Forwarded-* headers to the proxied request.
  */
 class ProxyHeaders implements MiddlewareInterface
 {
@@ -26,15 +25,7 @@ class ProxyHeaders implements MiddlewareInterface
     private $options;
 
     /**
-     * @param  array<string, mixed>  $options  {
-     *
-     * @type string $clientIp  Override client IP
-     * @type string $host      Override host
-     * @type string $scheme    Override scheme (http/https)
-     * @type string $port      Override port
-     * @type array $headers   Only include these headers
-     * @type array $except    Exclude these headers
-     *             }
+     * @param array<string, mixed> $options (skip)
      */
     public function __construct(array $options = [])
     {

@@ -10,8 +10,7 @@ use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\Support\Str;
 
 /**
- * @UILabel("IP Filter")
- * @UIDescription("Filter requests by IP address")
+ * Filter requests by IP address.
  */
 class IpFilter implements MiddlewareInterface
 {
@@ -26,11 +25,8 @@ class IpFilter implements MiddlewareInterface
     private $mode;
 
     /**
-     * @param  string  $modeOrIp  模式 (allow/deny) 或第一個 IP
-     * @param  string|string[]  ...$ips  IP 列表
-     *
-     * @UIField(name="modeOrIp", type="select", label="Mode", options="allow:Allow List,deny:Deny List", default="allow")
-     * @UIField(name="ips", type="repeater", label="IP Addresses", placeholder="e.g. 192.168.1.0/24")
+     * @param string $modeOrIp Mode (options: allow:Allow List|deny:Deny List)
+     * @param string|string[] $ips IP Addresses
      */
     public function __construct(string $modeOrIp = self::MODE_ALLOW, ...$ips)
     {
