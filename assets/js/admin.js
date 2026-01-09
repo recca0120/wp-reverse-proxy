@@ -104,18 +104,10 @@
         var $item = $(html);
         $('#middleware-list').append($item);
 
-        // Set the selected middleware
-        $item.find('.middleware-select').val(name).trigger('change');
-
-        // Fill in the field values after a short delay to let fields render
-        setTimeout(function() {
-            var $fields = $item.find('.middleware-fields input, .middleware-fields textarea');
-            $fields.each(function(i) {
-                if (args[i] !== undefined) {
-                    $(this).val(args[i]);
-                }
-            });
-        }, 10);
+        // Set the selected middleware and populate fields with values
+        var $select = $item.find('.middleware-select');
+        $select.val(name);
+        updateMiddlewareFields($select, args);
 
         middlewareIndex++;
     }
@@ -157,10 +149,11 @@
         middlewareIndex = $('#middleware-list .middleware-item').length;
     }
 
-    function updateMiddlewareFields($select) {
+    function updateMiddlewareFields($select, existingValues) {
         var name = $select.val();
         var $fieldsContainer = $select.siblings('.middleware-fields');
         var index = $select.closest('.middleware-item').data('index');
+        var values = existingValues || [];
         $fieldsContainer.empty();
 
         if (!name || !middlewares[name]) {
@@ -179,12 +172,15 @@
             return;
         }
 
-        fields.forEach(function(field) {
+        fields.forEach(function(field, fieldIndex) {
             var inputId = 'mw-' + index + '-' + field.name;
             var inputName = 'route[middlewares][' + index + '][' + field.name + ']';
             var $wrapper = $('<div class="middleware-field-wrapper" style="margin-bottom: 8px;">');
             var $label = $('<label>').attr('for', inputId).text(field.label + (field.required ? ' *' : ''));
             var $input;
+
+            // Determine the value: existing value > default > empty
+            var value = values[fieldIndex] !== undefined ? values[fieldIndex] : field.default;
 
             if (field.type === 'textarea') {
                 $input = $('<textarea>').attr({
@@ -193,6 +189,9 @@
                     rows: 3,
                     placeholder: field.placeholder || ''
                 }).css('width', '100%').css('max-width', '400px');
+                if (value !== undefined) {
+                    $input.val(value);
+                }
             } else {
                 $input = $('<input>').attr({
                     type: field.type || 'text',
@@ -204,8 +203,8 @@
                 if (field.required) {
                     $input.attr('required', true);
                 }
-                if (field.default !== undefined) {
-                    $input.val(field.default);
+                if (value !== undefined) {
+                    $input.val(value);
                 }
             }
 
