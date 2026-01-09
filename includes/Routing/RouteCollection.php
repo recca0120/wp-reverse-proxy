@@ -43,23 +43,14 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function load(): self
     {
-        $configs = $this->remember('route_configs', function () {
-            $configs = [];
-            foreach ($this->loaders as $loader) {
-                foreach ($loader->load() as $config) {
-                    $configs[] = $config;
+        foreach ($this->loaders as $loader) {
+            foreach ($this->loadFromLoader($loader) as $config) {
+                try {
+                    $this->routes[] = $this->createRoute($config);
+                } catch (InvalidArgumentException $e) {
+                    // Skip invalid routes
+                    continue;
                 }
-            }
-
-            return $configs;
-        });
-
-        foreach ($configs as $config) {
-            try {
-                $this->routes[] = $this->createRoute($config);
-            } catch (InvalidArgumentException $e) {
-                // Skip invalid routes
-                continue;
             }
         }
 
@@ -170,6 +161,34 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
+     * Load configs from a single loader with caching support.
+     *
+     * @return array<array<string, mixed>>
+     */
+    private function loadFromLoader(RouteLoaderInterface $loader): array
+    {
+        $cacheKey = $loader->getCacheKey();
+
+        if ($cacheKey === null || $this->cache === null) {
+            return $loader->load();
+        }
+
+        $cached = $this->cache->get($cacheKey);
+
+        if ($cached !== null && $loader->isCacheValid($cached['metadata'])) {
+            return $cached['data'];
+        }
+
+        $data = $loader->load();
+        $this->cache->set($cacheKey, [
+            'metadata' => $loader->getCacheMetadata(),
+            'data' => $data,
+        ]);
+
+        return $data;
+    }
+
+    /**
      * Create a single Route from configuration.
      *
      * @param array<string, mixed> $config
@@ -236,28 +255,4 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
             && in_array($parsed['scheme'], ['http', 'https'], true);
     }
 
-    /**
-     * Get value from cache or execute callback and store result.
-     *
-     * @template T
-     *
-     * @param callable(): T $callback
-     * @return T
-     */
-    private function remember(string $key, callable $callback)
-    {
-        if ($this->cache === null) {
-            return $callback();
-        }
-
-        $cached = $this->cache->get($key);
-        if ($cached !== null) {
-            return $cached;
-        }
-
-        $data = $callback();
-        $this->cache->set($key, $data);
-
-        return $data;
-    }
 }

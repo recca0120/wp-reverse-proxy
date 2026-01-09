@@ -45,6 +45,84 @@ class FileLoader implements RouteLoaderInterface
     }
 
     /**
+     * Get the cache key for this loader.
+     */
+    public function getCacheKey(): ?string
+    {
+        if (empty($this->paths)) {
+            return null;
+        }
+
+        $paths = $this->paths;
+        sort($paths);
+
+        return 'file_loader_' . md5(implode('|', $paths));
+    }
+
+    /**
+     * Get metadata for cache validation (max mtime of all files).
+     *
+     * @return int
+     */
+    public function getCacheMetadata()
+    {
+        return $this->getMaxMtime();
+    }
+
+    /**
+     * Check if cached data is still valid by comparing mtime.
+     *
+     * @param mixed $metadata The mtime stored with cached data
+     */
+    public function isCacheValid($metadata): bool
+    {
+        return $metadata === $this->getMaxMtime();
+    }
+
+    /**
+     * Get the maximum modification time of all files.
+     */
+    private function getMaxMtime(): int
+    {
+        $maxMtime = 0;
+
+        foreach ($this->getAllFiles() as $file) {
+            $mtime = filemtime($file);
+            if ($mtime > $maxMtime) {
+                $maxMtime = $mtime;
+            }
+        }
+
+        return $maxMtime;
+    }
+
+    /**
+     * Get all files from configured paths.
+     *
+     * @return array<string>
+     */
+    private function getAllFiles(): array
+    {
+        $files = [];
+
+        foreach ($this->paths as $path) {
+            if (!file_exists($path)) {
+                continue;
+            }
+
+            if (is_dir($path)) {
+                foreach ($this->globFiles($path, $this->buildPattern()) as $file) {
+                    $files[] = $file;
+                }
+            } else {
+                $files[] = $path;
+            }
+        }
+
+        return $files;
+    }
+
+    /**
      * @return array<array<string, mixed>>
      */
     private function loadFromPath(string $path): array

@@ -122,6 +122,7 @@ class RouteCollectionTest extends TestCase
     public function test_load_from_single_loader(): void
     {
         $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturnNull();
         $loader->shouldReceive('load')->once()->andReturn([
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
@@ -136,11 +137,13 @@ class RouteCollectionTest extends TestCase
     public function test_load_from_multiple_loaders(): void
     {
         $loader1 = Mockery::mock(RouteLoaderInterface::class);
+        $loader1->shouldReceive('getCacheKey')->andReturnNull();
         $loader1->shouldReceive('load')->once()->andReturn([
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
 
         $loader2 = Mockery::mock(RouteLoaderInterface::class);
+        $loader2->shouldReceive('getCacheKey')->andReturnNull();
         $loader2->shouldReceive('load')->once()->andReturn([
             ['path' => '/web/*', 'target' => 'https://web.example.com'],
         ]);
@@ -154,6 +157,7 @@ class RouteCollectionTest extends TestCase
     public function test_load_skips_invalid_routes(): void
     {
         $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturnNull();
         $loader->shouldReceive('load')->once()->andReturn([
             ['target' => 'https://api.example.com'], // missing path
             ['path' => '/valid/*', 'target' => 'https://valid.example.com'],
@@ -168,18 +172,20 @@ class RouteCollectionTest extends TestCase
 
     public function test_load_uses_cache_when_available(): void
     {
-        $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldNotReceive('load');
-
         $cachedConfigs = [
             ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
         ];
 
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
+        $loader->shouldReceive('isCacheValid')->with(12345)->andReturn(true);
+        $loader->shouldNotReceive('load');
+
         $cache = Mockery::mock(CacheInterface::class);
         $cache->shouldReceive('get')
-            ->with('route_configs')
+            ->with('test_loader_key')
             ->once()
-            ->andReturn($cachedConfigs);
+            ->andReturn(['metadata' => 12345, 'data' => $cachedConfigs]);
 
         $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();
@@ -191,13 +197,17 @@ class RouteCollectionTest extends TestCase
     public function test_load_stores_cache_when_not_cached(): void
     {
         $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
+        $loader->shouldReceive('getCacheMetadata')->andReturn(12345);
         $loader->shouldReceive('load')->once()->andReturn([
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
 
         $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->with('route_configs')->once()->andReturnNull();
-        $cache->shouldReceive('set')->with('route_configs', Mockery::type('array'))->once();
+        $cache->shouldReceive('get')->with('test_loader_key')->once()->andReturnNull();
+        $cache->shouldReceive('set')->with('test_loader_key', Mockery::on(function ($data) {
+            return isset($data['metadata']) && isset($data['data']);
+        }))->once();
 
         $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();

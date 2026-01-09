@@ -265,17 +265,21 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
+        $loader = new FileLoader([$filePath]);
+        $cacheKey = $loader->getCacheKey();
+        $mtime = filemtime($filePath);
+
         $cachedConfigs = [
             ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
         ];
 
         $cache = Mockery::mock(CacheInterface::class);
         $cache->shouldReceive('get')
-            ->with('route_configs')
+            ->with($cacheKey)
             ->once()
-            ->andReturn($cachedConfigs);
+            ->andReturn(['metadata' => $mtime, 'data' => $cachedConfigs]);
 
-        $collection = new RouteCollection([new FileLoader([$filePath])], null, $cache);
+        $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();
 
         $this->assertCount(1, $collection);
@@ -291,11 +295,16 @@ class FileLoaderTest extends TestCase
             ],
         ]));
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->with('route_configs')->once()->andReturnNull();
-        $cache->shouldReceive('set')->with('route_configs', Mockery::type('array'))->once();
+        $loader = new FileLoader([$filePath]);
+        $cacheKey = $loader->getCacheKey();
 
-        $collection = new RouteCollection([new FileLoader([$filePath])], null, $cache);
+        $cache = Mockery::mock(CacheInterface::class);
+        $cache->shouldReceive('get')->with($cacheKey)->once()->andReturnNull();
+        $cache->shouldReceive('set')->with($cacheKey, Mockery::on(function ($data) {
+            return isset($data['metadata']) && isset($data['data']);
+        }))->once();
+
+        $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();
 
         $this->assertCount(1, $collection);
@@ -387,6 +396,81 @@ class FileLoaderTest extends TestCase
 
         $this->assertIsArray($routes);
         $this->assertEmpty($routes);
+    }
+
+    public function test_get_cache_key_returns_null_for_empty_paths(): void
+    {
+        $loader = new FileLoader([]);
+
+        $this->assertNull($loader->getCacheKey());
+    }
+
+    public function test_get_cache_key_returns_consistent_key_for_same_paths(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.json';
+        file_put_contents($filePath, json_encode(['routes' => []]));
+
+        $loader1 = new FileLoader([$filePath]);
+        $loader2 = new FileLoader([$filePath]);
+
+        $this->assertNotNull($loader1->getCacheKey());
+        $this->assertEquals($loader1->getCacheKey(), $loader2->getCacheKey());
+    }
+
+    public function test_cache_invalidation_when_file_modified(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.json';
+        file_put_contents($filePath, json_encode([
+            'routes' => [
+                ['path' => '/api/*', 'target' => 'https://api.example.com'],
+            ],
+        ]));
+
+        $loader = new FileLoader([$filePath]);
+        $originalMtime = $loader->getCacheMetadata();
+
+        // Simulate cache with old mtime
+        $this->assertTrue($loader->isCacheValid($originalMtime));
+
+        // Modify file (touch to update mtime)
+        sleep(1);
+        touch($filePath);
+        clearstatcache();
+
+        // Cache should now be invalid
+        $this->assertFalse($loader->isCacheValid($originalMtime));
+    }
+
+    public function test_reloads_from_loader_when_cache_is_stale(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.json';
+        file_put_contents($filePath, json_encode([
+            'routes' => [
+                ['path' => '/api/*', 'target' => 'https://api.example.com'],
+            ],
+        ]));
+
+        $loader = new FileLoader([$filePath]);
+        $cacheKey = $loader->getCacheKey();
+
+        // Simulate stale cache with old mtime
+        $staleMtime = 12345;
+
+        $cache = Mockery::mock(CacheInterface::class);
+        $cache->shouldReceive('get')->with($cacheKey)->once()->andReturn([
+            'metadata' => $staleMtime,
+            'data' => [['path' => '/cached/*', 'target' => 'https://cached.example.com']],
+        ]);
+        $cache->shouldReceive('set')->with($cacheKey, Mockery::on(function ($data) {
+            return isset($data['metadata']) && isset($data['data']);
+        }))->once();
+
+        $collection = new RouteCollection([$loader], null, $cache);
+        $collection->load();
+
+        // Should reload from file, not use stale cache
+        $this->assertCount(1, $collection);
+        $this->assertEquals('api.example.com', $collection[0]->getTargetHost());
     }
 
     /**
