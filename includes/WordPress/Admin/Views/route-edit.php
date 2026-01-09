@@ -118,9 +118,6 @@ echo esc_attr(json_encode($currentMiddlewares));
 </div>
 
 <style>
-.required {
-    color: #d63638;
-}
 .middleware-item {
     background: #f6f7f7;
     border: 1px solid #c3c4c7;
@@ -147,16 +144,10 @@ echo esc_attr(json_encode($currentMiddlewares));
 }
 .middleware-header .remove-middleware {
     margin-left: auto;
-    color: #b32d2e;
-}
-.middleware-header .remove-middleware:hover {
-    color: #a00;
-    border-color: #a00;
 }
 .middleware-body {
     padding: 0 12px 12px;
     border-top: 1px solid #dcdcde;
-    margin-top: 0;
 }
 .middleware-body:empty,
 .middleware-body.empty {
@@ -164,7 +155,6 @@ echo esc_attr(json_encode($currentMiddlewares));
 }
 .middleware-body .description {
     margin: 10px 0 8px;
-    color: #646970;
 }
 .middleware-fields-grid {
     display: flex;
@@ -173,7 +163,7 @@ echo esc_attr(json_encode($currentMiddlewares));
 }
 .middleware-field-wrapper label {
     display: block;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 4px;
 }
 .middleware-item-placeholder {
@@ -184,7 +174,6 @@ echo esc_attr(json_encode($currentMiddlewares));
     margin-bottom: 10px;
 }
 .ui-sortable-helper {
-    background: #fff;
     box-shadow: 0 3px 6px rgba(0,0,0,0.15);
 }
 </style>

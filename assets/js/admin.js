@@ -127,7 +127,7 @@
         }
 
         html += '</select>';
-        html += '<button type="button" class="button button-small remove-middleware">Remove</button>';
+        html += '<button type="button" class="button button-small button-link-delete remove-middleware">Remove</button>';
         html += '</div>';
         html += '<div class="middleware-body"></div>';
         html += '</div>';
