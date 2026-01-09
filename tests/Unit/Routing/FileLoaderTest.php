@@ -256,6 +256,49 @@ class FileLoaderTest extends TestCase
         $this->assertEquals('valid.example.com', $routes[0]->getTargetHost());
     }
 
+    public function test_skips_route_with_missing_target(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.json';
+        file_put_contents($filePath, json_encode([
+            'routes' => [
+                [
+                    'path' => '/api/*', // missing target
+                ],
+                [
+                    'path' => '/valid/*',
+                    'target' => 'https://valid.example.com',
+                ],
+            ],
+        ]));
+
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
+
+        $this->assertCount(1, $routes);
+        $this->assertEquals('valid.example.com', $routes[0]->getTargetHost());
+    }
+
+    public function test_skips_route_with_invalid_target_url(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.json';
+        file_put_contents($filePath, json_encode([
+            'routes' => [
+                [
+                    'path' => '/api/*',
+                    'target' => 'not-a-valid-url',
+                ],
+                [
+                    'path' => '/valid/*',
+                    'target' => 'https://valid.example.com',
+                ],
+            ],
+        ]));
+
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
+
+        $this->assertCount(1, $routes);
+        $this->assertEquals('valid.example.com', $routes[0]->getTargetHost());
+    }
+
     public function test_uses_cache_when_available(): void
     {
         $filePath = $this->fixturesPath . '/routes.json';
