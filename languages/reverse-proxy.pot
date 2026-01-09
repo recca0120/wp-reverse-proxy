@@ -1,0 +1,241 @@
+# Copyright (C) 2024 Recca Tsai
+# This file is distributed under the MIT license.
+msgid ""
+msgstr ""
+"Project-Id-Version: Reverse Proxy 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/recca0120/wp-reverse-proxy/issues\n"
+"POT-Creation-Date: 2024-01-01T00:00:00+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: includes/WordPress/Admin/Admin.php:30
+#: includes/WordPress/Admin/Admin.php:31
+msgid "Reverse Proxy"
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:104
+#: includes/WordPress/Admin/Views/routes-list.php:20
+msgid "Route saved successfully."
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:109
+#: includes/WordPress/Admin/Views/routes-list.php:41
+msgid "Failed to save route. Please check the path and target URL."
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:121
+#: includes/WordPress/Admin/Admin.php:140
+msgid "Route ID is required."
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:127
+#: includes/WordPress/Admin/Views/routes-list.php:23
+msgid "Route deleted successfully."
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:129
+#: assets/js/admin.js:280
+msgid "Failed to delete route."
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:146
+#: includes/WordPress/Admin/Views/routes-list.php:26
+msgid "Route status updated."
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:148
+msgid "Failed to update route status."
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:185
+#: includes/WordPress/Admin/Admin.php:218
+#: includes/WordPress/Admin/Admin.php:234
+#: includes/WordPress/Admin/Admin.php:250
+msgid "Permission denied."
+msgstr ""
+
+#: includes/WordPress/Admin/Admin.php:190
+#: includes/WordPress/Admin/Admin.php:223
+#: includes/WordPress/Admin/Admin.php:239
+#: includes/WordPress/Admin/Admin.php:258
+msgid "Security check failed."
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:14
+msgid "Add New Route"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:14
+msgid "Edit Route"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:29
+msgid "Path Pattern"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:36
+msgid "Use * as wildcard. Examples: /api/*, /blog/posts/*, /proxy/service/*"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:42
+msgid "Target URL"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:49
+msgid "The backend server URL to proxy requests to (must be http:// or https://)."
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:54
+msgid "HTTP Methods"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:70
+msgid "Leave all unchecked to allow all HTTP methods."
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:76
+msgid "Status"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:82
+msgid "Enable this route"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:85
+msgid "Disabled routes will not proxy any requests."
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:91
+msgid "Middlewares"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:93
+msgid "Middlewares process requests before they are sent to the target server. They are executed in order from top to bottom."
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:101
+msgid "Add Middleware"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:111
+msgid "Add Route"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:111
+msgid "Update Route"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/route-edit.php:113
+msgid "Cancel"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:51
+msgid "Reverse Proxy Routes"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:53
+msgid "Add New"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:60
+msgid "No routes configured yet."
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:62
+msgid "Add your first route"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:70
+msgid "Status"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:71
+msgid "Path"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:72
+msgid "Target"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:73
+msgid "Methods"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:74
+msgid "Actions"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:82
+msgid "Enabled"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:84
+msgid "Disabled"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:102
+msgid "ALL"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:108
+msgid "Edit"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:121
+msgid "Disable"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:121
+msgid "Enable"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:123
+#: assets/js/admin.js:57
+msgid "Are you sure you want to delete this route?"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:124
+msgid "Delete"
+msgstr ""
+
+#: includes/WordPress/Admin/Views/routes-list.php:141
+msgid "Routes from configuration files in %s will also be loaded."
+msgstr ""
+
+#. JavaScript strings
+#: assets/js/admin.js:119
+msgid "Drag to reorder"
+msgstr ""
+
+#: assets/js/admin.js:121
+msgid "-- Select Middleware --"
+msgstr ""
+
+#: assets/js/admin.js:134
+msgid "Remove"
+msgstr ""
+
+#: assets/js/admin.js:250
+msgid "Failed to toggle route status."
+msgstr ""
+
+#: assets/js/admin.js:255
+#: assets/js/admin.js:284
+msgid "An error occurred."
+msgstr ""
+
+#: assets/js/admin.js:292
+msgid "Saving..."
+msgstr ""
+
+#: assets/js/admin.js:309
+msgid "Failed to save route."
+msgstr ""
+
+#: assets/js/admin.js:314
+msgid "An error occurred while saving."
+msgstr ""
