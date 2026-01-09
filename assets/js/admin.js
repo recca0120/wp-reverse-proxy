@@ -198,8 +198,6 @@
                 if (value !== undefined) {
                     $input.val(value);
                 }
-                // Textarea spans full width
-                $wrapper.css('grid-column', '1 / -1');
             } else {
                 $input = $('<input>').attr({
                     type: field.type || 'text',

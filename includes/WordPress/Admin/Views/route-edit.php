@@ -167,9 +167,10 @@ echo esc_attr(json_encode($currentMiddlewares));
     color: #646970;
 }
 .middleware-fields-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
 }
 .middleware-field-wrapper label {
     display: block;
@@ -179,7 +180,6 @@ echo esc_attr(json_encode($currentMiddlewares));
 .middleware-field-wrapper input,
 .middleware-field-wrapper textarea {
     width: 100%;
-    max-width: none;
 }
 .middleware-item-placeholder {
     background: #f0f6fc;
