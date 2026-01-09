@@ -6,6 +6,7 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class Retry implements MiddlewareInterface
 {
@@ -39,7 +40,7 @@ class Retry implements MiddlewareInterface
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $method = strtoupper($request->getMethod());
-        $canRetry = in_array($method, $this->retryableMethods, true);
+        $canRetry = Arr::contains($this->retryableMethods, $method);
 
         $attempts = 0;
         $lastException = null;
@@ -81,6 +82,6 @@ class Retry implements MiddlewareInterface
             return false;
         }
 
-        return in_array($response->getStatusCode(), $this->retryableStatusCodes, true);
+        return Arr::contains($this->retryableStatusCodes, $response->getStatusCode());
     }
 }

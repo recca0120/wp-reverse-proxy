@@ -7,6 +7,7 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Str;
 
 class Timeout implements MiddlewareInterface
 {
@@ -45,8 +46,8 @@ class Timeout implements MiddlewareInterface
     {
         $message = strtolower($e->getMessage());
 
-        return strpos($message, 'timeout') !== false
-            || strpos($message, 'timed out') !== false;
+        return Str::contains($message, 'timeout')
+            || Str::contains($message, 'timed out');
     }
 
     private function createTimeoutResponse(): ResponseInterface

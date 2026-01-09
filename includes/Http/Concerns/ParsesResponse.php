@@ -3,6 +3,7 @@
 namespace Recca0120\ReverseProxy\Http\Concerns;
 
 use Psr\Http\Message\RequestInterface;
+use Recca0120\ReverseProxy\Support\Str;
 
 trait ParsesResponse
 {
@@ -49,7 +50,7 @@ trait ParsesResponse
                 continue;
             }
 
-            if (strpos($line, ':') === false) {
+            if (! Str::contains($line, ':')) {
                 continue;
             }
 

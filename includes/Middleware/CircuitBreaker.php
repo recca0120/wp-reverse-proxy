@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\WordPress\TransientCache;
 
 class CircuitBreaker implements MiddlewareInterface
@@ -134,7 +135,7 @@ class CircuitBreaker implements MiddlewareInterface
 
     private function isFailure(ResponseInterface $response): bool
     {
-        return in_array($response->getStatusCode(), $this->failureStatusCodes, true);
+        return Arr::contains($this->failureStatusCodes, $response->getStatusCode());
     }
 
     private function getCacheKey(): string

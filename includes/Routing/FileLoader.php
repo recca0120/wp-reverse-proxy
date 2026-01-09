@@ -8,6 +8,7 @@ use Recca0120\ReverseProxy\Routing\Loaders\JsonLoader;
 use Recca0120\ReverseProxy\Routing\Loaders\PhpArrayLoader;
 use Recca0120\ReverseProxy\Routing\Loaders\YamlLoader;
 use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class FileLoader implements RouteLoaderInterface
 {
@@ -158,7 +159,7 @@ class FileLoader implements RouteLoaderInterface
     {
         $fullPattern = $directory . '/' . $pattern;
 
-        if (defined('GLOB_BRACE') && strpos($pattern, '{') !== false) {
+        if (defined('GLOB_BRACE') && Str::contains($pattern, '{')) {
             return $this->safeGlob($fullPattern, GLOB_BRACE);
         }
 

@@ -208,7 +208,7 @@ class MiddlewareFactory
     private function parseStringConfig(string $config): array
     {
         // No colon means no parameters
-        if (strpos($config, ':') === false) {
+        if (! Str::contains($config, ':')) {
             return ['name' => $config];
         }
 
@@ -231,7 +231,7 @@ class MiddlewareFactory
         }
 
         if (is_numeric($value)) {
-            return strpos($value, '.') !== false ? (float) $value : (int) $value;
+            return Str::contains($value, '.') ? (float) $value : (int) $value;
         }
 
         return $value;

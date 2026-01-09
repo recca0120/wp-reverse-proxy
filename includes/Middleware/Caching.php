@@ -7,6 +7,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 use Recca0120\ReverseProxy\WordPress\TransientCache;
 
 class Caching implements MiddlewareInterface
@@ -31,7 +32,7 @@ class Caching implements MiddlewareInterface
     {
         // 只快取 GET 和 HEAD 請求
         $method = strtoupper($request->getMethod());
-        if (! in_array($method, ['GET', 'HEAD'], true)) {
+        if (! Arr::contains(['GET', 'HEAD'], $method)) {
             return $next($request);
         }
 

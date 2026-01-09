@@ -63,4 +63,16 @@ class Str
 
         return substr($subject, $pos + strlen($search));
     }
+
+    /**
+     * Determine if a string contains a given substring.
+     */
+    public static function contains(string $haystack, string $needle): bool
+    {
+        if ($needle === '') {
+            return true;
+        }
+
+        return strpos($haystack, $needle) !== false;
+    }
 }

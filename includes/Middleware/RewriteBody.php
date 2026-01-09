@@ -7,6 +7,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class RewriteBody implements MiddlewareInterface
 {
@@ -71,7 +72,7 @@ class RewriteBody implements MiddlewareInterface
         // Extract media type (ignore charset and other parameters)
         $mediaType = strtolower(trim(explode(';', $contentType)[0]));
 
-        return in_array($mediaType, self::$textContentTypes, true);
+        return Arr::contains(self::$textContentTypes, $mediaType);
     }
 
     private function rewrite(string $body): string

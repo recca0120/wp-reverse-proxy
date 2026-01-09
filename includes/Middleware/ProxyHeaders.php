@@ -5,6 +5,8 @@ namespace Recca0120\ReverseProxy\Middleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class ProxyHeaders implements MiddlewareInterface
 {
@@ -83,8 +85,8 @@ class ProxyHeaders implements MiddlewareInterface
         return array_filter(
             $headers,
             function ($name) use ($allowedHeaders, $exceptHeaders) {
-                return in_array($name, $allowedHeaders, true)
-                    && ! in_array($name, $exceptHeaders, true);
+                return Arr::contains($allowedHeaders, $name)
+                    && ! Arr::contains($exceptHeaders, $name);
             },
             ARRAY_FILTER_USE_KEY
         );
@@ -100,7 +102,7 @@ class ProxyHeaders implements MiddlewareInterface
 
         $parts = [];
         if ($clientIp !== '') {
-            $parts[] = strpos($clientIp, ':') !== false
+            $parts[] = Str::contains($clientIp, ':')
                 ? 'for="['.$clientIp.']"'
                 : 'for='.$clientIp;
         }

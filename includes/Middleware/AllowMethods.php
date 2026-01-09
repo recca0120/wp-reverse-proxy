@@ -6,6 +6,7 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class AllowMethods implements MiddlewareInterface
 {
@@ -27,7 +28,7 @@ class AllowMethods implements MiddlewareInterface
             return $next($request);
         }
 
-        if (! in_array($method, $this->allowedMethods, true)) {
+        if (! Arr::contains($this->allowedMethods, $method)) {
             return $this->createMethodNotAllowedResponse();
         }
 

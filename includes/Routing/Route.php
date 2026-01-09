@@ -149,7 +149,7 @@ class Route
             $pattern = substr($pattern, 0, -3);
             $pattern = str_replace('\\*', '(.*)', $pattern);
             $pattern .= '(?:/(.*))?';
-        } elseif (strpos($pattern, '\\*') !== false) {
+        } elseif (Str::contains($pattern, '\\*')) {
             // Middle wildcard pattern - just replace wildcards
             // /api/*/users matches /api/v1/users
             $pattern = str_replace('\\*', '(.*)', $pattern);

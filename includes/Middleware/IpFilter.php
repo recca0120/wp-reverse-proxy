@@ -6,6 +6,8 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class IpFilter implements MiddlewareInterface
 {
@@ -25,7 +27,7 @@ class IpFilter implements MiddlewareInterface
      */
     public function __construct(string $modeOrIp = self::MODE_ALLOW, string ...$ips)
     {
-        if (in_array($modeOrIp, [self::MODE_ALLOW, self::MODE_DENY], true)) {
+        if (Arr::contains([self::MODE_ALLOW, self::MODE_DENY], $modeOrIp)) {
             $this->mode = $modeOrIp;
         } else {
             $this->mode = self::MODE_ALLOW;
@@ -89,7 +91,7 @@ class IpFilter implements MiddlewareInterface
     private function matchesIp(string $clientIp, string $pattern): bool
     {
         // CIDR 格式
-        if (strpos($pattern, '/') !== false) {
+        if (Str::contains($pattern, '/')) {
             return $this->matchesCidr($clientIp, $pattern);
         }
 

@@ -6,6 +6,7 @@ use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class Cors implements MiddlewareInterface
 {
@@ -68,11 +69,11 @@ class Cors implements MiddlewareInterface
 
     private function resolveAllowedOrigin(string $origin): string
     {
-        if (in_array('*', $this->allowedOrigins, true)) {
+        if (Arr::contains($this->allowedOrigins, '*')) {
             return '*';
         }
 
-        if (in_array($origin, $this->allowedOrigins, true)) {
+        if (Arr::contains($this->allowedOrigins, $origin)) {
             return $origin;
         }
 
