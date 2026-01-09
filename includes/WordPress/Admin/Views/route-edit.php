@@ -13,7 +13,7 @@ if (! defined('ABSPATH')) {
 $isNew = empty($route);
 $pageTitle = $isNew ? __('Add New Route', 'reverse-proxy') : __('Edit Route', 'reverse-proxy');
 ?>
-<div class="wrap">
+<div class="wrap reverse-proxy-route-form">
     <h1><?php echo esc_html($pageTitle); ?></h1>
 
     <form method="post" action="" id="reverse-proxy-route-form">
@@ -53,13 +53,13 @@ $pageTitle = $isNew ? __('Add New Route', 'reverse-proxy') : __('Edit Route', 'r
             <tr>
                 <th scope="row"><?php esc_html_e('HTTP Methods', 'reverse-proxy'); ?></th>
                 <td>
-                    <fieldset>
+                    <fieldset class="checkbox-group">
                         <?php
                         $allMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 $selectedMethods = $route['methods'] ?? [];
 foreach ($allMethods as $method) :
     ?>
-                            <label style="margin-right: 15px; display: inline-block;">
+                            <label>
                                 <input type="checkbox" name="route[methods][]" value="<?php echo esc_attr($method); ?>"
                                     <?php checked(in_array($method, $selectedMethods, true)); ?>>
                                 <?php echo esc_html($method); ?>
@@ -89,7 +89,7 @@ foreach ($allMethods as $method) :
         </table>
 
         <h2><?php esc_html_e('Middlewares', 'reverse-proxy'); ?></h2>
-        <p class="description" style="margin-bottom: 15px;">
+        <p class="description section-description">
             <?php esc_html_e('Middlewares process requests before they are sent to the target server. They are executed in order from top to bottom.', 'reverse-proxy'); ?>
         </p>
 
@@ -98,7 +98,6 @@ foreach ($allMethods as $method) :
         </div>
         <p>
             <button type="button" id="add-middleware" class="button">
-                <span class="dashicons dashicons-plus-alt2" style="vertical-align: middle;"></span>
                 <?php esc_html_e('Add Middleware', 'reverse-proxy'); ?>
             </button>
         </p>
@@ -116,64 +115,3 @@ echo esc_attr(json_encode($currentMiddlewares));
         </p>
     </form>
 </div>
-
-<style>
-.middleware-item {
-    background: #f6f7f7;
-    border: 1px solid #c3c4c7;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-.middleware-header {
-    display: flex;
-    align-items: center;
-    padding: 10px 12px;
-    gap: 8px;
-}
-.middleware-drag-handle {
-    cursor: move;
-    color: #787c82;
-    flex-shrink: 0;
-}
-.middleware-drag-handle:hover {
-    color: #2271b1;
-}
-.middleware-select {
-    flex: 1;
-    max-width: 250px;
-}
-.middleware-header .remove-middleware {
-    margin-left: auto;
-}
-.middleware-body {
-    padding: 0 12px 12px;
-    border-top: 1px solid #dcdcde;
-}
-.middleware-body:empty,
-.middleware-body.empty {
-    display: none;
-}
-.middleware-body .description {
-    margin: 10px 0 8px;
-}
-.middleware-fields-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-.middleware-field-wrapper label {
-    display: block;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-.middleware-item-placeholder {
-    background: #f0f6fc;
-    border: 2px dashed #2271b1;
-    border-radius: 4px;
-    height: 50px;
-    margin-bottom: 10px;
-}
-.ui-sortable-helper {
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-}
-</style>

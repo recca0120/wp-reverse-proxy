@@ -2,54 +2,94 @@
  * Reverse Proxy Admin Styles
  */
 
-.reverse-proxy-admin .column-status {
-    width: 60px;
+/* Routes List Table */
+.reverse-proxy-admin .status-enabled {
+    color: #00a32a;
 }
 
-.reverse-proxy-admin .column-path,
-.reverse-proxy-admin .column-target {
-    width: 25%;
+.reverse-proxy-admin .status-disabled {
+    color: #d63638;
 }
 
-.reverse-proxy-admin .column-methods {
-    width: 120px;
+/* Route Edit Form */
+.reverse-proxy-route-form .checkbox-group label {
+    margin-right: 15px;
+    display: inline-block;
 }
 
-.reverse-proxy-admin .column-middlewares {
-    width: 100px;
+.reverse-proxy-route-form .section-description {
+    margin-bottom: 15px;
 }
 
-.reverse-proxy-admin .column-actions {
-    width: 200px;
-}
-
+/* Middleware Items */
 .middleware-item {
-    padding: 10px;
-    margin-bottom: 10px;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
     border-radius: 4px;
+    margin-bottom: 10px;
 }
 
-.middleware-item .middleware-select {
-    min-width: 200px;
+.middleware-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 8px;
 }
 
-.middleware-item .middleware-fields {
-    margin: 10px 0;
+.middleware-drag-handle {
+    cursor: move;
+    color: #787c82;
+    flex-shrink: 0;
 }
 
-.middleware-item .middleware-fields label {
+.middleware-drag-handle:hover {
+    color: #2271b1;
+}
+
+.middleware-select {
+    flex: 1;
+    max-width: 250px;
+}
+
+.middleware-header .remove-middleware {
+    margin-left: auto;
+}
+
+.middleware-body {
+    padding: 0 12px 12px;
+    border-top: 1px solid #dcdcde;
+}
+
+.middleware-body:empty,
+.middleware-body.empty {
+    display: none;
+}
+
+.middleware-body .description {
+    margin: 10px 0 8px;
+}
+
+.middleware-fields-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.middleware-field-wrapper label {
     display: block;
-    margin-bottom: 5px;
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
-.middleware-item .middleware-fields input,
-.middleware-item .middleware-fields textarea {
-    width: 100%;
-    max-width: 400px;
+/* Sortable */
+.middleware-item-placeholder {
+    background: #f0f6fc;
+    border: 2px dashed #2271b1;
+    border-radius: 4px;
+    height: 50px;
+    margin-bottom: 10px;
 }
 
-#middleware-advanced-mode textarea {
-    font-family: monospace;
+.ui-sortable-helper {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
 }

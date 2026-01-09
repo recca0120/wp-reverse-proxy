@@ -79,9 +79,9 @@ if (isset($_GET['error'])) {
                     <tr>
                         <td class="column-status">
                             <?php if (! empty($route['enabled'])) : ?>
-                                <span class="dashicons dashicons-yes-alt" style="color: #00a32a;" title="<?php esc_attr_e('Enabled', 'reverse-proxy'); ?>"></span>
+                                <span class="dashicons dashicons-yes-alt status-enabled" title="<?php esc_attr_e('Enabled', 'reverse-proxy'); ?>"></span>
                             <?php else : ?>
-                                <span class="dashicons dashicons-marker" style="color: #d63638;" title="<?php esc_attr_e('Disabled', 'reverse-proxy'); ?>"></span>
+                                <span class="dashicons dashicons-marker status-disabled" title="<?php esc_attr_e('Disabled', 'reverse-proxy'); ?>"></span>
                             <?php endif; ?>
                         </td>
                         <td class="column-path">
