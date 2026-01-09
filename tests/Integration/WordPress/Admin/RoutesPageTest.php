@@ -7,6 +7,7 @@ use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\WordPress\Admin\Admin;
 use Recca0120\ReverseProxy\WordPress\Admin\RoutesPage;
+use Recca0120\ReverseProxy\WordPress\WordPressLoader;
 use WP_UnitTestCase;
 
 class RoutesPageTest extends WP_UnitTestCase
@@ -212,8 +213,10 @@ class RoutesPageTest extends WP_UnitTestCase
             'enabled' => true,
         ]);
 
-        // Register the filter to merge admin routes
-        $routesPage->registerRoutesFilter();
+        // Use WordPressLoader to load admin routes
+        add_filter('reverse_proxy_route_loaders', function () {
+            return [new WordPressLoader()];
+        });
 
         // Set up mock response
         $this->mockClient->addResponse(new Response(200, [], '{"from":"admin"}'));
@@ -227,6 +230,8 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertNotFalse($lastRequest);
         $this->assertEquals('https://admin-backend.example.com/admin-api/test', (string) $lastRequest->getUri());
         $this->assertEquals('{"from":"admin"}', $output);
+
+        remove_all_filters('reverse_proxy_route_loaders');
     }
 
     public function test_disabled_routes_are_not_proxied()
@@ -240,12 +245,17 @@ class RoutesPageTest extends WP_UnitTestCase
             'enabled' => false,
         ]);
 
-        $routesPage->registerRoutesFilter();
+        // Use WordPressLoader to load admin routes
+        add_filter('reverse_proxy_route_loaders', function () {
+            return [new WordPressLoader()];
+        });
 
         $this->go_to('/disabled-api/test');
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertFalse($lastRequest, 'Disabled route should not proxy');
+
+        remove_all_filters('reverse_proxy_route_loaders');
     }
 
     public function test_sanitize_route_removes_invalid_data()

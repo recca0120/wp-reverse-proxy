@@ -146,24 +146,6 @@ class RoutesPage
         return $sanitized;
     }
 
-    public function registerRoutesFilter(): void
-    {
-        add_filter('reverse_proxy_routes', [$this, 'mergeAdminRoutes'], 20);
-    }
-
-    public function mergeAdminRoutes($routes)
-    {
-        $adminRoutes = $this->getRoutes();
-
-        foreach ($adminRoutes as $adminRoute) {
-            if (!empty($adminRoute['enabled'])) {
-                $routes->add(self::toRouteObject($adminRoute));
-            }
-        }
-
-        return $routes;
-    }
-
     public static function toRouteObject(array $data): Route
     {
         $path = $data['path'] ?? '';

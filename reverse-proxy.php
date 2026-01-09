@@ -98,6 +98,7 @@ function reverse_proxy_load_config_routes()
 
         $loaders = apply_filters('reverse_proxy_route_loaders', [
             new Recca0120\ReverseProxy\Routing\FileLoader([$directory]),
+            new Recca0120\ReverseProxy\WordPress\WordPressLoader(),
         ]);
 
         $routes = new Recca0120\ReverseProxy\Routing\RouteCollection(
@@ -137,11 +138,6 @@ add_action(
     apply_filters('reverse_proxy_action_hook', 'plugins_loaded'),
     'reverse_proxy_handle'
 );
-
-// Register admin routes filter (must be before reverse_proxy_handle)
-// This merges wp_options routes with file-based routes
-$routesPage = new Recca0120\ReverseProxy\WordPress\Admin\RoutesPage();
-$routesPage->registerRoutesFilter();
 
 // Initialize Admin interface (only in admin area)
 if (is_admin()) {
