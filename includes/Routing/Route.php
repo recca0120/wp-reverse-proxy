@@ -3,7 +3,6 @@
 namespace Recca0120\ReverseProxy\Routing;
 
 use Psr\Http\Message\ServerRequestInterface;
-use Recca0120\ReverseProxy\Contracts\RouteAwareInterface;
 
 class Route
 {
@@ -37,7 +36,7 @@ class Route
      */
     public function middleware($middleware): self
     {
-        if ($middleware instanceof RouteAwareInterface) {
+        if (is_object($middleware) && method_exists($middleware, 'setRoute')) {
             $middleware->setRoute($this);
         }
 

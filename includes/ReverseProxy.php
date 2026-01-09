@@ -129,6 +129,7 @@ class ReverseProxy
             $request = $request->withHeader('Host', $targetHost);
         }
 
-        return $request;
+        // Store route captures as request attribute for middleware access
+        return $request->withAttribute('route_captures', $route->getCaptures());
     }
 }
