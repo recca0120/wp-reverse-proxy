@@ -17,7 +17,7 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_simple_label()
     {
-        $result = $this->parser->parse('Host name');
+        $result = $this->parser->extractAnnotations('Host name');
 
         $this->assertEquals('Host name', $result['label']);
         $this->assertNull($result['options']);
@@ -28,7 +28,7 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_skip_annotation()
     {
-        $result = $this->parser->parse('Some config (skip)');
+        $result = $this->parser->extractAnnotations('Some config (skip)');
 
         $this->assertEquals('Some config', $result['label']);
         $this->assertTrue($result['skip']);
@@ -36,14 +36,14 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_skip_annotation_case_insensitive()
     {
-        $result = $this->parser->parse('Config (SKIP)');
+        $result = $this->parser->extractAnnotations('Config (SKIP)');
 
         $this->assertTrue($result['skip']);
     }
 
     public function test_parse_default_annotation()
     {
-        $result = $this->parser->parse('Timeout (default: 30)');
+        $result = $this->parser->extractAnnotations('Timeout (default: 30)');
 
         $this->assertEquals('Timeout', $result['label']);
         $this->assertEquals('30', $result['default']);
@@ -51,7 +51,7 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_options_annotation()
     {
-        $result = $this->parser->parse('Mode (options: allow|deny)');
+        $result = $this->parser->extractAnnotations('Mode (options: allow|deny)');
 
         $this->assertEquals('Mode', $result['label']);
         $this->assertEquals('allow|deny', $result['options']);
@@ -59,7 +59,7 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_labels_annotation()
     {
-        $result = $this->parser->parse('Replacements (labels: Pattern|Replacement)');
+        $result = $this->parser->extractAnnotations('Replacements (labels: Pattern|Replacement)');
 
         $this->assertEquals('Replacements', $result['label']);
         $this->assertEquals('Pattern|Replacement', $result['labels']);
@@ -67,7 +67,7 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_labels_with_escaped_parentheses()
     {
-        $result = $this->parser->parse('Replacements (labels: Pattern \(regex\)|Replacement)');
+        $result = $this->parser->extractAnnotations('Replacements (labels: Pattern \(regex\)|Replacement)');
 
         $this->assertEquals('Replacements', $result['label']);
         $this->assertEquals('Pattern (regex)|Replacement', $result['labels']);
@@ -75,7 +75,7 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_multiple_annotations()
     {
-        $result = $this->parser->parse('Status Codes (default: 404) (options: 404|500|502)');
+        $result = $this->parser->extractAnnotations('Status Codes (default: 404) (options: 404|500|502)');
 
         $this->assertEquals('Status Codes', $result['label']);
         $this->assertEquals('404', $result['default']);
@@ -84,7 +84,7 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_empty_description()
     {
-        $result = $this->parser->parse('');
+        $result = $this->parser->extractAnnotations('');
 
         $this->assertEquals('', $result['label']);
         $this->assertNull($result['options']);
@@ -95,7 +95,7 @@ class AnnotationParserTest extends TestCase
 
     public function test_parse_only_skip()
     {
-        $result = $this->parser->parse('(skip)');
+        $result = $this->parser->extractAnnotations('(skip)');
 
         $this->assertEquals('', $result['label']);
         $this->assertTrue($result['skip']);
@@ -105,7 +105,7 @@ class AnnotationParserTest extends TestCase
     {
         $docComment = '/** Filter requests by IP address. */';
 
-        $result = $this->parser->parseDescription($docComment);
+        $result = $this->parser->parseDocBlock($docComment);
 
         $this->assertEquals('Filter requests by IP address.', $result);
     }
@@ -119,7 +119,7 @@ class AnnotationParserTest extends TestCase
  */
 DOC;
 
-        $result = $this->parser->parseDescription($docComment);
+        $result = $this->parser->parseDocBlock($docComment);
 
         $this->assertEquals('Filter requests by IP address. Supports CIDR notation.', $result);
     }
@@ -135,7 +135,7 @@ DOC;
  */
 DOC;
 
-        $result = $this->parser->parseDescription($docComment);
+        $result = $this->parser->parseDocBlock($docComment);
 
         $this->assertEquals('Filter requests by IP address.', $result);
     }
@@ -148,14 +148,14 @@ DOC;
  */
 DOC;
 
-        $result = $this->parser->parseDescription($docComment);
+        $result = $this->parser->parseDocBlock($docComment);
 
         $this->assertEquals('', $result);
     }
 
     public function test_parse_description_no_docblock()
     {
-        $result = $this->parser->parseDescription('');
+        $result = $this->parser->parseDocBlock('');
 
         $this->assertEquals('', $result);
     }

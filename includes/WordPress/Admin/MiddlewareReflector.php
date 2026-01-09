@@ -104,7 +104,7 @@ class MiddlewareReflector
             return '';
         }
 
-        return $this->annotationParser->parseDescription($docComment);
+        return $this->annotationParser->parseDocBlock($docComment);
     }
 
     /**
@@ -446,7 +446,7 @@ class MiddlewareReflector
                 $name = $match[2];
                 $description = isset($match[3]) ? trim($match[3]) : '';
 
-                $parsed = $this->annotationParser->parse($description);
+                $parsed = $this->annotationParser->extractAnnotations($description);
                 $parsed['type'] = $type;
                 $parsed['label'] = $parsed['label'] ?: $this->generateLabel($name);
 
