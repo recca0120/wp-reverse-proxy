@@ -29,9 +29,14 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
+function reverse_proxy_create_psr17_factory()
+{
+    return apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
+}
+
 function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollection $routes)
 {
-    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
+    $psr17Factory = reverse_proxy_create_psr17_factory();
     $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
 
     return new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
@@ -44,9 +49,7 @@ function reverse_proxy_create_request()
         return $request;
     }
 
-    $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
-
-    return (new Recca0120\ReverseProxy\Http\ServerRequestFactory($psr17Factory))->createFromGlobals();
+    return (new Recca0120\ReverseProxy\Http\ServerRequestFactory(reverse_proxy_create_psr17_factory()))->createFromGlobals();
 }
 
 function reverse_proxy_send_response($response)
