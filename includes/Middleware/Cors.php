@@ -14,38 +14,38 @@ use Recca0120\ReverseProxy\Support\Arr;
 class Cors implements MiddlewareInterface
 {
     /** @var string[] */
-    private $allowedOrigins;
+    private $origins;
 
     /** @var string[] */
-    private $allowedMethods;
+    private $methods;
 
     /** @var string[] */
-    private $allowedHeaders;
+    private $headers;
 
     /** @var bool */
-    private $allowCredentials;
+    private $credentials;
 
     /** @var int */
     private $maxAge;
 
     /**
-     * @param string[] $allowedOrigins Allowed Origins
-     * @param string[] $allowedMethods Allowed Methods (options: GET|POST|PUT|PATCH|DELETE|OPTIONS)
-     * @param string[] $allowedHeaders Allowed Headers
-     * @param bool $allowCredentials Allow Credentials
-     * @param int $maxAge Max Age (seconds)
+     * @param string[] $origins Allowed origins
+     * @param string[] $methods Allowed HTTP methods (options: GET|POST|PUT|PATCH|DELETE|OPTIONS)
+     * @param string[] $headers Allowed request headers
+     * @param bool $credentials Allow credentials (cookies)
+     * @param int $maxAge Preflight cache time in seconds
      */
     public function __construct(
-        array $allowedOrigins = ['*'],
-        array $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        array $allowedHeaders = ['Content-Type', 'Authorization', 'X-Requested-With'],
-        bool $allowCredentials = false,
+        array $origins = ['*'],
+        array $methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        array $headers = ['Content-Type', 'Authorization', 'X-Requested-With'],
+        bool $credentials = false,
         int $maxAge = 0
     ) {
-        $this->allowedOrigins = $allowedOrigins;
-        $this->allowedMethods = $allowedMethods;
-        $this->allowedHeaders = $allowedHeaders;
-        $this->allowCredentials = $allowCredentials;
+        $this->origins = $origins;
+        $this->methods = $methods;
+        $this->headers = $headers;
+        $this->credentials = $credentials;
         $this->maxAge = $maxAge;
     }
 
@@ -74,11 +74,11 @@ class Cors implements MiddlewareInterface
 
     private function resolveAllowedOrigin(string $origin): string
     {
-        if (Arr::contains($this->allowedOrigins, '*')) {
+        if (Arr::contains($this->origins, '*')) {
             return '*';
         }
 
-        if (Arr::contains($this->allowedOrigins, $origin)) {
+        if (Arr::contains($this->origins, $origin)) {
             return $origin;
         }
 
@@ -101,11 +101,11 @@ class Cors implements MiddlewareInterface
 
         $response = $response
             ->withHeader('Access-Control-Allow-Origin', $allowedOrigin)
-            ->withHeader('Access-Control-Allow-Methods', implode(', ', $this->allowedMethods))
-            ->withHeader('Access-Control-Allow-Headers', implode(', ', $this->allowedHeaders))
+            ->withHeader('Access-Control-Allow-Methods', implode(', ', $this->methods))
+            ->withHeader('Access-Control-Allow-Headers', implode(', ', $this->headers))
             ->withHeader('Vary', 'Origin');
 
-        if ($this->allowCredentials) {
+        if ($this->credentials) {
             $response = $response->withHeader('Access-Control-Allow-Credentials', 'true');
         }
 
@@ -126,7 +126,7 @@ class Cors implements MiddlewareInterface
             ->withHeader('Access-Control-Allow-Origin', $allowedOrigin)
             ->withHeader('Vary', 'Origin');
 
-        if ($this->allowCredentials) {
+        if ($this->credentials) {
             $response = $response->withHeader('Access-Control-Allow-Credentials', 'true');
         }
 

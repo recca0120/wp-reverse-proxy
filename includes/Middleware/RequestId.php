@@ -12,32 +12,32 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 class RequestId implements MiddlewareInterface
 {
     /** @var string */
-    private $headerName;
+    private $header;
 
     /**
-     * @param string $headerName Header Name
+     * @param string $header Header name for request ID
      */
-    public function __construct(string $headerName = 'X-Request-ID')
+    public function __construct(string $header = 'X-Request-ID')
     {
-        $this->headerName = $headerName;
+        $this->header = $header;
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         // 使用現有的 Request ID 或產生新的
-        $requestId = $request->getHeaderLine($this->headerName);
+        $requestId = $request->getHeaderLine($this->header);
         if ($requestId === '') {
             $requestId = $this->generateId();
         }
 
         // 加入到請求中
-        $request = $request->withHeader($this->headerName, $requestId);
+        $request = $request->withHeader($this->header, $requestId);
 
         // 執行下一個 middleware
         $response = $next($request);
 
         // 加入到回應中
-        return $response->withHeader($this->headerName, $requestId);
+        return $response->withHeader($this->header, $requestId);
     }
 
     private function generateId(): string

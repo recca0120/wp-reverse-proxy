@@ -31,30 +31,30 @@ class CircuitBreaker implements MiddlewareInterface, CacheAwareInterface
     private $serviceName;
 
     /** @var int */
-    private $failureThreshold;
+    private $threshold;
 
     /** @var int */
-    private $resetTimeout;
+    private $timeout;
 
     /** @var int[] */
-    private $failureStatusCodes;
+    private $statusCodes;
 
     /**
-     * @param string $serviceName Service Name
-     * @param int $failureThreshold Failure Threshold
-     * @param int $resetTimeout Reset Timeout (seconds)
-     * @param int[] $failureStatusCodes Failure Status Codes
+     * @param string $serviceName Service name for circuit identification
+     * @param int $threshold Failure count to open circuit
+     * @param int $timeout Seconds before attempting recovery
+     * @param int[] $statusCodes Status codes considered as failures
      */
     public function __construct(
         string $serviceName,
-        int $failureThreshold = 5,
-        int $resetTimeout = 60,
-        array $failureStatusCodes = [500, 502, 503, 504]
+        int $threshold = 5,
+        int $timeout = 60,
+        array $statusCodes = [500, 502, 503, 504]
     ) {
         $this->serviceName = $serviceName;
-        $this->failureThreshold = $failureThreshold;
-        $this->resetTimeout = $resetTimeout;
-        $this->failureStatusCodes = $failureStatusCodes;
+        $this->threshold = $threshold;
+        $this->timeout = $timeout;
+        $this->statusCodes = $statusCodes;
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -111,13 +111,13 @@ class CircuitBreaker implements MiddlewareInterface, CacheAwareInterface
     private function setState(string $status, int $failures): void
     {
         $key = $this->getCacheKey();
-        $resetAt = $status === self::STATE_OPEN ? time() + $this->resetTimeout : 0;
+        $resetAt = $status === self::STATE_OPEN ? time() + $this->timeout : 0;
 
         $this->cacheSet($key, [
             'status' => $status,
             'failures' => $failures,
             'reset_at' => $resetAt,
-        ], $this->resetTimeout * 2);
+        ], $this->timeout * 2);
     }
 
     private function recordFailure(): void
@@ -125,7 +125,7 @@ class CircuitBreaker implements MiddlewareInterface, CacheAwareInterface
         $state = $this->getState();
         $failures = $state['failures'] + 1;
 
-        if ($failures >= $this->failureThreshold) {
+        if ($failures >= $this->threshold) {
             $this->setState(self::STATE_OPEN, $failures);
         } else {
             $this->setState(self::STATE_CLOSED, $failures);
@@ -139,7 +139,7 @@ class CircuitBreaker implements MiddlewareInterface, CacheAwareInterface
 
     private function isFailure(ResponseInterface $response): bool
     {
-        return Arr::contains($this->failureStatusCodes, $response->getStatusCode());
+        return Arr::contains($this->statusCodes, $response->getStatusCode());
     }
 
     private function getCacheKey(): string

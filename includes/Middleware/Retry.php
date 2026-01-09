@@ -17,39 +17,39 @@ class Retry implements MiddlewareInterface
     public $priority = -80;
 
     /** @var int */
-    private $maxRetries;
+    private $retries;
 
     /** @var string[] */
-    private $retryableMethods;
+    private $methods;
 
     /** @var int[] */
-    private $retryableStatusCodes;
+    private $statusCodes;
 
     /**
-     * @param int $maxRetries Max Retries
-     * @param string[] $retryableMethods Retryable Methods (options: GET|HEAD|OPTIONS|PUT|DELETE)
-     * @param int[] $retryableStatusCodes Retryable Status Codes
+     * @param int $retries Max retry attempts
+     * @param string[] $methods Retryable HTTP methods (options: GET|HEAD|OPTIONS|PUT|DELETE)
+     * @param int[] $statusCodes Status codes that trigger retry
      */
     public function __construct(
-        int $maxRetries = 3,
-        array $retryableMethods = ['GET', 'HEAD', 'OPTIONS'],
-        array $retryableStatusCodes = [502, 503, 504]
+        int $retries = 3,
+        array $methods = ['GET', 'HEAD', 'OPTIONS'],
+        array $statusCodes = [502, 503, 504]
     ) {
-        $this->maxRetries = $maxRetries;
-        $this->retryableMethods = array_map('strtoupper', $retryableMethods);
-        $this->retryableStatusCodes = $retryableStatusCodes;
+        $this->retries = $retries;
+        $this->methods = array_map('strtoupper', $methods);
+        $this->statusCodes = $statusCodes;
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         $method = strtoupper($request->getMethod());
-        $canRetry = Arr::contains($this->retryableMethods, $method);
+        $canRetry = Arr::contains($this->methods, $method);
 
         $attempts = 0;
         $lastException = null;
         $lastResponse = null;
 
-        while ($attempts < $this->maxRetries) {
+        while ($attempts < $this->retries) {
             $attempts++;
 
             try {
@@ -63,7 +63,7 @@ class Retry implements MiddlewareInterface
                 $lastResponse = $response;
             } catch (ClientExceptionInterface $e) {
                 // 網路錯誤，可重試
-                if (! $canRetry || $attempts >= $this->maxRetries) {
+                if (! $canRetry || $attempts >= $this->retries) {
                     throw $e;
                 }
 
@@ -85,6 +85,6 @@ class Retry implements MiddlewareInterface
             return false;
         }
 
-        return Arr::contains($this->retryableStatusCodes, $response->getStatusCode());
+        return Arr::contains($this->statusCodes, $response->getStatusCode());
     }
 }

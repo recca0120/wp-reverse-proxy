@@ -14,15 +14,15 @@ use Recca0120\ReverseProxy\Support\Arr;
 class AllowMethods implements MiddlewareInterface
 {
     /** @var string[] */
-    private $allowedMethods;
+    private $methods;
 
     /**
-     * @param string|string[] $allowedMethods Allowed Methods (options: GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)
+     * @param string|string[] $methods Allowed HTTP methods (options: GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)
      */
-    public function __construct(...$allowedMethods)
+    public function __construct(...$methods)
     {
-        $methods = Arr::wrap($allowedMethods) ?: ['GET'];
-        $this->allowedMethods = array_map('strtoupper', $methods);
+        $input = Arr::wrap($methods) ?: ['GET'];
+        $this->methods = array_map('strtoupper', $input);
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -34,7 +34,7 @@ class AllowMethods implements MiddlewareInterface
             return $next($request);
         }
 
-        if (! Arr::contains($this->allowedMethods, $method)) {
+        if (! Arr::contains($this->methods, $method)) {
             return $this->createMethodNotAllowedResponse();
         }
 
@@ -52,7 +52,7 @@ class AllowMethods implements MiddlewareInterface
             405,
             [
                 'Content-Type' => 'application/json',
-                'Allow' => implode(', ', $this->allowedMethods),
+                'Allow' => implode(', ', $this->methods),
             ],
             $body
         );

@@ -149,7 +149,7 @@ class MiddlewareRegistryTest extends TestCase
 
     /**
      * Test Cors fields match constructor parameters.
-     * Constructor: __construct(array $allowedOrigins, array $allowedMethods, array $allowedHeaders, bool $allowCredentials, int $maxAge)
+     * Constructor: __construct(array $origins, array $methods, array $headers, bool $credentials, int $maxAge)
      */
     public function test_cors_fields()
     {
@@ -159,26 +159,26 @@ class MiddlewareRegistryTest extends TestCase
         $this->assertCount(5, $cors['fields']);
 
         $fieldNames = array_column($cors['fields'], 'name');
-        $this->assertContains('allowedOrigins', $fieldNames);
-        $this->assertContains('allowedMethods', $fieldNames);
-        $this->assertContains('allowedHeaders', $fieldNames);
-        $this->assertContains('allowCredentials', $fieldNames);
+        $this->assertContains('origins', $fieldNames);
+        $this->assertContains('methods', $fieldNames);
+        $this->assertContains('headers', $fieldNames);
+        $this->assertContains('credentials', $fieldNames);
         $this->assertContains('maxAge', $fieldNames);
 
         // Check types
-        $allowedOriginsField = $this->findField($cors['fields'], 'allowedOrigins');
-        $this->assertEquals('repeater', $allowedOriginsField['type']);
-        $this->assertEquals('*', $allowedOriginsField['default']);
+        $originsField = $this->findField($cors['fields'], 'origins');
+        $this->assertEquals('repeater', $originsField['type']);
+        $this->assertEquals('*', $originsField['default']);
 
-        $allowedHeadersField = $this->findField($cors['fields'], 'allowedHeaders');
-        $this->assertEquals('repeater', $allowedHeadersField['type']);
+        $headersField = $this->findField($cors['fields'], 'headers');
+        $this->assertEquals('repeater', $headersField['type']);
 
-        $allowedMethodsField = $this->findField($cors['fields'], 'allowedMethods');
-        $this->assertEquals('checkboxes', $allowedMethodsField['type']);
+        $methodsField = $this->findField($cors['fields'], 'methods');
+        $this->assertEquals('checkboxes', $methodsField['type']);
 
-        $allowCredentialsField = $this->findField($cors['fields'], 'allowCredentials');
-        $this->assertEquals('checkbox', $allowCredentialsField['type']);
-        $this->assertFalse($allowCredentialsField['default']);
+        $credentialsField = $this->findField($cors['fields'], 'credentials');
+        $this->assertEquals('checkbox', $credentialsField['type']);
+        $this->assertFalse($credentialsField['default']);
 
         $maxAgeField = $this->findField($cors['fields'], 'maxAge');
         $this->assertEquals('number', $maxAgeField['type']);
@@ -187,7 +187,7 @@ class MiddlewareRegistryTest extends TestCase
 
     /**
      * Test CircuitBreaker fields match constructor parameters.
-     * Constructor: __construct(string $serviceName, int $failureThreshold, int $resetTimeout, array $failureStatusCodes)
+     * Constructor: __construct(string $serviceName, int $threshold, int $timeout, array $statusCodes)
      */
     public function test_circuit_breaker_fields()
     {
@@ -198,31 +198,31 @@ class MiddlewareRegistryTest extends TestCase
 
         $fieldNames = array_column($cb['fields'], 'name');
         $this->assertContains('serviceName', $fieldNames);
-        $this->assertContains('failureThreshold', $fieldNames);
-        $this->assertContains('resetTimeout', $fieldNames);
-        $this->assertContains('failureStatusCodes', $fieldNames);
+        $this->assertContains('threshold', $fieldNames);
+        $this->assertContains('timeout', $fieldNames);
+        $this->assertContains('statusCodes', $fieldNames);
 
         // serviceName should be required
         $serviceNameField = $this->findField($cb['fields'], 'serviceName');
         $this->assertTrue($serviceNameField['required']);
 
-        // failureThreshold should have default 5
-        $failureField = $this->findField($cb['fields'], 'failureThreshold');
-        $this->assertEquals(5, $failureField['default']);
+        // threshold should have default 5
+        $thresholdField = $this->findField($cb['fields'], 'threshold');
+        $this->assertEquals(5, $thresholdField['default']);
 
-        // resetTimeout should have default 60
-        $resetField = $this->findField($cb['fields'], 'resetTimeout');
-        $this->assertEquals(60, $resetField['default']);
+        // timeout should have default 60
+        $timeoutField = $this->findField($cb['fields'], 'timeout');
+        $this->assertEquals(60, $timeoutField['default']);
 
-        // failureStatusCodes should be repeater
-        $statusCodesField = $this->findField($cb['fields'], 'failureStatusCodes');
+        // statusCodes should be repeater
+        $statusCodesField = $this->findField($cb['fields'], 'statusCodes');
         $this->assertEquals('repeater', $statusCodesField['type']);
         $this->assertEquals('number', $statusCodesField['inputType']);
     }
 
     /**
      * Test RateLimiting fields match constructor parameters.
-     * Constructor: __construct(int $maxRequests, int $windowSeconds, ?callable $keyGenerator = null)
+     * Constructor: __construct(int $limit, int $window, ?callable $keyGenerator = null)
      */
     public function test_rate_limiting_fields()
     {
@@ -231,14 +231,14 @@ class MiddlewareRegistryTest extends TestCase
 
         $this->assertCount(2, $rl['fields']);
 
-        $maxRequestsField = $this->findField($rl['fields'], 'maxRequests');
-        $this->assertEquals('number', $maxRequestsField['type']);
-        $this->assertEquals('Max Requests', $maxRequestsField['label']);
-        $this->assertEquals(100, $maxRequestsField['default']);
+        $limitField = $this->findField($rl['fields'], 'limit');
+        $this->assertEquals('number', $limitField['type']);
+        $this->assertEquals('Max requests allowed', $limitField['label']);
+        $this->assertEquals(100, $limitField['default']);
 
-        $windowField = $this->findField($rl['fields'], 'windowSeconds');
+        $windowField = $this->findField($rl['fields'], 'window');
         $this->assertEquals('number', $windowField['type']);
-        $this->assertEquals('Window (seconds)', $windowField['label']);
+        $this->assertEquals('Time window in seconds', $windowField['label']);
         $this->assertEquals(60, $windowField['default']);
     }
 
@@ -261,7 +261,7 @@ class MiddlewareRegistryTest extends TestCase
 
     /**
      * Test Retry fields match constructor parameters.
-     * Constructor: __construct(int $maxRetries, array $retryableMethods, array $retryableStatusCodes)
+     * Constructor: __construct(int $retries, array $methods, array $statusCodes)
      */
     public function test_retry_fields()
     {
@@ -271,20 +271,20 @@ class MiddlewareRegistryTest extends TestCase
         $this->assertCount(3, $retry['fields']);
 
         $fieldNames = array_column($retry['fields'], 'name');
-        $this->assertContains('maxRetries', $fieldNames);
-        $this->assertContains('retryableMethods', $fieldNames);
-        $this->assertContains('retryableStatusCodes', $fieldNames);
+        $this->assertContains('retries', $fieldNames);
+        $this->assertContains('methods', $fieldNames);
+        $this->assertContains('statusCodes', $fieldNames);
 
-        $maxRetriesField = $this->findField($retry['fields'], 'maxRetries');
-        $this->assertEquals('number', $maxRetriesField['type']);
-        $this->assertEquals(3, $maxRetriesField['default']);
+        $retriesField = $this->findField($retry['fields'], 'retries');
+        $this->assertEquals('number', $retriesField['type']);
+        $this->assertEquals(3, $retriesField['default']);
 
-        $retryableMethodsField = $this->findField($retry['fields'], 'retryableMethods');
-        $this->assertEquals('checkboxes', $retryableMethodsField['type']);
+        $methodsField = $this->findField($retry['fields'], 'methods');
+        $this->assertEquals('checkboxes', $methodsField['type']);
 
-        $retryableStatusCodesField = $this->findField($retry['fields'], 'retryableStatusCodes');
-        $this->assertEquals('repeater', $retryableStatusCodesField['type']);
-        $this->assertEquals('number', $retryableStatusCodesField['inputType']);
+        $statusCodesField = $this->findField($retry['fields'], 'statusCodes');
+        $this->assertEquals('repeater', $statusCodesField['type']);
+        $this->assertEquals('number', $statusCodesField['inputType']);
     }
 
     /**
@@ -311,7 +311,7 @@ class MiddlewareRegistryTest extends TestCase
     }
 
     /**
-     * Test RequestId fields match constructor: __construct(string $headerName = 'X-Request-ID')
+     * Test RequestId fields match constructor: __construct(string $header = 'X-Request-ID')
      */
     public function test_request_id_fields()
     {
@@ -320,10 +320,10 @@ class MiddlewareRegistryTest extends TestCase
 
         $this->assertCount(1, $requestId['fields']);
 
-        $headerNameField = $requestId['fields'][0];
-        $this->assertEquals('headerName', $headerNameField['name']);
-        $this->assertEquals('text', $headerNameField['type']);
-        $this->assertEquals('X-Request-ID', $headerNameField['default']);
+        $headerField = $requestId['fields'][0];
+        $this->assertEquals('header', $headerField['name']);
+        $this->assertEquals('text', $headerField['type']);
+        $this->assertEquals('X-Request-ID', $headerField['default']);
     }
 
     /**
@@ -361,7 +361,7 @@ class MiddlewareRegistryTest extends TestCase
     }
 
     /**
-     * Test AllowMethods fields match constructor: __construct(string ...$allowedMethods)
+     * Test AllowMethods fields match constructor: __construct(string ...$methods)
      */
     public function test_allow_methods_fields()
     {
@@ -371,7 +371,7 @@ class MiddlewareRegistryTest extends TestCase
         $this->assertCount(1, $allowMethods['fields']);
 
         $methodsField = $allowMethods['fields'][0];
-        $this->assertEquals('allowedMethods', $methodsField['name']);
+        $this->assertEquals('methods', $methodsField['name']);
         $this->assertEquals('checkboxes', $methodsField['type']);
         $this->assertNotEmpty($methodsField['options']);
     }

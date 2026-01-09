@@ -17,26 +17,26 @@ class RateLimiting implements MiddlewareInterface, CacheAwareInterface
     use HasCache;
 
     /** @var int */
-    private $maxRequests;
+    private $limit;
 
     /** @var int */
-    private $windowSeconds;
+    private $window;
 
     /** @var callable|null */
     private $keyGenerator;
 
     /**
-     * @param int $maxRequests Max Requests
-     * @param int $windowSeconds Window (seconds)
+     * @param int $limit Max requests allowed
+     * @param int $window Time window in seconds
      * @param callable|null $keyGenerator
      */
     public function __construct(
-        int $maxRequests = 100,
-        int $windowSeconds = 60,
+        int $limit = 100,
+        int $window = 60,
         ?callable $keyGenerator = null
     ) {
-        $this->maxRequests = $maxRequests;
-        $this->windowSeconds = $windowSeconds;
+        $this->limit = $limit;
+        $this->window = $window;
         $this->keyGenerator = $keyGenerator;
     }
 
@@ -50,14 +50,14 @@ class RateLimiting implements MiddlewareInterface, CacheAwareInterface
         $requestCount = $data['count'] ?? 0;
 
         // 如果時間窗口已過，重置計數
-        if ($now - $windowStart >= $this->windowSeconds) {
+        if ($now - $windowStart >= $this->window) {
             $windowStart = $now;
             $requestCount = 0;
         }
 
         $requestCount++;
-        $remaining = max(0, $this->maxRequests - $requestCount);
-        $resetTime = $windowStart + $this->windowSeconds;
+        $remaining = max(0, $this->limit - $requestCount);
+        $resetTime = $windowStart + $this->window;
 
         // 儲存更新後的資料
         $this->saveRateLimitData($key, [
@@ -66,7 +66,7 @@ class RateLimiting implements MiddlewareInterface, CacheAwareInterface
         ]);
 
         // 超過限制
-        if ($requestCount > $this->maxRequests) {
+        if ($requestCount > $this->limit) {
             return $this->createTooManyRequestsResponse($resetTime, $remaining);
         }
 
@@ -104,7 +104,7 @@ class RateLimiting implements MiddlewareInterface, CacheAwareInterface
     private function saveRateLimitData(string $key, array $data): void
     {
         $cacheKey = md5($key);
-        $this->cacheSet($cacheKey, $data, $this->windowSeconds);
+        $this->cacheSet($cacheKey, $data, $this->window);
     }
 
     private function createTooManyRequestsResponse(int $resetTime, int $remaining): ResponseInterface
@@ -121,7 +121,7 @@ class RateLimiting implements MiddlewareInterface, CacheAwareInterface
             429,
             [
                 'Content-Type' => 'application/json',
-                'X-RateLimit-Limit' => (string) $this->maxRequests,
+                'X-RateLimit-Limit' => (string) $this->limit,
                 'X-RateLimit-Remaining' => (string) $remaining,
                 'X-RateLimit-Reset' => (string) $resetTime,
                 'Retry-After' => (string) $retryAfter,
@@ -133,7 +133,7 @@ class RateLimiting implements MiddlewareInterface, CacheAwareInterface
     private function addRateLimitHeaders(ResponseInterface $response, int $remaining, int $resetTime): ResponseInterface
     {
         return $response
-            ->withHeader('X-RateLimit-Limit', (string) $this->maxRequests)
+            ->withHeader('X-RateLimit-Limit', (string) $this->limit)
             ->withHeader('X-RateLimit-Remaining', (string) $remaining)
             ->withHeader('X-RateLimit-Reset', (string) $resetTime);
     }

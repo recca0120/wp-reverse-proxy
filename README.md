@@ -126,7 +126,7 @@ return [
         "ProxyHeaders",
         ["SetHost", "api.example.com"],
         ["Timeout", 30],
-        { "name": "RateLimiting", "options": { "maxRequests": 100, "windowSeconds": 60 } }
+        { "name": "RateLimiting", "options": { "limit": 100, "window": 60 } }
       ]
     },
     {
@@ -155,8 +155,8 @@ routes:
       - Timeout: 30
       - name: RateLimiting
         options:
-          maxRequests: 100
-          windowSeconds: 60
+          limit: 100
+          window: 60
 
   - path: /legacy/*
     target: https://legacy.example.com
@@ -176,7 +176,7 @@ return [
                 'ProxyHeaders',
                 'SetHost' => 'api.example.com',      // Key-Value 格式
                 'Timeout' => 30,
-                'RateLimiting' => ['maxRequests' => 100, 'windowSeconds' => 60],
+                'RateLimiting' => ['limit' => 100, 'window' => 60],
             ],
         ],
         [
