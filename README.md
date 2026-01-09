@@ -1113,7 +1113,7 @@ add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
 | `reverse_proxy_middleware_factory` | `$factory` | 自訂中介層工廠（可註冊自訂別名） |
 | `reverse_proxy_config_directory` | `$directory` | 配置檔目錄（預設 `WP_CONTENT_DIR/reverse-proxy-routes`） |
 | `reverse_proxy_config_pattern` | `$pattern` | 配置檔匹配模式（預設 `*.{json,yaml,yml,php}`） |
-| `reverse_proxy_config_cache` | `$cache` | PSR-16 快取實例（用於快取配置） |
+| `reverse_proxy_cache` | `$cache` | PSR-16 快取實例（用於路由快取與中介層注入） |
 | `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_psr17_factory` | `$factory` | 覆寫 PSR-17 HTTP 工廠 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |

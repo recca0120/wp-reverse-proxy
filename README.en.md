@@ -1112,7 +1112,7 @@ add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
 | `reverse_proxy_middleware_factory` | `$factory` | Customize middleware factory (register custom aliases) |
 | `reverse_proxy_config_directory` | `$directory` | Config file directory (default `WP_CONTENT_DIR/reverse-proxy-routes`) |
 | `reverse_proxy_config_pattern` | `$pattern` | Config file pattern (default `*.{json,yaml,yml,php}`) |
-| `reverse_proxy_config_cache` | `$cache` | PSR-16 cache instance (for caching config) |
+| `reverse_proxy_cache` | `$cache` | PSR-16 cache instance (for route caching and middleware injection) |
 | `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
 | `reverse_proxy_psr17_factory` | `$factory` | Override PSR-17 HTTP factory |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
