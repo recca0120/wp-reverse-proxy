@@ -3,6 +3,7 @@
 namespace Recca0120\ReverseProxy\Routing\Loaders;
 
 use Recca0120\ReverseProxy\Contracts\FileLoaderInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 
 abstract class AbstractFileLoader implements FileLoaderInterface
 {
@@ -13,7 +14,7 @@ abstract class AbstractFileLoader implements FileLoaderInterface
     {
         $extension = pathinfo($file, PATHINFO_EXTENSION);
 
-        return in_array($extension, $this->getExtensions(), true);
+        return Arr::contains($this->getExtensions(), $extension);
     }
 
     /**

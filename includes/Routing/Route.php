@@ -4,6 +4,8 @@ namespace Recca0120\ReverseProxy\Routing;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\RouteAwareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class Route
 {
@@ -121,7 +123,7 @@ class Route
             return true;
         }
 
-        return in_array(strtoupper($method), $this->methods, true);
+        return Arr::contains($this->methods, strtoupper($method));
     }
 
     private function matchesPattern(string $path): bool
@@ -139,18 +141,8 @@ class Route
 
     private function buildTargetUrl(string $path, string $queryString): string
     {
-        // Nginx-style: if target ends with /, strip the matched prefix from path
-        if (substr($this->target, -1) === '/') {
-            $basePath = $this->getBasePath();
-
-            if ($basePath !== '' && strpos($path, $basePath) === 0) {
-                $path = substr($path, strlen($basePath));
-
-                // Ensure path starts with / when not empty, or is / when empty
-                if ($path === '' || $path === false) {
-                    $path = '/';
-                }
-            }
+        if ($this->hasTrailingSlash()) {
+            $path = $this->stripBasePath($path);
         }
 
         $url = rtrim($this->target, '/').$path;
@@ -160,6 +152,28 @@ class Route
         }
 
         return $url;
+    }
+
+    /**
+     * Check if target URL has a trailing slash (nginx-style prefix stripping).
+     */
+    private function hasTrailingSlash(): bool
+    {
+        return Str::endsWith($this->target, '/');
+    }
+
+    /**
+     * Strip the base path prefix from the request path.
+     */
+    private function stripBasePath(string $path): string
+    {
+        $basePath = $this->getBasePath();
+
+        if ($basePath !== '' && Str::startsWith($path, $basePath)) {
+            $path = Str::after($path, $basePath);
+        }
+
+        return $path ?: '/';
     }
 
     /**

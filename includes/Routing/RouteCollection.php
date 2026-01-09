@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use IteratorAggregate;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 use Traversable;
 
 class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
@@ -257,7 +258,7 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
         return $parsed !== false
             && isset($parsed['scheme'])
             && isset($parsed['host'])
-            && in_array($parsed['scheme'], ['http', 'https'], true);
+            && Arr::contains(['http', 'https'], $parsed['scheme']);
     }
 
 }
