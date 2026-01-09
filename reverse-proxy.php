@@ -49,8 +49,10 @@ function reverse_proxy_create_request()
     return (new Recca0120\ReverseProxy\Http\ServerRequestFactory($psr17Factory))->createFromGlobals();
 }
 
-function reverse_proxy_emit_response($response)
+function reverse_proxy_send_response($response)
 {
+    $response = apply_filters('reverse_proxy_response', $response);
+
     if (! headers_sent()) {
         http_response_code($response->getStatusCode());
         foreach ($response->getHeaders() as $name => $values) {
@@ -60,12 +62,6 @@ function reverse_proxy_emit_response($response)
         }
     }
     echo $response->getBody();
-}
-
-function reverse_proxy_send_response($response)
-{
-    $response = apply_filters('reverse_proxy_response', $response);
-    reverse_proxy_emit_response($response);
 
     if (apply_filters('reverse_proxy_should_exit', true)) {
         exit;
