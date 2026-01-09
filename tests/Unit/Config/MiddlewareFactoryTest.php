@@ -15,6 +15,12 @@ use Recca0120\ReverseProxy\Middleware\Timeout;
 
 class MiddlewareFactoryTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        MiddlewareFactory::resetAliases();
+        parent::tearDown();
+    }
+
     public function test_create_middleware_by_alias(): void
     {
         $factory = new MiddlewareFactory();
@@ -72,8 +78,6 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_register_custom_alias(): void
     {
-        $factory = new MiddlewareFactory();
-
         $customMiddleware = new class () implements MiddlewareInterface {
             public function process(\Psr\Http\Message\ServerRequestInterface $request, callable $next): \Psr\Http\Message\ResponseInterface
             {
@@ -81,8 +85,9 @@ class MiddlewareFactoryTest extends TestCase
             }
         };
 
-        $factory->registerAlias('CustomMiddleware', get_class($customMiddleware));
+        MiddlewareFactory::registerAlias('CustomMiddleware', get_class($customMiddleware));
 
+        $factory = new MiddlewareFactory();
         $middleware = $factory->create(['name' => 'CustomMiddleware']);
 
         $this->assertInstanceOf(get_class($customMiddleware), $middleware);
@@ -238,22 +243,12 @@ class MiddlewareFactoryTest extends TestCase
         $this->assertInstanceOf(IpFilter::class, $middleware);
     }
 
-    public function test_register_alias_returns_self_for_chaining(): void
+    public function test_register_alias_multiple_times(): void
     {
+        MiddlewareFactory::registerAlias('Alias1', ProxyHeaders::class);
+        MiddlewareFactory::registerAlias('Alias2', SetHost::class);
+
         $factory = new MiddlewareFactory();
-
-        $result = $factory->registerAlias('CustomAlias', ProxyHeaders::class);
-
-        $this->assertSame($factory, $result);
-    }
-
-    public function test_register_alias_chaining(): void
-    {
-        $factory = new MiddlewareFactory();
-
-        $factory->registerAlias('Alias1', ProxyHeaders::class)
-            ->registerAlias('Alias2', SetHost::class);
-
         $aliases = $factory->getAliases();
 
         $this->assertArrayHasKey('Alias1', $aliases);
@@ -262,13 +257,12 @@ class MiddlewareFactoryTest extends TestCase
 
     public function test_register_alias_with_array(): void
     {
-        $factory = new MiddlewareFactory();
-
-        $factory->registerAlias([
+        MiddlewareFactory::registerAlias([
             'MyProxy' => ProxyHeaders::class,
             'MyHost' => SetHost::class,
         ]);
 
+        $factory = new MiddlewareFactory();
         $aliases = $factory->getAliases();
 
         $this->assertArrayHasKey('MyProxy', $aliases);
@@ -277,15 +271,15 @@ class MiddlewareFactoryTest extends TestCase
         $this->assertEquals(SetHost::class, $aliases['MyHost']);
     }
 
-    public function test_register_alias_with_array_returns_self(): void
+    public function test_custom_alias_shared_across_instances(): void
     {
-        $factory = new MiddlewareFactory();
+        MiddlewareFactory::registerAlias('SharedAlias', ProxyHeaders::class);
 
-        $result = $factory->registerAlias([
-            'MyProxy' => ProxyHeaders::class,
-        ]);
+        $factory1 = new MiddlewareFactory();
+        $factory2 = new MiddlewareFactory();
 
-        $this->assertSame($factory, $result);
+        $this->assertArrayHasKey('SharedAlias', $factory1->getAliases());
+        $this->assertArrayHasKey('SharedAlias', $factory2->getAliases());
     }
 
     public function test_create_middleware_from_yaml_key_value_format(): void

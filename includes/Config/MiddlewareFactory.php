@@ -52,8 +52,8 @@ class MiddlewareFactory
         'null' => null,
     ];
 
-    /** @var array<string, class-string<MiddlewareInterface>>|null */
-    private $aliases;
+    /** @var array<string, class-string<MiddlewareInterface>> */
+    private static $customAliases = [];
 
     /**
      * Create a middleware instance from configuration.
@@ -117,19 +117,21 @@ class MiddlewareFactory
      * @param  string|array<string, class-string<MiddlewareInterface>>  $alias
      * @param  class-string<MiddlewareInterface>|null  $class
      */
-    public function registerAlias($alias, ?string $class = null): self
+    public static function registerAlias($alias, ?string $class = null): void
     {
-        $this->getAliases();
-
         if (is_array($alias)) {
-            foreach ($alias as $name => $middlewareClass) {
-                $this->aliases[$name] = $middlewareClass;
-            }
+            self::$customAliases = array_merge(self::$customAliases, $alias);
         } else {
-            $this->aliases[$alias] = $class;
+            self::$customAliases[$alias] = $class;
         }
+    }
 
-        return $this;
+    /**
+     * Reset custom aliases (useful for testing).
+     */
+    public static function resetAliases(): void
+    {
+        self::$customAliases = [];
     }
 
     /**
@@ -139,11 +141,10 @@ class MiddlewareFactory
      */
     public function getAliases(): array
     {
-        if ($this->aliases === null) {
-            $this->aliases = $this->buildAliases(self::$defaultMiddlewares);
-        }
-
-        return $this->aliases;
+        return array_merge(
+            $this->buildAliases(self::$defaultMiddlewares),
+            self::$customAliases
+        );
     }
 
     /**
