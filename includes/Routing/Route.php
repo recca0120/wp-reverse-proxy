@@ -143,16 +143,20 @@ class Route
     {
         $pattern = preg_quote($this->path, '#');
 
-        // Handle trailing /* pattern - make slash and wildcard optional
-        // This allows /test/* to match /test, /test/, and /test/foo
         if (Str::endsWith($pattern, '/\\*')) {
-            // Replace all wildcards except the trailing one
+            // Trailing /* pattern - make slash and wildcard optional
+            // /api/* matches /api, /api/, /api/users
             $pattern = substr($pattern, 0, -3);
             $pattern = str_replace('\\*', '(.*)', $pattern);
-            // Use non-capturing group (?:...) for trailing optional part
             $pattern .= '(?:/(.*))?';
-        } else {
+        } elseif (strpos($pattern, '\\*') !== false) {
+            // Middle wildcard pattern - just replace wildcards
+            // /api/*/users matches /api/v1/users
             $pattern = str_replace('\\*', '(.*)', $pattern);
+        } else {
+            // No wildcard - treat as prefix match
+            // /api matches /api, /api/, /api/users (but not /api-docs)
+            $pattern .= '(?:/(.*))?';
         }
 
         return '#^'.$pattern.'$#';

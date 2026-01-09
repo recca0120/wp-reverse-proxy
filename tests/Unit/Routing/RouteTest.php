@@ -482,4 +482,66 @@ class RouteTest extends TestCase
 
         $this->assertEquals('https://admin.example.com/', $result);
     }
+
+    // Path without wildcard should act as prefix match (like /path/*)
+
+    public function test_path_without_wildcard_matches_exact_path()
+    {
+        $route = new Route('/api', 'https://api.example.com/');
+        $request = new ServerRequest('GET', '/api');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://api.example.com/', $result);
+    }
+
+    public function test_path_without_wildcard_matches_with_trailing_slash()
+    {
+        $route = new Route('/api', 'https://api.example.com/');
+        $request = new ServerRequest('GET', '/api/');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://api.example.com/', $result);
+    }
+
+    public function test_path_without_wildcard_matches_subpaths()
+    {
+        $route = new Route('/api', 'https://api.example.com/');
+        $request = new ServerRequest('GET', '/api/users/123');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://api.example.com/users/123', $result);
+    }
+
+    public function test_path_without_wildcard_does_not_match_similar_prefix()
+    {
+        $route = new Route('/api', 'https://api.example.com/');
+        $request = new ServerRequest('GET', '/api-docs');
+
+        $result = $route->matches($request);
+
+        $this->assertNull($result);
+    }
+
+    public function test_nested_path_without_wildcard_matches_subpaths()
+    {
+        $route = new Route('/proxy/backend', 'https://backend.example.com/');
+        $request = new ServerRequest('GET', '/proxy/backend/users/list');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://backend.example.com/users/list', $result);
+    }
+
+    public function test_path_with_method_without_wildcard_matches_subpaths()
+    {
+        $route = new Route('GET /admin', 'https://admin.example.com/');
+        $request = new ServerRequest('GET', '/admin/dashboard');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://admin.example.com/dashboard', $result);
+    }
 }
