@@ -58,7 +58,7 @@ class Admin
             true
         );
 
-        wp_set_script_translations('reverse-proxy-admin', 'reverse-proxy');
+        wp_set_script_translations('reverse-proxy-admin', 'reverse-proxy', REVERSE_PROXY_PLUGIN_DIR . 'languages');
 
         // Get existing middlewares if editing a route
         $existingMiddlewares = [];
