@@ -7,6 +7,7 @@ return [
     'project-id-version' => 'Reverse Proxy 1.0.0',
     'language' => 'zh_TW',
     'messages' => [
+        'Reverse Proxy' => '反向代理',
         'Route saved successfully.' => '路由已成功儲存。',
         'Failed to save route. Please check the path and target URL.' => '儲存路由失敗。請檢查路徑和目標網址。',
         'Route ID is required.' => '路由 ID 為必填項目。',
@@ -33,6 +34,7 @@ return [
         'Add Route' => '新增路由',
         'Update Route' => '更新路由',
         'Cancel' => '取消',
+        'Reverse Proxy Routes' => '反向代理路由',
         'Add New' => '新增',
         'No routes configured yet.' => '尚未設定任何路由。',
         'Add your first route' => '新增您的第一個路由',
