@@ -6,6 +6,7 @@ use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\RateLimiting;
 use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class RateLimitingTest extends WP_UnitTestCase
@@ -176,9 +177,14 @@ class RateLimitingTest extends WP_UnitTestCase
         $this->assertEquals(200, $capturedResponse->getStatusCode());
     }
 
-    private function givenRoutes(array $routes): void
+    private function givenRoutes(array $routeArray): void
     {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
+        add_filter('reverse_proxy_routes', function () use ($routeArray) {
+            $routes = new RouteCollection();
+            foreach ($routeArray as $route) {
+                $routes->add($route);
+            }
+
             return $routes;
         });
     }

@@ -8,6 +8,7 @@ use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\Timeout;
 use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class TimeoutTest extends WP_UnitTestCase
@@ -111,9 +112,14 @@ class TimeoutTest extends WP_UnitTestCase
         $this->assertEquals('30', $lastRequest->getHeaderLine('X-Timeout'));
     }
 
-    private function givenRoutes(array $routes): void
+    private function givenRoutes(array $routeArray): void
     {
-        add_filter('reverse_proxy_routes', function () use ($routes) {
+        add_filter('reverse_proxy_routes', function () use ($routeArray) {
+            $routes = new RouteCollection();
+            foreach ($routeArray as $route) {
+                $routes->add($route);
+            }
+
             return $routes;
         });
     }

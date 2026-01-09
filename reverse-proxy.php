@@ -29,7 +29,7 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
-function reverse_proxy_create_proxy(array $routes)
+function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollection $routes)
 {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
     $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
@@ -81,15 +81,15 @@ function reverse_proxy_send_response($response)
 
 function reverse_proxy_load_config_routes()
 {
-    $routeLoader = apply_filters('reverse_proxy_route_loader', null);
+    $routeCollection = apply_filters('reverse_proxy_route_collection', null);
 
-    if ($routeLoader === null) {
+    if ($routeCollection === null) {
         $middlewareFactory = apply_filters(
             'reverse_proxy_middleware_factory',
             new Recca0120\ReverseProxy\Routing\MiddlewareFactory()
         );
 
-        $routeLoader = new Recca0120\ReverseProxy\Routing\RouteLoader(
+        $routeCollection = new Recca0120\ReverseProxy\Routing\RouteCollection(
             [
                 new Recca0120\ReverseProxy\Routing\Loaders\JsonLoader(),
                 new Recca0120\ReverseProxy\Routing\Loaders\YamlLoader(),
@@ -103,7 +103,7 @@ function reverse_proxy_load_config_routes()
     $directory = apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
     $pattern = apply_filters('reverse_proxy_routes_pattern', '*.{json,yaml,yml,php}');
 
-    return $routeLoader->loadFromDirectory($directory, $pattern);
+    return $routeCollection->loadFromDirectory($directory, $pattern);
 }
 
 function reverse_proxy_handle()

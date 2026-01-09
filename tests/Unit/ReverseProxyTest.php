@@ -12,6 +12,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\ReverseProxy;
 use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 class ReverseProxyTest extends TestCase
 {
@@ -439,8 +440,13 @@ class ReverseProxyTest extends TestCase
         ], $order);
     }
 
-    private function createProxy(array $routes): ReverseProxy
+    private function createProxy(array $routeArray): ReverseProxy
     {
+        $routes = new RouteCollection();
+        foreach ($routeArray as $route) {
+            $routes->add($route);
+        }
+
         return new ReverseProxy(
             $routes,
             $this->mockClient,

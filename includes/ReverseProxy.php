@@ -11,10 +11,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 class ReverseProxy
 {
-    /** @var Route[] */
+    /** @var RouteCollection */
     private $routes;
 
     /** @var ClientInterface */
@@ -29,11 +30,8 @@ class ReverseProxy
     /** @var array */
     private $globalMiddlewares = [];
 
-    /**
-     * @param  Route[]  $routes
-     */
     public function __construct(
-        array $routes,
+        RouteCollection $routes,
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory
