@@ -81,6 +81,21 @@ class Arr
      */
     public static function merge(array ...$arrays): array
     {
+        $count = count($arrays);
+
+        if ($count === 0) {
+            return [];
+        }
+
+        if ($count === 1) {
+            return $arrays[0];
+        }
+
+        // Optimize for common 2-array case (avoids spread operator overhead)
+        if ($count === 2) {
+            return array_merge($arrays[0], $arrays[1]);
+        }
+
         return array_merge(...$arrays);
     }
 
