@@ -6,7 +6,7 @@
  * @var array $middlewares
  */
 
-if (!defined('ABSPATH')) {
+if (! defined('ABSPATH')) {
     exit;
 }
 
@@ -19,53 +19,55 @@ $pageTitle = $isNew ? __('Add New Route', 'reverse-proxy') : __('Edit Route', 'r
     <form method="post" action="" id="reverse-proxy-route-form">
         <?php wp_nonce_field('reverse_proxy_save_route', 'reverse_proxy_nonce'); ?>
         <input type="hidden" name="action" value="reverse_proxy_save_route">
-        <?php if (!$isNew) : ?>
+        <?php if (! $isNew) : ?>
             <input type="hidden" name="route[id]" value="<?php echo esc_attr($route['id']); ?>">
         <?php endif; ?>
 
         <table class="form-table">
             <tr>
                 <th scope="row">
-                    <label for="route-path"><?php esc_html_e('Path Pattern', 'reverse-proxy'); ?></label>
+                    <label for="route-path"><?php esc_html_e('Path Pattern', 'reverse-proxy'); ?> <span class="required">*</span></label>
                 </th>
                 <td>
-                    <input type="text" id="route-path" name="route[path]" class="regular-text"
+                    <input type="text" id="route-path" name="route[path]" class="regular-text code"
                            value="<?php echo esc_attr($route['path'] ?? ''); ?>"
                            placeholder="/api/*" required>
                     <p class="description">
-                        <?php esc_html_e('Use * as wildcard. Examples: /api/*, /blog/posts/*', 'reverse-proxy'); ?>
+                        <?php esc_html_e('Use * as wildcard. Examples: /api/*, /blog/posts/*, /proxy/service/*', 'reverse-proxy'); ?>
                     </p>
                 </td>
             </tr>
             <tr>
                 <th scope="row">
-                    <label for="route-target"><?php esc_html_e('Target URL', 'reverse-proxy'); ?></label>
+                    <label for="route-target"><?php esc_html_e('Target URL', 'reverse-proxy'); ?> <span class="required">*</span></label>
                 </th>
                 <td>
-                    <input type="url" id="route-target" name="route[target]" class="regular-text"
+                    <input type="url" id="route-target" name="route[target]" class="regular-text code"
                            value="<?php echo esc_attr($route['target'] ?? ''); ?>"
                            placeholder="https://api.example.com" required>
                     <p class="description">
-                        <?php esc_html_e('The backend server URL to proxy requests to.', 'reverse-proxy'); ?>
+                        <?php esc_html_e('The backend server URL to proxy requests to (must be http:// or https://).', 'reverse-proxy'); ?>
                     </p>
                 </td>
             </tr>
             <tr>
                 <th scope="row"><?php esc_html_e('HTTP Methods', 'reverse-proxy'); ?></th>
                 <td>
-                    <?php
-                    $allMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+                    <fieldset>
+                        <?php
+                        $allMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 $selectedMethods = $route['methods'] ?? [];
 foreach ($allMethods as $method) :
     ?>
-                        <label style="margin-right: 15px;">
-                            <input type="checkbox" name="route[methods][]" value="<?php echo esc_attr($method); ?>"
-                                <?php checked(in_array($method, $selectedMethods, true)); ?>>
-                            <?php echo esc_html($method); ?>
-                        </label>
-                    <?php endforeach; ?>
+                            <label style="margin-right: 15px; display: inline-block;">
+                                <input type="checkbox" name="route[methods][]" value="<?php echo esc_attr($method); ?>"
+                                    <?php checked(in_array($method, $selectedMethods, true)); ?>>
+                                <?php echo esc_html($method); ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </fieldset>
                     <p class="description">
-                        <?php esc_html_e('Leave all unchecked to allow all methods.', 'reverse-proxy'); ?>
+                        <?php esc_html_e('Leave all unchecked to allow all HTTP methods.', 'reverse-proxy'); ?>
                     </p>
                 </td>
             </tr>
@@ -76,21 +78,27 @@ foreach ($allMethods as $method) :
                 <td>
                     <label>
                         <input type="checkbox" id="route-enabled" name="route[enabled]" value="1"
-                            <?php checked(!empty($route['enabled'])); ?>>
+                            <?php checked(! empty($route['enabled']) || $isNew); ?>>
                         <?php esc_html_e('Enable this route', 'reverse-proxy'); ?>
                     </label>
+                    <p class="description">
+                        <?php esc_html_e('Disabled routes will not proxy any requests.', 'reverse-proxy'); ?>
+                    </p>
                 </td>
             </tr>
         </table>
 
         <h2><?php esc_html_e('Middlewares', 'reverse-proxy'); ?></h2>
+        <p class="description" style="margin-bottom: 15px;">
+            <?php esc_html_e('Middlewares process requests before they are sent to the target server. They are executed in order from top to bottom.', 'reverse-proxy'); ?>
+        </p>
 
         <div id="middleware-mode-toggle" style="margin-bottom: 15px;">
-            <label>
+            <label style="margin-right: 15px;">
                 <input type="radio" name="middleware_mode" value="simple" checked>
                 <?php esc_html_e('Simple Mode', 'reverse-proxy'); ?>
             </label>
-            <label style="margin-left: 15px;">
+            <label>
                 <input type="radio" name="middleware_mode" value="advanced">
                 <?php esc_html_e('Advanced Mode (JSON)', 'reverse-proxy'); ?>
             </label>
@@ -98,42 +106,36 @@ foreach ($allMethods as $method) :
 
         <div id="middleware-simple-mode">
             <div id="middleware-list">
-                <?php
-                $routeMiddlewares = $route['middlewares'] ?? [];
-if (!empty($routeMiddlewares)) :
-    foreach ($routeMiddlewares as $index => $mw) :
-        $mwName = is_string($mw) ? $mw : ($mw[0] ?? $mw['name'] ?? '');
-        ?>
-                        <div class="middleware-item" data-index="<?php echo esc_attr($index); ?>">
-                            <select name="route[middlewares][<?php echo esc_attr($index); ?>][name]" class="middleware-select">
-                                <option value=""><?php esc_html_e('Select Middleware', 'reverse-proxy'); ?></option>
-                                <?php foreach ($middlewares as $name => $info) : ?>
-                                    <option value="<?php echo esc_attr($name); ?>" <?php selected($mwName, $name); ?>>
-                                        <?php echo esc_html($info['label']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div class="middleware-fields"></div>
-                            <button type="button" class="button button-small remove-middleware">
-                                <?php esc_html_e('Remove', 'reverse-proxy'); ?>
-                            </button>
-                        </div>
-                    <?php endforeach;
-endif; ?>
+                <!-- Middlewares will be loaded by JavaScript -->
             </div>
-            <button type="button" id="add-middleware" class="button">
-                <?php esc_html_e('Add Middleware', 'reverse-proxy'); ?>
-            </button>
+            <p>
+                <button type="button" id="add-middleware" class="button">
+                    <span class="dashicons dashicons-plus-alt2" style="vertical-align: middle;"></span>
+                    <?php esc_html_e('Add Middleware', 'reverse-proxy'); ?>
+                </button>
+            </p>
         </div>
 
         <div id="middleware-advanced-mode" style="display: none;">
-            <textarea id="middlewares-json" name="middlewares_json" rows="10" class="large-text code"
-                      placeholder='[&#10;  "ProxyHeaders",&#10;  ["SetHost", "api.example.com"],&#10;  ["Timeout", 30]&#10;]'><?php
-echo esc_textarea(json_encode($route['middlewares'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            <textarea id="middlewares-json" name="middlewares_json" rows="12" class="large-text code"
+                      placeholder='[
+  "ProxyHeaders",
+  ["SetHost", "api.example.com"],
+  ["Timeout", 30]
+]'><?php
+                $currentMiddlewares = $route['middlewares'] ?? [];
+if (! empty($currentMiddlewares)) {
+    echo esc_textarea(json_encode($currentMiddlewares, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+}
 ?></textarea>
             <p class="description">
-                <?php esc_html_e('Enter middleware configuration as JSON array.', 'reverse-proxy'); ?>
+                <?php esc_html_e('Enter middleware configuration as a JSON array. Supported formats:', 'reverse-proxy'); ?>
             </p>
+            <ul class="description" style="list-style: disc; margin-left: 20px;">
+                <li><code>"MiddlewareName"</code> - <?php esc_html_e('Simple middleware without options', 'reverse-proxy'); ?></li>
+                <li><code>["MiddlewareName", "arg1"]</code> - <?php esc_html_e('Middleware with single argument', 'reverse-proxy'); ?></li>
+                <li><code>["MiddlewareName", "arg1", "arg2"]</code> - <?php esc_html_e('Middleware with multiple arguments', 'reverse-proxy'); ?></li>
+            </ul>
         </div>
 
         <p class="submit">
@@ -146,19 +148,38 @@ echo esc_textarea(json_encode($route['middlewares'] ?? [], JSON_PRETTY_PRINT | J
     </form>
 </div>
 
-<script type="text/template" id="middleware-item-template">
-    <div class="middleware-item" data-index="{{index}}">
-        <select name="route[middlewares][{{index}}][name]" class="middleware-select">
-            <option value=""><?php esc_html_e('Select Middleware', 'reverse-proxy'); ?></option>
-            <?php foreach ($middlewares as $name => $info) : ?>
-                <option value="<?php echo esc_attr($name); ?>">
-                    <?php echo esc_html($info['label']); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <div class="middleware-fields"></div>
-        <button type="button" class="button button-small remove-middleware">
-            <?php esc_html_e('Remove', 'reverse-proxy'); ?>
-        </button>
-    </div>
-</script>
+<style>
+.required {
+    color: #d63638;
+}
+.middleware-item {
+    background: #f6f7f7;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+.middleware-item .middleware-select {
+    min-width: 200px;
+    margin-right: 10px;
+}
+.middleware-item .middleware-fields {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #dcdcde;
+}
+.middleware-item .middleware-fields:empty {
+    display: none;
+}
+.middleware-item .remove-middleware {
+    color: #b32d2e;
+}
+.middleware-item .remove-middleware:hover {
+    color: #a00;
+    border-color: #a00;
+}
+#middlewares-json {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+}
+</style>

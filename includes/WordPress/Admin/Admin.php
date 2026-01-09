@@ -16,6 +16,7 @@ class Admin
     {
         add_action('admin_menu', [$this, 'addMenuPage']);
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
+        add_action('admin_init', [$this, 'handleFormSubmission']);
 
         // AJAX handlers
         add_action('wp_ajax_reverse_proxy_save_route', [$this, 'handleSaveRoute']);
@@ -57,10 +58,30 @@ class Admin
             true
         );
 
+        // Get existing middlewares if editing a route
+        $existingMiddlewares = [];
+        if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['route_id'])) {
+            $routeId = sanitize_text_field($_GET['route_id']);
+            $routes = $this->routesPage->getRoutes();
+            foreach ($routes as $route) {
+                if ($route['id'] === $routeId) {
+                    $existingMiddlewares = $route['middlewares'] ?? [];
+                    break;
+                }
+            }
+        }
+
         wp_localize_script('reverse-proxy-admin', 'reverseProxyAdmin', [
             'ajaxUrl' => admin_url('admin-ajax.php'),
+            'adminUrl' => admin_url('admin.php'),
             'nonce' => wp_create_nonce('reverse_proxy_admin'),
             'middlewares' => MiddlewareRegistry::getAll(),
+            'existingMiddlewares' => $existingMiddlewares,
+            'i18n' => [
+                'confirmDelete' => __('Are you sure you want to delete this route?', 'reverse-proxy'),
+                'saving' => __('Saving...', 'reverse-proxy'),
+                'saveRoute' => __('Save Route', 'reverse-proxy'),
+            ],
         ]);
     }
 
@@ -129,6 +150,105 @@ class Admin
         } else {
             wp_send_json_error(['message' => __('Failed to update route status.', 'reverse-proxy')]);
         }
+    }
+
+    public function handleFormSubmission(): void
+    {
+        // Only handle non-AJAX form submissions
+        if (wp_doing_ajax()) {
+            return;
+        }
+
+        // Check if this is our form submission
+        if (!isset($_POST['action'])) {
+            return;
+        }
+
+        $action = sanitize_text_field($_POST['action']);
+
+        // Handle save route form
+        if ($action === 'reverse_proxy_save_route') {
+            $this->handleFormSaveRoute();
+        }
+
+        // Handle delete action from URL
+        if (isset($_GET['page']) && $_GET['page'] === 'reverse-proxy' &&
+            isset($_GET['action']) && $_GET['action'] === 'delete' &&
+            isset($_GET['route_id']) && isset($_GET['_wpnonce'])) {
+            $this->handleFormDeleteRoute();
+        }
+
+        // Handle toggle action from URL
+        if (isset($_GET['page']) && $_GET['page'] === 'reverse-proxy' &&
+            isset($_GET['action']) && $_GET['action'] === 'toggle' &&
+            isset($_GET['route_id']) && isset($_GET['_wpnonce'])) {
+            $this->handleFormToggleRoute();
+        }
+    }
+
+    private function handleFormSaveRoute(): void
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied.', 'reverse-proxy'));
+        }
+
+        $nonce = isset($_POST['reverse_proxy_nonce']) ? $_POST['reverse_proxy_nonce'] : '';
+        if (!wp_verify_nonce($nonce, 'reverse_proxy_save_route')) {
+            wp_die(__('Security check failed.', 'reverse-proxy'));
+        }
+
+        $route = isset($_POST['route']) ? (array) $_POST['route'] : [];
+
+        // Handle JSON middlewares
+        if (!empty($_POST['middlewares_json'])) {
+            $json = stripslashes($_POST['middlewares_json']);
+            $middlewares = json_decode($json, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($middlewares)) {
+                $route['middlewares'] = $middlewares;
+            }
+        }
+
+        $result = $this->routesPage->saveRoute($route);
+
+        if ($result) {
+            wp_safe_redirect(admin_url('admin.php?page=reverse-proxy&message=saved'));
+            exit;
+        } else {
+            wp_safe_redirect(admin_url('admin.php?page=reverse-proxy&error=save_failed'));
+            exit;
+        }
+    }
+
+    private function handleFormDeleteRoute(): void
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied.', 'reverse-proxy'));
+        }
+
+        $routeId = sanitize_text_field($_GET['route_id']);
+        if (!wp_verify_nonce($_GET['_wpnonce'], 'delete_route_' . $routeId)) {
+            wp_die(__('Security check failed.', 'reverse-proxy'));
+        }
+
+        $this->routesPage->deleteRoute($routeId);
+        wp_safe_redirect(admin_url('admin.php?page=reverse-proxy&message=deleted'));
+        exit;
+    }
+
+    private function handleFormToggleRoute(): void
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied.', 'reverse-proxy'));
+        }
+
+        $routeId = sanitize_text_field($_GET['route_id']);
+        if (!wp_verify_nonce($_GET['_wpnonce'], 'toggle_route_' . $routeId)) {
+            wp_die(__('Security check failed.', 'reverse-proxy'));
+        }
+
+        $this->routesPage->toggleRoute($routeId);
+        wp_safe_redirect(admin_url('admin.php?page=reverse-proxy&message=toggled'));
+        exit;
     }
 
     private function verifyAjaxRequest(): void
