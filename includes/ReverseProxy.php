@@ -95,14 +95,18 @@ class ReverseProxy
 
     private function sortMiddlewares(array $middlewares): array
     {
-        usort($middlewares, function ($a, $b) {
-            $priorityA = $a instanceof MiddlewareInterface ? ($a->priority ?? 0) : 0;
-            $priorityB = $b instanceof MiddlewareInterface ? ($b->priority ?? 0) : 0;
+        $indexed = [];
+        foreach ($middlewares as $index => $middleware) {
+            $priority = $middleware instanceof MiddlewareInterface ? ($middleware->priority ?? 0) : 0;
+            $indexed[] = [$priority, $index, $middleware];
+        }
 
-            return $priorityA <=> $priorityB;
+        usort($indexed, function ($a, $b) {
+            // Sort by priority first, then by original index (stable sort)
+            return $a[0] <=> $b[0] ?: $a[1] <=> $b[1];
         });
 
-        return $middlewares;
+        return array_column($indexed, 2);
     }
 
     /**
