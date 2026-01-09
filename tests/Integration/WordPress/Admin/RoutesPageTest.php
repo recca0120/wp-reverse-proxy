@@ -4,7 +4,6 @@ namespace Recca0120\ReverseProxy\Tests\Integration\WordPress\Admin;
 
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Response;
-use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\WordPress\Admin\Admin;
 use Recca0120\ReverseProxy\WordPress\Admin\RoutesPage;
 use Recca0120\ReverseProxy\WordPress\WordPressLoader;
@@ -305,29 +304,6 @@ class RoutesPageTest extends WP_UnitTestCase
         ]);
 
         $this->assertFalse($result);
-    }
-
-    public function test_middlewares_are_converted_to_route_object()
-    {
-        $routesPage = new RoutesPage();
-
-        $routesPage->saveRoute([
-            'path' => '/api/*',
-            'target' => 'https://api.example.com',
-            'middlewares' => [
-                'ProxyHeaders',
-                ['SetHost', 'custom.example.com'],
-                ['Timeout', 30],
-            ],
-            'enabled' => true,
-        ]);
-
-        $routes = $routesPage->getRoutes();
-        $routeObject = RoutesPage::toRouteObject($routes[0]);
-
-        $this->assertInstanceOf(Route::class, $routeObject);
-        $middlewares = $routeObject->getMiddlewares();
-        $this->assertCount(3, $middlewares);
     }
 
     public function test_ajax_save_route_handler()

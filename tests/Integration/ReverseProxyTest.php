@@ -13,7 +13,6 @@ use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class ReverseProxyTest extends WP_UnitTestCase
@@ -535,10 +534,8 @@ class ReverseProxyTest extends WP_UnitTestCase
 
     private function givenRoutes(array $routeArray): void
     {
-        add_filter('reverse_proxy_routes', function () use ($routeArray) {
-            $routes = (new RouteCollection())->add($routeArray);
-
-            return $routes;
+        add_filter('reverse_proxy_routes', function ($routes) use ($routeArray) {
+            return $routes->add($routeArray);
         });
     }
 

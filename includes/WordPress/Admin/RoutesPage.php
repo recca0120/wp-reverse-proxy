@@ -2,9 +2,6 @@
 
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
-use Recca0120\ReverseProxy\Routing\MiddlewareFactory;
-use Recca0120\ReverseProxy\Routing\Route;
-
 class RoutesPage
 {
     public const OPTION_NAME = 'reverse_proxy_admin_routes';
@@ -12,6 +9,14 @@ class RoutesPage
     public const VERSION_OPTION_NAME = 'reverse_proxy_admin_routes_version';
 
     private const VALID_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+
+    /** @var MiddlewareRegistry|null */
+    private $registry;
+
+    public function __construct(?MiddlewareRegistry $registry = null)
+    {
+        $this->registry = $registry;
+    }
 
     public function render(): void
     {
@@ -157,25 +162,6 @@ class RoutesPage
         return $sanitized;
     }
 
-    public static function toRouteObject(array $data): Route
-    {
-        $path = $data['path'] ?? '';
-        $target = $data['target'] ?? '';
-        $methods = $data['methods'] ?? [];
-        $middlewaresConfig = $data['middlewares'] ?? [];
-
-        // Prepend methods to path if specified
-        if (!empty($methods)) {
-            $path = implode('|', $methods) . ' ' . $path;
-        }
-
-        // Create middleware instances
-        $factory = new MiddlewareFactory();
-        $middlewares = $factory->createMany($middlewaresConfig);
-
-        return new Route($path, $target, $middlewares);
-    }
-
     private function findRouteIndex(array $routes, string $id): ?int
     {
         foreach ($routes as $index => $route) {
@@ -288,7 +274,7 @@ class RoutesPage
     private function renderEditPage(?string $routeId): void
     {
         $route = $routeId ? $this->getRouteById($routeId) : null;
-        $middlewares = MiddlewareRegistry::getAll();
+        $middlewares = $this->registry !== null ? $this->registry->getAvailable() : [];
         include REVERSE_PROXY_PLUGIN_DIR . 'templates/admin/route-form.php';
     }
 }

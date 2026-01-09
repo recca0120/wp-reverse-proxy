@@ -2,30 +2,72 @@
 
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Support\Str;
+
 class MiddlewareRegistry
 {
-    /**
-     * Global middlewares that are automatically applied to all routes.
-     * These should not be shown in the admin UI.
-     */
-    private static $globalMiddlewares = [
-        'SanitizeHeaders',
-        'ErrorHandling',
-        'Logging',
-    ];
+    /** @var MiddlewareManager */
+    private $manager;
 
-    /**
-     * Get middlewares available for route configuration (excludes global middlewares).
-     */
-    public static function getAll(): array
+    public function __construct(MiddlewareManager $manager)
     {
-        return array_diff_key(self::getAllMiddlewares(), array_flip(self::$globalMiddlewares));
+        $this->manager = $manager;
     }
 
     /**
-     * Get all middlewares including global ones.
+     * Get the middleware manager.
      */
-    public static function getAllMiddlewares(): array
+    public function getManager(): MiddlewareManager
+    {
+        return $this->manager;
+    }
+
+    /**
+     * Get available middlewares with UI field definitions.
+     * Excludes global middlewares registered in the manager.
+     */
+    public function getAvailable(): array
+    {
+        $aliases = $this->manager->getAliases();
+        $globalNames = $this->getGlobalMiddlewareNames();
+        $fieldDefinitions = $this->getFieldDefinitions();
+
+        $middlewares = [];
+        foreach ($aliases as $name => $class) {
+            if (in_array($name, $globalNames, true)) {
+                continue;
+            }
+
+            $middlewares[$name] = $fieldDefinitions[$name] ?? [
+                'label' => $name,
+                'description' => '',
+                'fields' => [],
+            ];
+        }
+
+        return $middlewares;
+    }
+
+    /**
+     * Get names of global middlewares from the manager.
+     *
+     * @return array<string>
+     */
+    private function getGlobalMiddlewareNames(): array
+    {
+        return array_map(
+            function ($middleware) {
+                return Str::afterLast(get_class($middleware), '\\');
+            },
+            $this->manager->getGlobalMiddlewares()
+        );
+    }
+
+    /**
+     * UI field definitions for each middleware.
+     */
+    private function getFieldDefinitions(): array
     {
         return [
             'ProxyHeaders' => [
@@ -117,16 +159,6 @@ class MiddlewareRegistry
                     ['name' => 'headerName', 'type' => 'text', 'label' => 'Header Name', 'default' => 'X-Request-ID'],
                 ],
             ],
-            'Logging' => [
-                'label' => 'Logging',
-                'description' => 'Log requests and responses',
-                'fields' => [],
-            ],
-            'ErrorHandling' => [
-                'label' => 'Error Handling',
-                'description' => 'Handle errors gracefully',
-                'fields' => [],
-            ],
             'Fallback' => [
                 'label' => 'Fallback',
                 'description' => 'Provide fallback response on failure',
@@ -142,11 +174,6 @@ class MiddlewareRegistry
                     ['name' => 'search', 'type' => 'text', 'label' => 'Search Pattern'],
                     ['name' => 'replace', 'type' => 'text', 'label' => 'Replace With'],
                 ],
-            ],
-            'SanitizeHeaders' => [
-                'label' => 'Sanitize Headers',
-                'description' => 'Remove sensitive headers from requests/responses',
-                'fields' => [],
             ],
         ];
     }

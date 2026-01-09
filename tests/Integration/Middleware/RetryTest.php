@@ -8,7 +8,6 @@ use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\Retry;
 use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class RetryTest extends WP_UnitTestCase
@@ -35,7 +34,7 @@ class RetryTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_http_client');
         remove_all_filters('reverse_proxy_should_exit');
         remove_all_filters('reverse_proxy_response');
-        remove_all_filters('reverse_proxy_default_middlewares');
+        remove_all_filters('reverse_proxy_global_middlewares');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
     }
@@ -58,7 +57,7 @@ class RetryTest extends WP_UnitTestCase
     public function test_it_retries_on_network_error()
     {
         // 停用預設的 ErrorHandling 讓 Retry 能接住錯誤
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -79,7 +78,7 @@ class RetryTest extends WP_UnitTestCase
 
     public function test_it_retries_on_5xx_error()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -100,7 +99,7 @@ class RetryTest extends WP_UnitTestCase
 
     public function test_it_does_not_retry_on_4xx_error()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -118,7 +117,7 @@ class RetryTest extends WP_UnitTestCase
 
     public function test_it_gives_up_after_max_retries()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -146,7 +145,7 @@ class RetryTest extends WP_UnitTestCase
 
     public function test_it_only_retries_get_requests_by_default()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -174,7 +173,7 @@ class RetryTest extends WP_UnitTestCase
 
     public function test_it_can_retry_idempotent_methods()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -195,10 +194,9 @@ class RetryTest extends WP_UnitTestCase
 
     private function givenRoutes(array $routeArray): void
     {
-        add_filter('reverse_proxy_routes', function () use ($routeArray) {
-            $routes = (new RouteCollection())->add($routeArray);
+        add_filter('reverse_proxy_routes', function ($routes) use ($routeArray) {
+            return $routes->add($routeArray);
 
-            return $routes;
         });
     }
 

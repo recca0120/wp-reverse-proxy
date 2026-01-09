@@ -12,6 +12,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class ReverseProxy
 {
@@ -27,9 +28,6 @@ class ReverseProxy
     /** @var StreamFactoryInterface */
     private $streamFactory;
 
-    /** @var array */
-    private $globalMiddlewares = [];
-
     public function __construct(
         RouteCollection $routes,
         ClientInterface $client,
@@ -40,23 +38,6 @@ class ReverseProxy
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
-    }
-
-    /**
-     * @param  callable|MiddlewareInterface  $middleware
-     */
-    public function addGlobalMiddleware($middleware): self
-    {
-        $this->globalMiddlewares[] = $middleware;
-
-        return $this;
-    }
-
-    public function addGlobalMiddlewares(array $middlewares): self
-    {
-        $this->globalMiddlewares = array_merge($this->globalMiddlewares, $middlewares);
-
-        return $this;
     }
 
     public function handle(ServerRequestInterface $request): ?ResponseInterface
@@ -80,9 +61,10 @@ class ReverseProxy
             return $this->client->sendRequest($request);
         };
 
-        // Merge and sort middlewares by priority (lower priority = outer layer)
+        // Merge global middlewares from manager with route middlewares
+        $globalMiddlewares = $this->routes->getMiddlewareManager()->getGlobalMiddlewares();
         $middlewares = $this->sortMiddlewares(
-            array_merge($this->globalMiddlewares, $route->getMiddlewares())
+            Arr::merge($globalMiddlewares, $route->getMiddlewares())
         );
 
         // Wrap middlewares in reverse order (highest priority = innermost)

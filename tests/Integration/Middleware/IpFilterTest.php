@@ -6,7 +6,6 @@ use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\IpFilter;
 use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
 use WP_UnitTestCase;
 
 class IpFilterTest extends WP_UnitTestCase
@@ -171,10 +170,9 @@ class IpFilterTest extends WP_UnitTestCase
 
     private function givenRoutes(array $routeArray): void
     {
-        add_filter('reverse_proxy_routes', function () use ($routeArray) {
-            $routes = (new RouteCollection())->add($routeArray);
+        add_filter('reverse_proxy_routes', function ($routes) use ($routeArray) {
+            return $routes->add($routeArray);
 
-            return $routes;
         });
     }
 

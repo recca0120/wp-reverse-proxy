@@ -72,4 +72,15 @@ class Arr
     {
         return array_key_exists($key, $array);
     }
+
+    /**
+     * Merge two or more arrays.
+     *
+     * @param array<mixed> ...$arrays
+     * @return array<mixed>
+     */
+    public static function merge(array ...$arrays): array
+    {
+        return array_merge(...$arrays);
+    }
 }

@@ -8,7 +8,6 @@ use Nyholm\Psr7\Request;
 use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\CircuitBreaker;
 use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
 use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 use WP_UnitTestCase;
 
@@ -44,7 +43,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
         remove_all_filters('reverse_proxy_http_client');
         remove_all_filters('reverse_proxy_should_exit');
         remove_all_filters('reverse_proxy_response');
-        remove_all_filters('reverse_proxy_default_middlewares');
+        remove_all_filters('reverse_proxy_global_middlewares');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         parent::tearDown();
     }
@@ -65,7 +64,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
     public function test_it_opens_circuit_after_failure_threshold()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -99,7 +98,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
     public function test_it_resets_failure_count_on_success()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -133,7 +132,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
     public function test_it_counts_network_errors_as_failures()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -176,7 +175,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
     public function test_different_services_have_separate_circuits()
     {
-        add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+        add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
         $this->givenRoutes([
             new Route('/api/a/*', 'https://backend-a.example.com', [
@@ -202,10 +201,9 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
     private function givenRoutes(array $routeArray): void
     {
-        add_filter('reverse_proxy_routes', function () use ($routeArray) {
-            $routes = (new RouteCollection())->add($routeArray);
+        add_filter('reverse_proxy_routes', function ($routes) use ($routeArray) {
+            return $routes->add($routeArray);
 
-            return $routes;
         });
     }
 
