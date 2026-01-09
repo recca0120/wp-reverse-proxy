@@ -226,7 +226,7 @@
 
     // Field Renderers
     function renderTextarea(ctx) {
-        var $wrapper = createFieldWrapper(ctx.field);
+        var $wrapper = createFieldWrapper();
         var $input = $('<textarea>').attr({
             id: ctx.inputId,
             name: ctx.inputName,
@@ -259,7 +259,7 @@
     }
 
     function renderSelect(ctx) {
-        var $wrapper = createFieldWrapper(ctx.field);
+        var $wrapper = createFieldWrapper();
         var $input = $('<select>').attr({ id: ctx.inputId, name: ctx.inputName });
 
         parseOptions(ctx.field.options).forEach(function(opt) {
@@ -353,7 +353,7 @@
     }
 
     function renderDefaultInput(ctx) {
-        var $wrapper = createFieldWrapper(ctx.field);
+        var $wrapper = createFieldWrapper();
         var inputClass = ctx.field.type === 'number' ? 'small-text' : 'regular-text';
 
         var $input = $('<input>').attr({
