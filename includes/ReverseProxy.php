@@ -13,6 +13,9 @@ use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 
 class ReverseProxy
 {
+    /** @var Route[] */
+    private $routes;
+
     /** @var ClientInterface */
     private $client;
 
@@ -25,11 +28,16 @@ class ReverseProxy
     /** @var array */
     private $globalMiddlewares = [];
 
+    /**
+     * @param  Route[]  $routes
+     */
     public function __construct(
+        array $routes,
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory
     ) {
+        $this->routes = $routes;
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->streamFactory = $streamFactory;
@@ -52,12 +60,9 @@ class ReverseProxy
         return $this;
     }
 
-    /**
-     * @param  Route[]  $routes
-     */
-    public function handle(ServerRequestInterface $request, array $routes): ?ResponseInterface
+    public function handle(ServerRequestInterface $request): ?ResponseInterface
     {
-        foreach ($routes as $route) {
+        foreach ($this->routes as $route) {
             $targetUrl = $route->matches($request);
             if ($targetUrl !== null) {
                 return $this->proxy($request, $route, $targetUrl);

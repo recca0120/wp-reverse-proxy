@@ -29,12 +29,12 @@ if (file_exists(REVERSE_PROXY_PLUGIN_DIR.'vendor-prefixed/autoload.php')) {
     require_once REVERSE_PROXY_PLUGIN_DIR.'vendor/autoload.php';
 }
 
-function reverse_proxy_create_proxy()
+function reverse_proxy_create_proxy(array $routes)
 {
     $psr17Factory = apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory);
     $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
 
-    $proxy = new Recca0120\ReverseProxy\ReverseProxy($httpClient, $psr17Factory, $psr17Factory);
+    $proxy = new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
     $proxy->addGlobalMiddlewares(apply_filters('reverse_proxy_default_middlewares', [
         new Recca0120\ReverseProxy\Middleware\SanitizeHeaders,
         new Recca0120\ReverseProxy\Middleware\ErrorHandling,
@@ -108,17 +108,17 @@ function reverse_proxy_load_config_routes()
 
 function reverse_proxy_handle()
 {
-    $proxy = reverse_proxy_create_proxy();
-    $request = reverse_proxy_create_request();
-
     // Load routes from config files (JSON/PHP)
     $configRoutes = reverse_proxy_load_config_routes();
 
     // Merge with routes from filter hook (for programmatic routes)
     $routes = apply_filters('reverse_proxy_routes', $configRoutes);
 
+    $proxy = reverse_proxy_create_proxy($routes);
+    $request = reverse_proxy_create_request();
+
     try {
-        $response = $proxy->handle($request, $routes);
+        $response = $proxy->handle($request);
 
         if ($response !== null) {
             reverse_proxy_send_response($response);

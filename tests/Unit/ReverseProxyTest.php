@@ -21,14 +21,16 @@ class ReverseProxyTest extends TestCase
     /** @var Psr17Factory */
     private $psr17Factory;
 
-    /** @var ReverseProxy */
-    private $reverseProxy;
-
     protected function setUp(): void
     {
         $this->mockClient = new MockClient;
         $this->psr17Factory = new Psr17Factory;
-        $this->reverseProxy = new ReverseProxy(
+    }
+
+    private function createProxy(array $routes): ReverseProxy
+    {
+        return new ReverseProxy(
+            $routes,
             $this->mockClient,
             $this->psr17Factory,
             $this->psr17Factory
@@ -42,7 +44,7 @@ class ReverseProxyTest extends TestCase
             new Route('/api/*', 'https://backend.example.com'),
         ];
 
-        $response = $this->reverseProxy->handle($request, $routes);
+        $response = $this->createProxy($routes)->handle($request);
 
         $this->assertNull($response);
     }
@@ -58,7 +60,7 @@ class ReverseProxyTest extends TestCase
             new Route('/api/*', 'https://backend.example.com'),
         ];
 
-        $response = $this->reverseProxy->handle($request, $routes);
+        $response = $this->createProxy($routes)->handle($request);
 
         $this->assertNotNull($response);
         $this->assertEquals(200, $response->getStatusCode());
@@ -81,7 +83,7 @@ class ReverseProxyTest extends TestCase
             new Route('/api/*', 'https://backend.example.com'),
         ];
 
-        $response = $this->reverseProxy->handle($request, $routes);
+        $response = $this->createProxy($routes)->handle($request);
 
         $this->assertEquals(201, $response->getStatusCode());
 
@@ -102,7 +104,7 @@ class ReverseProxyTest extends TestCase
             new Route('/api/*', 'https://backend.example.com'),
         ];
 
-        $this->reverseProxy->handle($request, $routes);
+        $this->createProxy($routes)->handle($request);
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals('Bearer token123', $lastRequest->getHeaderLine('Authorization'));
@@ -118,7 +120,7 @@ class ReverseProxyTest extends TestCase
             new Route('/api/*', 'https://backend.example.com'),
         ];
 
-        $this->reverseProxy->handle($request, $routes);
+        $this->createProxy($routes)->handle($request);
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals(
@@ -137,7 +139,7 @@ class ReverseProxyTest extends TestCase
             new Route('/api/*', 'https://backend.example.com'),
         ];
 
-        $this->reverseProxy->handle($request, $routes);
+        $this->createProxy($routes)->handle($request);
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals('backend.example.com', $lastRequest->getHeaderLine('Host'));
@@ -153,7 +155,7 @@ class ReverseProxyTest extends TestCase
             new Route('/api/*', 'https://api.example.com'),
         ];
 
-        $this->reverseProxy->handle($request, $routes);
+        $this->createProxy($routes)->handle($request);
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals(
@@ -172,7 +174,7 @@ class ReverseProxyTest extends TestCase
                 return $next($request->withHeader('X-Added-By-Middleware', 'yes'));
             });
 
-        $this->reverseProxy->handle($request, [$route]);
+        $this->createProxy([$route])->handle($request);
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals('yes', $lastRequest->getHeaderLine('X-Added-By-Middleware'));
@@ -190,7 +192,7 @@ class ReverseProxyTest extends TestCase
                 return $response->withHeader('X-Modified-By-Middleware', 'yes');
             });
 
-        $response = $this->reverseProxy->handle($request, [$route]);
+        $response = $this->createProxy([$route])->handle($request);
 
         $this->assertEquals('yes', $response->getHeaderLine('X-Modified-By-Middleware'));
     }
@@ -205,7 +207,7 @@ class ReverseProxyTest extends TestCase
                 return new Response(403, [], '{"error":"forbidden"}');
             });
 
-        $response = $this->reverseProxy->handle($request, [$route]);
+        $response = $this->createProxy([$route])->handle($request);
 
         $this->assertEquals(403, $response->getStatusCode());
         $this->assertEquals('{"error":"forbidden"}', (string) $response->getBody());
@@ -234,7 +236,7 @@ class ReverseProxyTest extends TestCase
                 return $response;
             });
 
-        $this->reverseProxy->handle($request, [$route]);
+        $this->createProxy([$route])->handle($request);
 
         $this->assertEquals([
             'middleware1:before',
@@ -262,7 +264,7 @@ class ReverseProxyTest extends TestCase
         $route = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware($middleware);
 
-        $response = $this->reverseProxy->handle($request, [$route]);
+        $response = $this->createProxy([$route])->handle($request);
 
         // Verify request was modified
         $lastRequest = $this->mockClient->getLastRequest();
@@ -276,16 +278,17 @@ class ReverseProxyTest extends TestCase
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
-        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) {
+        $request = new ServerRequest('GET', '/api/users');
+        $route = new Route('/api/*', 'https://backend.example.com');
+
+        $proxy = $this->createProxy([$route]);
+        $proxy->addGlobalMiddleware(function ($request, $next) {
             $response = $next($request->withHeader('X-Global', 'yes'));
 
             return $response->withHeader('X-Global-Response', 'yes');
         });
 
-        $request = new ServerRequest('GET', '/api/users');
-        $route = new Route('/api/*', 'https://backend.example.com');
-
-        $response = $this->reverseProxy->handle($request, [$route]);
+        $response = $proxy->handle($request);
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals('yes', $lastRequest->getHeaderLine('X-Global'));
@@ -298,14 +301,6 @@ class ReverseProxyTest extends TestCase
 
         $order = [];
 
-        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
-            $order[] = 'global:before';
-            $response = $next($request);
-            $order[] = 'global:after';
-
-            return $response;
-        });
-
         $route = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware(function ($request, $next) use (&$order) {
                 $order[] = 'route:before';
@@ -315,8 +310,17 @@ class ReverseProxyTest extends TestCase
                 return $response;
             });
 
+        $proxy = $this->createProxy([$route]);
+        $proxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
+            $order[] = 'global:before';
+            $response = $next($request);
+            $order[] = 'global:after';
+
+            return $response;
+        });
+
         $request = new ServerRequest('GET', '/api/users');
-        $this->reverseProxy->handle($request, [$route]);
+        $proxy->handle($request);
 
         $this->assertEquals([
             'global:before',
@@ -332,7 +336,11 @@ class ReverseProxyTest extends TestCase
 
         $order = [];
 
-        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
+        $request = new ServerRequest('GET', '/api/users');
+        $route = new Route('/api/*', 'https://backend.example.com');
+
+        $proxy = $this->createProxy([$route]);
+        $proxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
             $order[] = 'global1:before';
             $response = $next($request);
             $order[] = 'global1:after';
@@ -340,7 +348,7 @@ class ReverseProxyTest extends TestCase
             return $response;
         });
 
-        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
+        $proxy->addGlobalMiddleware(function ($request, $next) use (&$order) {
             $order[] = 'global2:before';
             $response = $next($request);
             $order[] = 'global2:after';
@@ -348,10 +356,7 @@ class ReverseProxyTest extends TestCase
             return $response;
         });
 
-        $request = new ServerRequest('GET', '/api/users');
-        $route = new Route('/api/*', 'https://backend.example.com');
-
-        $this->reverseProxy->handle($request, [$route]);
+        $proxy->handle($request);
 
         $this->assertEquals([
             'global1:before',
@@ -363,7 +368,13 @@ class ReverseProxyTest extends TestCase
 
     public function test_global_middleware_can_catch_exception()
     {
-        $this->reverseProxy->addGlobalMiddleware(function ($request, $next) {
+        $route = (new Route('/api/*', 'https://backend.example.com'))
+            ->middleware(function ($request, $next) {
+                throw new \RuntimeException('Error');
+            });
+
+        $proxy = $this->createProxy([$route]);
+        $proxy->addGlobalMiddleware(function ($request, $next) {
             try {
                 return $next($request);
             } catch (\Exception $e) {
@@ -371,13 +382,8 @@ class ReverseProxyTest extends TestCase
             }
         });
 
-        $route = (new Route('/api/*', 'https://backend.example.com'))
-            ->middleware(function ($request, $next) {
-                throw new \RuntimeException('Error');
-            });
-
         $request = new ServerRequest('GET', '/api/users');
-        $response = $this->reverseProxy->handle($request, [$route]);
+        $response = $proxy->handle($request);
 
         $this->assertEquals(502, $response->getStatusCode());
         $this->assertEquals('{"error":"caught"}', (string) $response->getBody());
@@ -395,12 +401,13 @@ class ReverseProxyTest extends TestCase
             }
         };
 
-        $this->reverseProxy->addGlobalMiddleware($middleware);
-
         $request = new ServerRequest('GET', '/api/users');
         $route = new Route('/api/*', 'https://backend.example.com');
 
-        $this->reverseProxy->handle($request, [$route]);
+        $proxy = $this->createProxy([$route]);
+        $proxy->addGlobalMiddleware($middleware);
+
+        $proxy->handle($request);
 
         $lastRequest = $this->mockClient->getLastRequest();
         $this->assertEquals('yes', $lastRequest->getHeaderLine('X-Interface-Global'));
@@ -428,12 +435,13 @@ class ReverseProxyTest extends TestCase
             return $response;
         };
 
-        $this->reverseProxy->addGlobalMiddlewares([$middleware1, $middleware2]);
-
         $request = new ServerRequest('GET', '/api/users');
         $route = new Route('/api/*', 'https://backend.example.com');
 
-        $this->reverseProxy->handle($request, [$route]);
+        $proxy = $this->createProxy([$route]);
+        $proxy->addGlobalMiddlewares([$middleware1, $middleware2]);
+
+        $proxy->handle($request);
 
         $this->assertEquals([
             'mw1:before',
