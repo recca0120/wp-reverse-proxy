@@ -19,6 +19,7 @@ A WordPress plugin that proxies specific URL paths to external backend servers.
 - Logging integration
 - PSR-18 compliant HTTP client
 - Middleware support for request/response processing
+- WordPress admin interface (visual route configuration)
 
 ## Requirements
 
@@ -305,6 +306,47 @@ add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
     return $routes;
 });
 ```
+
+---
+
+### Option 3: WordPress Admin Interface
+
+The plugin provides a graphical interface to manage routes directly in the WordPress admin panel, without writing code or config files.
+
+**Access:**
+
+WordPress Admin → Settings → Reverse Proxy
+
+**Features:**
+
+- **Route List** - View all configured routes
+- **Add Route** - Configure path, target URL, HTTP methods, and middlewares
+- **Edit Route** - Modify existing route settings
+- **Toggle Status** - Quickly enable/disable routes
+- **Delete Route** - Remove unwanted routes
+
+**Middleware Configuration Modes:**
+
+1. **Simple Mode** - Select middleware from dropdown, fill in parameters
+2. **JSON Mode** - Edit JSON directly for advanced configuration
+
+**Screenshot:**
+
+```
++--------------------------------------------------+
+| Reverse Proxy Route Settings                      |
++--------------------------------------------------+
+| [+ Add Route]                                     |
++--------------------------------------------------+
+| □ | Path         | Target URL              | Actions |
++---+--------------+------------------------+---------+
+| ✓ | /api/*       | https://api.example.com| Edit    |
+| ✓ | /legacy/*    | https://old.example.com| Edit    |
+| ○ | /test/*      | https://test.local     | Edit    |
++--------------------------------------------------+
+```
+
+> **Note**: Routes configured in admin are stored in `wp_options` and load after config files and Filter Hooks.
 
 ---
 
