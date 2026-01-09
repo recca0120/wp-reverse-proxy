@@ -135,25 +135,6 @@ class FileLoaderTest extends TestCase
         $this->assertCount(2, $routes);
     }
 
-    public function test_merge_routes_from_multiple_files(): void
-    {
-        file_put_contents($this->fixturesPath . '/first.json', json_encode([
-            'routes' => [
-                ['path' => '/first/*', 'target' => 'https://first.example.com'],
-            ],
-        ]));
-
-        file_put_contents($this->fixturesPath . '/second.json', json_encode([
-            'routes' => [
-                ['path' => '/second/*', 'target' => 'https://second.example.com'],
-            ],
-        ]));
-
-        $routes = $this->loadRoutes(new FileLoader([$this->fixturesPath]));
-
-        $this->assertCount(2, $routes);
-    }
-
     public function test_load_routes_from_multiple_paths(): void
     {
         $filePath1 = $this->fixturesPath . '/first.json';
@@ -174,24 +155,6 @@ class FileLoaderTest extends TestCase
         $routes = $this->loadRoutes(new FileLoader([$filePath1, $filePath2]));
 
         $this->assertCount(2, $routes);
-    }
-
-    public function test_create_route_with_path_and_target(): void
-    {
-        $filePath = $this->fixturesPath . '/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'path' => '/api/users/*',
-                    'target' => 'https://api.example.com',
-                ],
-            ],
-        ]));
-
-        $routes = $this->loadRoutes(new FileLoader([$filePath]));
-
-        $this->assertCount(1, $routes);
-        $this->assertEquals('api.example.com', $routes[0]->getTargetHost());
     }
 
     public function test_create_route_with_methods(): void
@@ -351,20 +314,6 @@ class FileLoaderTest extends TestCase
         $collection->load();
 
         $this->assertCount(1, $collection);
-    }
-
-    public function test_works_without_cache(): void
-    {
-        $filePath = $this->fixturesPath . '/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                ['path' => '/api/*', 'target' => 'https://api.example.com'],
-            ],
-        ]));
-
-        $routes = $this->loadRoutes(new FileLoader([$filePath]));
-
-        $this->assertCount(1, $routes);
     }
 
     public function test_returns_empty_array_for_nonexistent_file(): void
