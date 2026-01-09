@@ -30,10 +30,7 @@ class IpFilter implements MiddlewareInterface
      */
     public function __construct(string $modeOrIp = self::MODE_ALLOW, ...$ips)
     {
-        // Support both: new IpFilter('allow', '1.2.3.4', '5.6.7.8') and new IpFilter('allow', ['1.2.3.4', '5.6.7.8'])
-        if (count($ips) === 1 && is_array($ips[0])) {
-            $ips = $ips[0];
-        }
+        $ips = Arr::wrap($ips);
 
         if (Arr::contains([self::MODE_ALLOW, self::MODE_DENY], $modeOrIp)) {
             $this->mode = $modeOrIp;

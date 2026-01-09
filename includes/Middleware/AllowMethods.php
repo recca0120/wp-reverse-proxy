@@ -21,11 +21,7 @@ class AllowMethods implements MiddlewareInterface
      */
     public function __construct(...$allowedMethods)
     {
-        // Support both: new AllowMethods('GET', 'POST') and new AllowMethods(['GET', 'POST'])
-        if (count($allowedMethods) === 1 && is_array($allowedMethods[0])) {
-            $allowedMethods = $allowedMethods[0];
-        }
-        $methods = $allowedMethods ?: ['GET'];
+        $methods = Arr::wrap($allowedMethods) ?: ['GET'];
         $this->allowedMethods = array_map('strtoupper', $methods);
     }
 

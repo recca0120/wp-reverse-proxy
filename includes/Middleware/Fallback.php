@@ -24,11 +24,7 @@ class Fallback implements MiddlewareInterface
      */
     public function __construct(...$statusCodes)
     {
-        // Support both: new Fallback(404, 500) and new Fallback([404, 500])
-        if (count($statusCodes) === 1 && is_array($statusCodes[0])) {
-            $statusCodes = $statusCodes[0];
-        }
-        $this->statusCodes = array_map('intval', $statusCodes) ?: [404];
+        $this->statusCodes = array_map('intval', Arr::wrap($statusCodes)) ?: [404];
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface

@@ -95,4 +95,35 @@ class ArrTest extends TestCase
 
         $this->assertEquals(['a', 'b'], $result);
     }
+
+    /**
+     * @dataProvider wrapProvider
+     */
+    public function test_wrap(array $input, array $expected): void
+    {
+        $this->assertEquals($expected, Arr::wrap($input));
+    }
+
+    public static function wrapProvider(): array
+    {
+        return [
+            // Single array element - unwrap it
+            [[[1, 2, 3]], [1, 2, 3]],
+            [[['GET', 'POST']], ['GET', 'POST']],
+
+            // Multiple elements - keep as is
+            [['GET', 'POST'], ['GET', 'POST']],
+            [[1, 2, 3], [1, 2, 3]],
+
+            // Empty array - keep as is
+            [[], []],
+
+            // Single non-array element - keep as is
+            [['GET'], ['GET']],
+            [[404], [404]],
+
+            // Single nested empty array - unwrap it
+            [[[]], []],
+        ];
+    }
 }

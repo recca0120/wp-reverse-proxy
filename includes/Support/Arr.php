@@ -115,4 +115,22 @@ class Arr
 
         return key($array);
     }
+
+    /**
+     * Normalize variadic arguments - unwrap single array element.
+     *
+     * Supports both: func('a', 'b') and func(['a', 'b'])
+     *
+     * @template T
+     * @param array<T|array<T>> $values
+     * @return array<T>
+     */
+    public static function wrap(array $values): array
+    {
+        if (count($values) === 1 && is_array($values[0])) {
+            return $values[0];
+        }
+
+        return $values;
+    }
 }
