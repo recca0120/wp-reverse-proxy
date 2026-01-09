@@ -5,40 +5,39 @@ namespace Recca0120\ReverseProxy\Middleware;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\SimpleCache\CacheInterface;
+use Recca0120\ReverseProxy\Concerns\HasCache;
+use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
-use Recca0120\ReverseProxy\WordPress\TransientCache;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
-class Caching implements MiddlewareInterface
+class Caching implements MiddlewareInterface, CacheAwareInterface
 {
+    use HasCache;
+
     /** @var int */
     private $ttl;
 
-    /** @var CacheInterface */
-    private $cache;
-
     /**
      * @param  int  $ttl  快取時間（秒）
-     * @param  CacheInterface|null  $cache  快取實作
      */
-    public function __construct(int $ttl = 300, ?CacheInterface $cache = null)
+    public function __construct(int $ttl = 300)
     {
         $this->ttl = $ttl;
-        $this->cache = $cache ?? new TransientCache('rp_cache_');
     }
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
         // 只快取 GET 和 HEAD 請求
         $method = strtoupper($request->getMethod());
-        if (! in_array($method, ['GET', 'HEAD'], true)) {
+        if (! Arr::contains(['GET', 'HEAD'], $method)) {
             return $next($request);
         }
 
         $cacheKey = $this->generateCacheKey($request);
 
         // 嘗試從快取取得
-        $cached = $this->cache->get($cacheKey);
+        $cached = $this->cacheGet($cacheKey);
         if ($cached !== null && is_array($cached)) {
             return $this->restoreResponse($cached)->withHeader('X-Cache', 'HIT');
         }
@@ -54,6 +53,11 @@ class Caching implements MiddlewareInterface
         return $response->withHeader('X-Cache', 'MISS');
     }
 
+    protected function getCachePrefix(): string
+    {
+        return 'rp_cache_';
+    }
+
     private function generateCacheKey(ServerRequestInterface $request): string
     {
         return md5((string) $request->getUri());
@@ -61,23 +65,24 @@ class Caching implements MiddlewareInterface
 
     private function isCacheable(ResponseInterface $response): bool
     {
-        $statusCode = $response->getStatusCode();
-
-        // 只快取 200 OK
-        if ($statusCode !== 200) {
+        if ($response->getStatusCode() !== 200) {
             return false;
         }
 
-        // 檢查 Cache-Control header
-        $cacheControl = $response->getHeaderLine('Cache-Control');
-        if (stripos($cacheControl, 'no-cache') !== false
-            || stripos($cacheControl, 'no-store') !== false
-            || stripos($cacheControl, 'private') !== false
-        ) {
-            return false;
+        return ! $this->hasNoCacheDirective($response->getHeaderLine('Cache-Control'));
+    }
+
+    private function hasNoCacheDirective(string $cacheControl): bool
+    {
+        $cacheControl = strtolower($cacheControl);
+
+        foreach (['no-cache', 'no-store', 'private'] as $directive) {
+            if (Str::contains($cacheControl, $directive)) {
+                return true;
+            }
         }
 
-        return true;
+        return false;
     }
 
     private function cacheResponse(string $key, ResponseInterface $response): void
@@ -90,7 +95,7 @@ class Caching implements MiddlewareInterface
             'reason' => $response->getReasonPhrase(),
         ];
 
-        $this->cache->set($key, $data, $this->ttl);
+        $this->cacheSet($key, $data, $this->ttl);
     }
 
     private function restoreResponse(array $data): ResponseInterface

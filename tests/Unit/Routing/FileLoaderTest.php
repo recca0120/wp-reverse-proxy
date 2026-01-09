@@ -4,12 +4,12 @@ namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use Mockery;
 use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Routing\FileLoader;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 
 class FileLoaderTest extends TestCase
 {
@@ -279,11 +279,8 @@ class FileLoaderTest extends TestCase
             ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
         ];
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')
-            ->with($cacheKey)
-            ->once()
-            ->andReturn(['metadata' => $mtime, 'data' => $cachedConfigs]);
+        $cache = new ArrayCache();
+        $cache->set($cacheKey, ['metadata' => $mtime, 'data' => $cachedConfigs]);
 
         $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();
@@ -304,16 +301,17 @@ class FileLoaderTest extends TestCase
         $loader = new FileLoader([$filePath]);
         $cacheKey = $loader->getCacheKey();
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->with($cacheKey)->once()->andReturnNull();
-        $cache->shouldReceive('set')->with($cacheKey, Mockery::on(function ($data) {
-            return isset($data['metadata']) && isset($data['data']);
-        }))->once();
+        $cache = new ArrayCache();
 
         $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();
 
         $this->assertCount(1, $collection);
+
+        $cachedData = $cache->get($cacheKey);
+        $this->assertNotNull($cachedData);
+        $this->assertArrayHasKey('metadata', $cachedData);
+        $this->assertArrayHasKey('data', $cachedData);
     }
 
     public function test_returns_empty_array_for_nonexistent_file(): void
@@ -448,14 +446,11 @@ class FileLoaderTest extends TestCase
         // Simulate stale cache with old mtime
         $staleMtime = 12345;
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->with($cacheKey)->once()->andReturn([
+        $cache = new ArrayCache();
+        $cache->set($cacheKey, [
             'metadata' => $staleMtime,
             'data' => [['path' => '/cached/*', 'target' => 'https://cached.example.com']],
         ]);
-        $cache->shouldReceive('set')->with($cacheKey, Mockery::on(function ($data) {
-            return isset($data['metadata']) && isset($data['data']);
-        }))->once();
 
         $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();
@@ -463,6 +458,11 @@ class FileLoaderTest extends TestCase
         // Should reload from file, not use stale cache
         $this->assertCount(1, $collection);
         $this->assertEquals('api.example.com', $collection[0]->getTargetHost());
+
+        // Verify cache was updated with new data
+        $cachedData = $cache->get($cacheKey);
+        $this->assertNotNull($cachedData);
+        $this->assertNotEquals($staleMtime, $cachedData['metadata']);
     }
 
     /**

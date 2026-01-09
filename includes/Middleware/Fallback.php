@@ -6,6 +6,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Exceptions\FallbackException;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class Fallback implements MiddlewareInterface
 {
@@ -27,7 +28,7 @@ class Fallback implements MiddlewareInterface
     {
         $response = $next($request);
 
-        if (in_array($response->getStatusCode(), $this->statusCodes, true)) {
+        if (Arr::contains($this->statusCodes, $response->getStatusCode())) {
             throw new FallbackException();
         }
 

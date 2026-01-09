@@ -4,6 +4,8 @@ namespace Recca0120\ReverseProxy\Routing;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\RouteAwareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class Route
 {
@@ -121,12 +123,12 @@ class Route
             return true;
         }
 
-        return in_array(strtoupper($method), $this->methods, true);
+        return Arr::contains($this->methods, strtoupper($method));
     }
 
     private function matchesPattern(string $path): bool
     {
-        $regex = '#^'.str_replace('\*', '(.*)', preg_quote($this->path, '#')).'$#';
+        $regex = $this->buildRegex();
 
         if (preg_match($regex, $path, $matches)) {
             $this->captures = array_slice($matches, 1);
@@ -137,8 +139,37 @@ class Route
         return false;
     }
 
+    private function buildRegex(): string
+    {
+        $pattern = preg_quote($this->path, '#');
+
+        // Step 1: Handle trailing /* by removing it
+        $hasTrailingWildcard = Str::endsWith($pattern, '/\\*');
+        if ($hasTrailingWildcard) {
+            $pattern = substr($pattern, 0, -3);
+        }
+
+        // Step 2: Replace remaining wildcards with capture groups
+        $pattern = str_replace('\\*', '(.*)', $pattern);
+
+        // Step 3: Add optional path suffix for prefix matching
+        // - Trailing wildcard: /api/* matches /api, /api/, /api/users
+        // - No wildcard: /api matches /api, /api/, /api/users
+        // - Middle wildcard only: /api/*/users matches exactly that pattern
+        $hasMiddleWildcard = Str::contains($pattern, '(.*)');
+        if ($hasTrailingWildcard || ! $hasMiddleWildcard) {
+            $pattern .= '(?:/(.*))?';
+        }
+
+        return '#^'.$pattern.'$#';
+    }
+
     private function buildTargetUrl(string $path, string $queryString): string
     {
+        if ($this->hasTrailingSlash()) {
+            $path = $this->stripBasePath($path);
+        }
+
         $url = rtrim($this->target, '/').$path;
 
         if ($queryString !== '') {
@@ -146,5 +177,35 @@ class Route
         }
 
         return $url;
+    }
+
+    /**
+     * Check if target URL has a trailing slash (nginx-style prefix stripping).
+     */
+    private function hasTrailingSlash(): bool
+    {
+        return Str::endsWith($this->target, '/');
+    }
+
+    /**
+     * Strip the base path prefix from the request path.
+     */
+    private function stripBasePath(string $path): string
+    {
+        $basePath = $this->getBasePath();
+
+        if ($basePath !== '' && Str::startsWith($path, $basePath)) {
+            $path = Str::after($path, $basePath);
+        }
+
+        return $path ?: '/';
+    }
+
+    /**
+     * Get the base path (pattern without wildcard).
+     */
+    private function getBasePath(): string
+    {
+        return rtrim(preg_replace('/\*+$/', '', $this->path), '/');
     }
 }

@@ -3,6 +3,8 @@
 namespace Recca0120\ReverseProxy\Http\Concerns;
 
 use Psr\Http\Message\RequestInterface;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 trait ParsesResponse
 {
@@ -49,7 +51,7 @@ trait ParsesResponse
                 continue;
             }
 
-            if (strpos($line, ':') === false) {
+            if (! Str::contains($line, ':')) {
                 continue;
             }
 
@@ -57,7 +59,7 @@ trait ParsesResponse
             $name = trim($name);
             $value = trim($value);
 
-            if (isset($headers[$name])) {
+            if (Arr::has($headers, $name)) {
                 $headers[$name][] = $value;
             } else {
                 $headers[$name] = [$value];

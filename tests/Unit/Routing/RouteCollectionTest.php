@@ -4,10 +4,10 @@ namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use Mockery;
 use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 
 class RouteCollectionTest extends TestCase
 {
@@ -181,11 +181,8 @@ class RouteCollectionTest extends TestCase
         $loader->shouldReceive('isCacheValid')->with(12345)->andReturn(true);
         $loader->shouldNotReceive('load');
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')
-            ->with('test_loader_key')
-            ->once()
-            ->andReturn(['metadata' => 12345, 'data' => $cachedConfigs]);
+        $cache = new ArrayCache();
+        $cache->set('test_loader_key', ['metadata' => 12345, 'data' => $cachedConfigs]);
 
         $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();
@@ -203,16 +200,17 @@ class RouteCollectionTest extends TestCase
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->with('test_loader_key')->once()->andReturnNull();
-        $cache->shouldReceive('set')->with('test_loader_key', Mockery::on(function ($data) {
-            return isset($data['metadata']) && isset($data['data']);
-        }))->once();
+        $cache = new ArrayCache();
 
         $collection = new RouteCollection([$loader], null, $cache);
         $collection->load();
 
         $this->assertCount(1, $collection);
+
+        $cachedData = $cache->get('test_loader_key');
+        $this->assertNotNull($cachedData);
+        $this->assertArrayHasKey('metadata', $cachedData);
+        $this->assertArrayHasKey('data', $cachedData);
     }
 
     public function test_clear_cache(): void
@@ -220,13 +218,13 @@ class RouteCollectionTest extends TestCase
         $loader = Mockery::mock(RouteLoaderInterface::class);
         $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
 
-        $cache = Mockery::spy(CacheInterface::class);
+        $cache = new ArrayCache();
+        $cache->set('test_loader_key', ['metadata' => 12345, 'data' => []]);
 
         $collection = new RouteCollection([$loader], null, $cache);
         $collection->clearCache();
 
-        $cache->shouldHaveReceived('delete')->with('test_loader_key')->once();
-        $this->addToAssertionCount(1);
+        $this->assertFalse($cache->has('test_loader_key'));
     }
 
     public function test_clear_cache_without_cache_does_nothing(): void

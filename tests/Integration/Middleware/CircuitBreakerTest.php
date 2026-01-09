@@ -9,6 +9,7 @@ use Nyholm\Psr7\Response;
 use Recca0120\ReverseProxy\Middleware\CircuitBreaker;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 use WP_UnitTestCase;
 
 class CircuitBreakerTest extends WP_UnitTestCase
@@ -16,11 +17,15 @@ class CircuitBreakerTest extends WP_UnitTestCase
     /** @var MockClient */
     private $mockClient;
 
+    /** @var ArrayCache */
+    private $cache;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->mockClient = new MockClient();
+        $this->cache = new ArrayCache();
 
         add_filter('reverse_proxy_http_client', function () {
             return $this->mockClient;
@@ -48,7 +53,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new CircuitBreaker('test-service', 3, 60),
+                $this->createCircuitBreaker('test-service', 3, 60),
             ]),
         ]);
         $this->mockClient->addResponse(new Response(200, [], '{"data":"success"}'));
@@ -64,7 +69,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new CircuitBreaker('threshold-test', 3, 60),
+                $this->createCircuitBreaker('threshold-test', 3, 60),
             ]),
         ]);
 
@@ -98,7 +103,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new CircuitBreaker('reset-test', 3, 60),
+                $this->createCircuitBreaker('reset-test', 3, 60),
             ]),
         ]);
 
@@ -132,7 +137,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
-                new CircuitBreaker('network-test', 2, 60),
+                $this->createCircuitBreaker('network-test', 2, 60),
             ]),
         ]);
 
@@ -175,10 +180,10 @@ class CircuitBreakerTest extends WP_UnitTestCase
 
         $this->givenRoutes([
             new Route('/api/a/*', 'https://backend-a.example.com', [
-                new CircuitBreaker('service-a', 2, 60),
+                $this->createCircuitBreaker('service-a', 2, 60),
             ]),
             new Route('/api/b/*', 'https://backend-b.example.com', [
-                new CircuitBreaker('service-b', 2, 60),
+                $this->createCircuitBreaker('service-b', 2, 60),
             ]),
         ]);
 
@@ -210,5 +215,13 @@ class CircuitBreakerTest extends WP_UnitTestCase
         $this->go_to($path);
 
         return ob_get_clean();
+    }
+
+    private function createCircuitBreaker(string $serviceName, int $threshold = 5, int $timeout = 60): CircuitBreaker
+    {
+        $middleware = new CircuitBreaker($serviceName, $threshold, $timeout);
+        $middleware->setCache($this->cache);
+
+        return $middleware;
     }
 }

@@ -348,4 +348,200 @@ class RouteTest extends TestCase
         $this->assertEquals('first', $middlewares[0]->name);
         $this->assertEquals('second', $middlewares[1]->name);
     }
+
+    // Nginx-style trailing slash tests
+
+    public function test_target_without_trailing_slash_keeps_full_path()
+    {
+        $route = new Route('/google/*', 'https://www.google.com');
+        $request = new ServerRequest('GET', '/google/search');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/google/search', $result);
+    }
+
+    public function test_target_with_trailing_slash_strips_prefix()
+    {
+        $route = new Route('/google/*', 'https://www.google.com/');
+        $request = new ServerRequest('GET', '/google/search');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/search', $result);
+    }
+
+    public function test_target_with_trailing_slash_strips_prefix_and_preserves_query()
+    {
+        $route = new Route('/google/*', 'https://www.google.com/');
+        $request = new ServerRequest('GET', '/google/search?q=test&lang=en');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/search?q=test&lang=en', $result);
+    }
+
+    public function test_target_with_trailing_slash_handles_root_path()
+    {
+        $route = new Route('/google/*', 'https://www.google.com/');
+        $request = new ServerRequest('GET', '/google/');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/', $result);
+    }
+
+    public function test_target_with_trailing_slash_handles_exact_match()
+    {
+        $route = new Route('/google', 'https://www.google.com/');
+        $request = new ServerRequest('GET', '/google');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://www.google.com/', $result);
+    }
+
+    public function test_target_with_trailing_slash_handles_nested_path()
+    {
+        $route = new Route('/api/v1/*', 'https://backend.example.com/');
+        $request = new ServerRequest('GET', '/api/v1/users/123/profile');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://backend.example.com/users/123/profile', $result);
+    }
+
+    public function test_target_with_trailing_slash_and_target_path()
+    {
+        $route = new Route('/old-api/*', 'https://backend.example.com/new-api/');
+        $request = new ServerRequest('GET', '/old-api/users');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://backend.example.com/new-api/users', $result);
+    }
+
+    // Wildcard pattern should also match base path without trailing slash
+
+    public function test_wildcard_pattern_matches_base_path_without_trailing_slash()
+    {
+        $route = new Route('/test/*', 'https://example.com/');
+        $request = new ServerRequest('GET', '/test');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://example.com/', $result);
+    }
+
+    public function test_wildcard_pattern_matches_base_path_with_trailing_slash()
+    {
+        $route = new Route('/test/*', 'https://example.com/');
+        $request = new ServerRequest('GET', '/test/');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://example.com/', $result);
+    }
+
+    public function test_wildcard_pattern_matches_subpath()
+    {
+        $route = new Route('/test/*', 'https://example.com/');
+        $request = new ServerRequest('GET', '/test/foo/bar');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://example.com/foo/bar', $result);
+    }
+
+    public function test_wildcard_pattern_without_trailing_slash_target_matches_base_path()
+    {
+        $route = new Route('/api/*', 'https://backend.example.com');
+        $request = new ServerRequest('GET', '/api');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://backend.example.com/api', $result);
+    }
+
+    public function test_nested_wildcard_pattern_matches_base_path()
+    {
+        $route = new Route('/api/v1/*', 'https://backend.example.com/');
+        $request = new ServerRequest('GET', '/api/v1');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://backend.example.com/', $result);
+    }
+
+    public function test_wildcard_with_method_matches_base_path()
+    {
+        $route = new Route('GET /admin/*', 'https://admin.example.com/');
+        $request = new ServerRequest('GET', '/admin');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://admin.example.com/', $result);
+    }
+
+    // Path without wildcard should act as prefix match (like /path/*)
+
+    public function test_path_without_wildcard_matches_exact_path()
+    {
+        $route = new Route('/api', 'https://api.example.com/');
+        $request = new ServerRequest('GET', '/api');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://api.example.com/', $result);
+    }
+
+    public function test_path_without_wildcard_matches_with_trailing_slash()
+    {
+        $route = new Route('/api', 'https://api.example.com/');
+        $request = new ServerRequest('GET', '/api/');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://api.example.com/', $result);
+    }
+
+    public function test_path_without_wildcard_matches_subpaths()
+    {
+        $route = new Route('/api', 'https://api.example.com/');
+        $request = new ServerRequest('GET', '/api/users/123');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://api.example.com/users/123', $result);
+    }
+
+    public function test_path_without_wildcard_does_not_match_similar_prefix()
+    {
+        $route = new Route('/api', 'https://api.example.com/');
+        $request = new ServerRequest('GET', '/api-docs');
+
+        $result = $route->matches($request);
+
+        $this->assertNull($result);
+    }
+
+    public function test_nested_path_without_wildcard_matches_subpaths()
+    {
+        $route = new Route('/proxy/backend', 'https://backend.example.com/');
+        $request = new ServerRequest('GET', '/proxy/backend/users/list');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://backend.example.com/users/list', $result);
+    }
+
+    public function test_path_with_method_without_wildcard_matches_subpaths()
+    {
+        $route = new Route('GET /admin', 'https://admin.example.com/');
+        $request = new ServerRequest('GET', '/admin/dashboard');
+
+        $result = $route->matches($request);
+
+        $this->assertEquals('https://admin.example.com/dashboard', $result);
+    }
 }

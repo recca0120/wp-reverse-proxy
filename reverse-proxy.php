@@ -86,9 +86,14 @@ function reverse_proxy_load_config_routes()
     if ($routes === null) {
         $directory = apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
 
+        $cache = apply_filters(
+            'reverse_proxy_cache',
+            new Recca0120\ReverseProxy\WordPress\TransientCache()
+        );
+
         $middlewareFactory = apply_filters(
             'reverse_proxy_middleware_factory',
-            new Recca0120\ReverseProxy\Routing\MiddlewareFactory()
+            new Recca0120\ReverseProxy\Routing\MiddlewareFactory($cache)
         );
 
         $loaders = apply_filters('reverse_proxy_route_loaders', [
@@ -98,7 +103,7 @@ function reverse_proxy_load_config_routes()
         $routes = new Recca0120\ReverseProxy\Routing\RouteCollection(
             $loaders,
             $middlewareFactory,
-            apply_filters('reverse_proxy_route_cache', null)
+            $cache
         );
     }
 

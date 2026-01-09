@@ -48,4 +48,28 @@ class Arr
 
         return $result;
     }
+
+    /**
+     * Determine if an array contains a given value (strict comparison).
+     *
+     * @template TValue
+     *
+     * @param array<TValue> $array
+     * @param TValue $value
+     */
+    public static function contains(array $array, $value): bool
+    {
+        return in_array($value, $array, true);
+    }
+
+    /**
+     * Determine if a key exists in an array.
+     *
+     * @param array<string|int, mixed> $array
+     * @param string|int $key
+     */
+    public static function has(array $array, $key): bool
+    {
+        return array_key_exists($key, $array);
+    }
 }

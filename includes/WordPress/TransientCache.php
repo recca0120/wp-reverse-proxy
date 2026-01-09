@@ -4,6 +4,7 @@ namespace Recca0120\ReverseProxy\WordPress;
 
 use DateInterval;
 use Psr\SimpleCache\CacheInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class TransientCache implements CacheInterface
 {
@@ -170,7 +171,7 @@ class TransientCache implements CacheInterface
      */
     private function trackKey($key)
     {
-        if (! in_array($key, $this->keys, true)) {
+        if (! Arr::contains($this->keys, $key)) {
             $this->keys[] = $key;
             $this->saveKeys();
         }

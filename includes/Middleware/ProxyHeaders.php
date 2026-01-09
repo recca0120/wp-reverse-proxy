@@ -5,6 +5,8 @@ namespace Recca0120\ReverseProxy\Middleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class ProxyHeaders implements MiddlewareInterface
 {
@@ -64,11 +66,7 @@ class ProxyHeaders implements MiddlewareInterface
      */
     private function detectScheme(array $serverParams): string
     {
-        if (isset($serverParams['HTTPS']) && $serverParams['HTTPS'] !== 'off') {
-            return 'https';
-        }
-
-        return 'http';
+        return ($serverParams['HTTPS'] ?? 'off') !== 'off' ? 'https' : 'http';
     }
 
     /**
@@ -83,8 +81,8 @@ class ProxyHeaders implements MiddlewareInterface
         return array_filter(
             $headers,
             function ($name) use ($allowedHeaders, $exceptHeaders) {
-                return in_array($name, $allowedHeaders, true)
-                    && ! in_array($name, $exceptHeaders, true);
+                return Arr::contains($allowedHeaders, $name)
+                    && ! Arr::contains($exceptHeaders, $name);
             },
             ARRAY_FILTER_USE_KEY
         );
@@ -96,11 +94,9 @@ class ProxyHeaders implements MiddlewareInterface
         string $host,
         string $scheme
     ): string {
-        $existing = $request->getHeaderLine('Forwarded');
-
         $parts = [];
         if ($clientIp !== '') {
-            $parts[] = strpos($clientIp, ':') !== false
+            $parts[] = Str::contains($clientIp, ':')
                 ? 'for="['.$clientIp.']"'
                 : 'for='.$clientIp;
         }
@@ -111,23 +107,26 @@ class ProxyHeaders implements MiddlewareInterface
             $parts[] = 'proto='.$scheme;
         }
 
-        $current = implode(';', $parts);
-
-        if ($existing === '' || $current === '') {
-            return $existing ?: $current;
-        }
-
-        return $existing.', '.$current;
+        return $this->appendHeaderValue(
+            $request->getHeaderLine('Forwarded'),
+            implode(';', $parts)
+        );
     }
 
     private function buildForwardedFor(ServerRequestInterface $request, string $clientIp): string
     {
-        $existing = $request->getHeaderLine('X-Forwarded-For');
+        return $this->appendHeaderValue(
+            $request->getHeaderLine('X-Forwarded-For'),
+            $clientIp
+        );
+    }
 
-        if ($existing === '' || $clientIp === '') {
-            return $existing ?: $clientIp;
+    private function appendHeaderValue(string $existing, string $new): string
+    {
+        if ($existing === '' || $new === '') {
+            return $existing !== '' ? $existing : $new;
         }
 
-        return "{$existing}, {$clientIp}";
+        return $existing.', '.$new;
     }
 }

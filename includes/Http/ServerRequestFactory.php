@@ -6,6 +6,8 @@ use Nyholm\Psr7\ServerRequest;
 use Nyholm\Psr7\Uri;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class ServerRequestFactory
 {
@@ -48,7 +50,7 @@ class ServerRequestFactory
 
     private function createUri(array $serverParams): Uri
     {
-        $scheme = isset($serverParams['HTTPS']) && $serverParams['HTTPS'] !== 'off' ? 'https' : 'http';
+        $scheme = ($serverParams['HTTPS'] ?? 'off') !== 'off' ? 'https' : 'http';
         $host = $serverParams['HTTP_HOST'] ?? $serverParams['SERVER_NAME'] ?? 'localhost';
         $requestUri = $this->normalizeRequestUri($serverParams['REQUEST_URI'] ?? '/');
 
@@ -68,7 +70,7 @@ class ServerRequestFactory
         $headers = [];
 
         foreach ($serverParams as $key => $value) {
-            if (strpos($key, 'HTTP_') === 0) {
+            if (Str::startsWith($key, 'HTTP_')) {
                 // Skip CONTENT_TYPE and CONTENT_LENGTH as they're handled separately
                 if ($key === 'HTTP_CONTENT_TYPE' || $key === 'HTTP_CONTENT_LENGTH') {
                     continue;
@@ -77,7 +79,7 @@ class ServerRequestFactory
                 if ($value === '' || $value === null) {
                     continue;
                 }
-                $name = str_replace('_', '-', substr($key, 5));
+                $name = str_replace('_', '-', Str::after($key, 'HTTP_'));
                 $headers[$name] = $value;
             } elseif ($key === 'CONTENT_TYPE' && $value) {
                 $headers['Content-Type'] = $value;
@@ -94,7 +96,7 @@ class ServerRequestFactory
      */
     private function resolveBody(string $method, $body): string
     {
-        if (! in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
+        if (! Arr::contains(['POST', 'PUT', 'PATCH'], $method)) {
             return '';
         }
 

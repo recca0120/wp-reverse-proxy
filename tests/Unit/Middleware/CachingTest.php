@@ -5,33 +5,35 @@ namespace Recca0120\ReverseProxy\Tests\Unit\Middleware;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Middleware\Caching;
+use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 
 class CachingTest extends TestCase
 {
-    /** @var CacheInterface&\PHPUnit\Framework\MockObject\MockObject */
+    /** @var ArrayCache */
     private $cache;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->cache = $this->createMock(CacheInterface::class);
+        $this->cache = new ArrayCache();
     }
 
     public function test_it_returns_cached_response_on_hit()
     {
-        $cachedData = [
+        $uri = 'https://example.com/api/users';
+        $cacheKey = 'rp_cache_' . md5($uri);
+        $this->cache->set($cacheKey, [
             'status' => 200,
             'headers' => ['Content-Type' => ['application/json']],
             'body' => '{"cached":true}',
             'protocol' => '1.1',
             'reason' => 'OK',
-        ];
-        $this->cache->method('get')->willReturn($cachedData);
+        ]);
 
-        $middleware = new Caching(300, $this->cache);
-        $request = new ServerRequest('GET', 'https://example.com/api/users');
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
+        $request = new ServerRequest('GET', $uri);
 
         $called = false;
         $response = $middleware->process($request, function ($req) use (&$called) {
@@ -47,10 +49,8 @@ class CachingTest extends TestCase
 
     public function test_it_calls_next_on_cache_miss()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->method('set')->willReturn(true);
-
-        $middleware = new Caching(300, $this->cache);
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $called = false;
@@ -66,36 +66,34 @@ class CachingTest extends TestCase
 
     public function test_it_caches_200_responses()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->expects($this->once())->method('set');
-
-        $middleware = new Caching(300, $this->cache);
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
             return new Response(200, [], '{"data":"test"}');
         });
+
+        $this->assertNotEmpty($this->cache->all());
     }
 
     public function test_it_does_not_cache_non_200_responses()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->expects($this->never())->method('set');
-
-        $middleware = new Caching(300, $this->cache);
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
             return new Response(404);
         });
+
+        $this->assertEmpty($this->cache->all());
     }
 
     public function test_it_does_not_cache_post_requests()
     {
-        $this->cache->expects($this->never())->method('get');
-        $this->cache->expects($this->never())->method('set');
-
-        $middleware = new Caching(300, $this->cache);
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('POST', 'https://example.com/api/users');
 
         $called = false;
@@ -107,72 +105,71 @@ class CachingTest extends TestCase
 
         $this->assertTrue($called);
         $this->assertFalse($response->hasHeader('X-Cache'));
+        $this->assertEmpty($this->cache->all());
     }
 
     public function test_it_does_not_cache_responses_with_no_cache_header()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->expects($this->never())->method('set');
-
-        $middleware = new Caching(300, $this->cache);
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
             return new Response(200, ['Cache-Control' => 'no-cache']);
         });
+
+        $this->assertEmpty($this->cache->all());
     }
 
     public function test_it_does_not_cache_responses_with_no_store_header()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->expects($this->never())->method('set');
-
-        $middleware = new Caching(300, $this->cache);
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
             return new Response(200, ['Cache-Control' => 'no-store']);
         });
+
+        $this->assertEmpty($this->cache->all());
     }
 
     public function test_it_does_not_cache_private_responses()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->expects($this->never())->method('set');
-
-        $middleware = new Caching(300, $this->cache);
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
             return new Response(200, ['Cache-Control' => 'private']);
         });
+
+        $this->assertEmpty($this->cache->all());
     }
 
     public function test_it_caches_head_requests()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->expects($this->once())->method('set');
-
-        $middleware = new Caching(300, $this->cache);
+        $middleware = new Caching(300);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('HEAD', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
             return new Response(200);
         });
+
+        $this->assertNotEmpty($this->cache->all());
     }
 
     public function test_it_uses_custom_ttl()
     {
-        $this->cache->method('get')->willReturn(null);
-        $this->cache->expects($this->once())
-            ->method('set')
-            ->with($this->anything(), $this->anything(), $this->equalTo(600));
-
-        $middleware = new Caching(600, $this->cache);
+        $middleware = new Caching(600);
+        $middleware->setCache($this->cache);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
 
         $middleware->process($request, function ($req) {
             return new Response(200);
         });
+
+        $this->assertNotEmpty($this->cache->all());
     }
 }

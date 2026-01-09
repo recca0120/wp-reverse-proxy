@@ -21,9 +21,16 @@ use Recca0120\ReverseProxy\Middleware\RewritePath;
 use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
+use Psr\SimpleCache\CacheInterface;
+use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
+use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareFactory
 {
+    /** @var CacheInterface|null */
+    private $cache;
+
     /** @var array<class-string<MiddlewareInterface>> */
     private static $defaultMiddlewares = [
         AllowMethods::class,
@@ -55,6 +62,11 @@ class MiddlewareFactory
     /** @var array<string, class-string<MiddlewareInterface>> */
     private static $customAliases = [];
 
+    public function __construct(?CacheInterface $cache = null)
+    {
+        $this->cache = $cache;
+    }
+
     /**
      * Create a middleware instance from configuration.
      *
@@ -77,8 +89,13 @@ class MiddlewareFactory
         }
 
         $args = $this->resolveArguments($config);
+        $middleware = new $class(...$args);
 
-        return new $class(...$args);
+        if ($this->cache !== null && $middleware instanceof CacheAwareInterface) {
+            $middleware->setCache($this->cache);
+        }
+
+        return $middleware;
     }
 
     /**
@@ -161,7 +178,7 @@ class MiddlewareFactory
         }
 
         // Already standard format: ["name" => "...", ...]
-        if (isset($config['name'])) {
+        if (Arr::has($config, 'name')) {
             return $config;
         }
 
@@ -207,7 +224,7 @@ class MiddlewareFactory
     private function parseStringConfig(string $config): array
     {
         // No colon means no parameters
-        if (strpos($config, ':') === false) {
+        if (! Str::contains($config, ':')) {
             return ['name' => $config];
         }
 
@@ -230,7 +247,7 @@ class MiddlewareFactory
         }
 
         if (is_numeric($value)) {
-            return strpos($value, '.') !== false ? (float) $value : (int) $value;
+            return Str::contains($value, '.') ? (float) $value : (int) $value;
         }
 
         return $value;
@@ -246,7 +263,7 @@ class MiddlewareFactory
     {
         $aliases = [];
         foreach ($classes as $class) {
-            $shortName = substr(strrchr($class, '\\'), 1) ?: $class;
+            $shortName = Str::afterLast($class, '\\');
             $aliases[$shortName] = $class;
         }
 
@@ -264,11 +281,11 @@ class MiddlewareFactory
      */
     private function resolveArguments(array $config): array
     {
-        if (isset($config['args'])) {
+        if (Arr::has($config, 'args')) {
             return (array) $config['args'];
         }
 
-        if (isset($config['options'])) {
+        if (Arr::has($config, 'options')) {
             return [$config['options']];
         }
 
