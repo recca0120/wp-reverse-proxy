@@ -240,20 +240,18 @@ return [
 
 ```php
 // mu-plugins/reverse-proxy.php
-add_filter('reverse_proxy_middleware_factory', function ($factory) {
-    // 方式一：逐一註冊（支援鏈式呼叫）
-    $factory->registerAlias('MyAuth', MyAuthMiddleware::class)
-        ->registerAlias('CustomCache', MyCacheMiddleware::class);
+use Recca0120\ReverseProxy\Routing\MiddlewareFactory;
 
-    // 方式二：批次註冊（陣列格式）
-    $factory->registerAlias([
-        'MyAuth' => MyAuthMiddleware::class,
-        'CustomCache' => MyCacheMiddleware::class,
-        'RateLimit' => MyRateLimitMiddleware::class,
-    ]);
+// 方式一：逐一註冊
+MiddlewareFactory::registerAlias('MyAuth', MyAuthMiddleware::class);
+MiddlewareFactory::registerAlias('CustomCache', MyCacheMiddleware::class);
 
-    return $factory;
-});
+// 方式二：批次註冊（陣列格式）
+MiddlewareFactory::registerAlias([
+    'MyAuth' => MyAuthMiddleware::class,
+    'CustomCache' => MyCacheMiddleware::class,
+    'RateLimit' => MyRateLimitMiddleware::class,
+]);
 ```
 
 然後在配置檔中使用：
@@ -298,12 +296,13 @@ add_filter('reverse_proxy_config_pattern', function () {
  * Description: Custom reverse proxy routes configuration
  */
 
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
-        new Route('/api/*', 'https://api.example.com'),
-    ];
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add(new Route('/api/*', 'https://api.example.com'));
+
+    return $routes;
 });
 ```
 
@@ -314,10 +313,19 @@ add_filter('reverse_proxy_routes', function () {
 配置檔和 Filter Hook 可以同時使用。配置檔的路由會先載入，再透過 `reverse_proxy_routes` filter 合併或修改：
 
 ```php
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+
 // 在配置檔路由的基礎上新增或修改
-add_filter('reverse_proxy_routes', function ($routes) {
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
     // 新增額外路由
-    $routes[] = new Route('/custom/*', 'https://custom.example.com');
+    $routes->add(new Route('/custom/*', 'https://custom.example.com'));
+
+    // 或一次新增多個路由
+    $routes->add([
+        new Route('/v1/*', 'https://v1.example.com'),
+        new Route('/v2/*', 'https://v2.example.com'),
+    ]);
 
     return $routes;
 });
@@ -342,33 +350,36 @@ add_filter('reverse_proxy_routes', function ($routes) {
 路由依序匹配（第一個符合的優先）：
 
 ```php
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
-        // 更具體的路由放前面
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    // 更具體的路由放前面
+    $routes->add([
         new Route('/api/v2/*', 'https://api-v2.example.com'),
         // 其他 API 路由的備援
         new Route('/api/*', 'https://api.example.com'),
-    ];
+    ]);
+
+    return $routes;
 });
 ```
 
 ### 搭配中介層
 
 ```php
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
-use Recca0120\ReverseProxy\Middleware\RewritePath;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
-        new Route('/api/*', 'https://backend.example.com', [
-            new ProxyHeaders(),
-            new SetHost('custom-host.com'),
-        ]),
-    ];
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add(new Route('/api/*', 'https://backend.example.com', [
+        new ProxyHeaders(),
+        new SetHost('custom-host.com'),
+    ]));
+
+    return $routes;
 });
 ```
 
@@ -406,15 +417,18 @@ new Route('GET|POST|PUT|DELETE /api/*', 'https://backend.example.com');
 將不同 HTTP 方法導向不同後端：
 
 ```php
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add([
         // 讀取操作 → 讀取副本
         new Route('GET /api/users/*', 'https://read-replica.example.com'),
         // 寫入操作 → 主要伺服器
         new Route('POST|PUT|DELETE /api/users/*', 'https://primary.example.com'),
-    ];
+    ]);
+
+    return $routes;
 });
 ```
 
@@ -1015,17 +1029,18 @@ location ^~ /api/v1 {
 WordPress 對應寫法：
 
 ```php
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 
-add_filter('reverse_proxy_routes', function () {
-    return [
-        new Route('/api/v1/*', 'https://127.0.0.1:8080', [
-            new ProxyHeaders(),
-            new SetHost('api.example.com'),
-        ]),
-    ];
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add(new Route('/api/v1/*', 'https://127.0.0.1:8080', [
+        new ProxyHeaders(),
+        new SetHost('api.example.com'),
+    ]));
+
+    return $routes;
 });
 ```
 
@@ -1210,15 +1225,16 @@ Request → plugins_loaded → 符合路由？
 <?php
 // wp-content/mu-plugins/reverse-proxy-early.php
 
-use Recca0120\ReverseProxy\Route;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 require_once WP_CONTENT_DIR.'/plugins/reverse-proxy/reverse-proxy.php';
 
 // 註冊路由
-add_filter('reverse_proxy_routes', function () {
-    return [
-        new Route('/api/*', 'https://api.example.com'),
-    ];
+add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
+    $routes->add(new Route('/api/*', 'https://api.example.com'));
+
+    return $routes;
 });
 
 // 直接執行（跳過後續 WordPress 載入）
