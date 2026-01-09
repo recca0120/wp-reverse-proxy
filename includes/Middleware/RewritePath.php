@@ -5,14 +5,15 @@ namespace Recca0120\ReverseProxy\Middleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Contracts\RouteAwareInterface;
 use Recca0120\ReverseProxy\Routing\Route;
 
-class RewritePath implements MiddlewareInterface
+class RewritePath implements MiddlewareInterface, RouteAwareInterface
 {
     /** @var string */
     private $replacement;
 
-    /** @var Route|null */
+    /** @var Route */
     private $route;
 
     public function __construct(string $replacement)
@@ -20,9 +21,6 @@ class RewritePath implements MiddlewareInterface
         $this->replacement = $replacement;
     }
 
-    /**
-     * Set the route for capture access (used by Route::middleware()).
-     */
     public function setRoute(Route $route): void
     {
         $this->route = $route;
@@ -30,9 +28,7 @@ class RewritePath implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, callable $next): ResponseInterface
     {
-        $captures = $request->getAttribute('route_captures')
-            ?? ($this->route ? $this->route->getCaptures() : []);
-        $newPath = $this->applyReplacement($captures);
+        $newPath = $this->applyReplacement($this->route->getCaptures());
 
         $uri = $request->getUri();
         if ($newPath !== $uri->getPath()) {
