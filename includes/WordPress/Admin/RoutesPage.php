@@ -273,7 +273,7 @@ class RoutesPage
     private function renderListPage(): void
     {
         $routes = $this->getRoutes();
-        include REVERSE_PROXY_PLUGIN_DIR . 'templates/routes-list.php';
+        include REVERSE_PROXY_PLUGIN_DIR . 'templates/admin/routes.php';
     }
 
     private function renderEditPage(?string $routeId): void
@@ -290,6 +290,6 @@ class RoutesPage
         }
 
         $middlewares = MiddlewareRegistry::getAll();
-        include REVERSE_PROXY_PLUGIN_DIR . 'templates/route-edit.php';
+        include REVERSE_PROXY_PLUGIN_DIR . 'templates/admin/route-form.php';
     }
 }

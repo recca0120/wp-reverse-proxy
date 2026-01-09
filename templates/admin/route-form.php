@@ -109,7 +109,7 @@ echo esc_attr(json_encode($currentMiddlewares));
         <p class="submit">
             <input type="submit" name="submit" id="submit" class="button button-primary"
                    value="<?php echo esc_attr($isNew ? __('Add Route', 'reverse-proxy') : __('Update Route', 'reverse-proxy')); ?>">
-            <a href="<?php echo esc_url(admin_url('admin.php?page=reverse-proxy')); ?>" class="button">
+            <a href="<?php echo esc_url(admin_url('options-general.php?page=reverse-proxy')); ?>" class="button">
                 <?php esc_html_e('Cancel', 'reverse-proxy'); ?>
             </a>
         </p>

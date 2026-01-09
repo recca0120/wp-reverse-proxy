@@ -18,6 +18,9 @@ class Admin
         add_action('admin_enqueue_scripts', [$this, 'enqueueAssets']);
         add_action('admin_init', [$this, 'handleFormSubmission']);
 
+        // Add settings link to plugin list
+        add_filter('plugin_action_links_' . plugin_basename(REVERSE_PROXY_PLUGIN_FILE), [$this, 'addPluginActionLinks']);
+
         // AJAX handlers
         add_action('wp_ajax_reverse_proxy_save_route', [$this, 'handleSaveRoute']);
         add_action('wp_ajax_reverse_proxy_delete_route', [$this, 'handleDeleteRoute']);
@@ -26,20 +29,31 @@ class Admin
 
     public function addMenuPage(): void
     {
-        add_menu_page(
+        add_options_page(
             __('Reverse Proxy', 'reverse-proxy'),
             __('Reverse Proxy', 'reverse-proxy'),
             'manage_options',
             'reverse-proxy',
-            [$this->routesPage, 'render'],
-            'dashicons-randomize',
-            80
+            [$this->routesPage, 'render']
         );
+    }
+
+    public function addPluginActionLinks(array $links): array
+    {
+        $settingsLink = sprintf(
+            '<a href="%s">%s</a>',
+            admin_url('options-general.php?page=reverse-proxy'),
+            __('Settings', 'reverse-proxy')
+        );
+
+        array_unshift($links, $settingsLink);
+
+        return $links;
     }
 
     public function enqueueAssets(string $hook): void
     {
-        if ($hook !== 'toplevel_page_reverse-proxy') {
+        if ($hook !== 'settings_page_reverse-proxy') {
             return;
         }
 
@@ -102,7 +116,7 @@ class Admin
         if ($result) {
             wp_send_json_success([
                 'message' => __('Route saved successfully.', 'reverse-proxy'),
-                'redirect' => admin_url('admin.php?page=reverse-proxy'),
+                'redirect' => admin_url('options-general.php?page=reverse-proxy'),
             ]);
         } else {
             wp_send_json_error([
@@ -204,10 +218,10 @@ class Admin
         $result = $this->routesPage->saveRoute($route);
 
         if ($result) {
-            wp_safe_redirect(admin_url('admin.php?page=reverse-proxy&message=saved'));
+            wp_safe_redirect(admin_url('options-general.php?page=reverse-proxy&message=saved'));
             exit;
         } else {
-            wp_safe_redirect(admin_url('admin.php?page=reverse-proxy&error=save_failed'));
+            wp_safe_redirect(admin_url('options-general.php?page=reverse-proxy&error=save_failed'));
             exit;
         }
     }
@@ -224,7 +238,7 @@ class Admin
         }
 
         $this->routesPage->deleteRoute($routeId);
-        wp_safe_redirect(admin_url('admin.php?page=reverse-proxy&message=deleted'));
+        wp_safe_redirect(admin_url('options-general.php?page=reverse-proxy&message=deleted'));
         exit;
     }
 
@@ -240,7 +254,7 @@ class Admin
         }
 
         $this->routesPage->toggleRoute($routeId);
-        wp_safe_redirect(admin_url('admin.php?page=reverse-proxy&message=toggled'));
+        wp_safe_redirect(admin_url('options-general.php?page=reverse-proxy&message=toggled'));
         exit;
     }
 

@@ -49,7 +49,7 @@ if (isset($_GET['error'])) {
 ?>
 <div class="wrap reverse-proxy-admin">
     <h1 class="wp-heading-inline"><?php esc_html_e('Reverse Proxy Routes', 'reverse-proxy'); ?></h1>
-    <a href="<?php echo esc_url(admin_url('admin.php?page=reverse-proxy&action=new')); ?>" class="page-title-action">
+    <a href="<?php echo esc_url(admin_url('options-general.php?page=reverse-proxy&action=new')); ?>" class="page-title-action">
         <?php esc_html_e('Add New', 'reverse-proxy'); ?>
     </a>
     <hr class="wp-header-end">
@@ -58,7 +58,7 @@ if (isset($_GET['error'])) {
         <div class="notice notice-info">
             <p>
                 <?php esc_html_e('No routes configured yet.', 'reverse-proxy'); ?>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=reverse-proxy&action=new')); ?>">
+                <a href="<?php echo esc_url(admin_url('options-general.php?page=reverse-proxy&action=new')); ?>">
                     <?php esc_html_e('Add your first route', 'reverse-proxy'); ?>
                 </a>
             </p>
@@ -86,7 +86,7 @@ if (isset($_GET['error'])) {
                         </td>
                         <td class="column-path">
                             <strong>
-                                <a href="<?php echo esc_url(admin_url('admin.php?page=reverse-proxy&action=edit&route_id=' . $route['id'])); ?>">
+                                <a href="<?php echo esc_url(admin_url('options-general.php?page=reverse-proxy&action=edit&route_id=' . $route['id'])); ?>">
                                     <code><?php echo esc_html($route['path']); ?></code>
                                 </a>
                             </strong>
@@ -104,16 +104,16 @@ if (isset($_GET['error'])) {
                     ?>
                         </td>
                         <td class="column-actions">
-                            <a href="<?php echo esc_url(admin_url('admin.php?page=reverse-proxy&action=edit&route_id=' . $route['id'])); ?>" class="button button-small">
+                            <a href="<?php echo esc_url(admin_url('options-general.php?page=reverse-proxy&action=edit&route_id=' . $route['id'])); ?>" class="button button-small">
                                 <?php esc_html_e('Edit', 'reverse-proxy'); ?>
                             </a>
                             <?php
                     $toggleUrl = wp_nonce_url(
-                        admin_url('admin.php?page=reverse-proxy&action=toggle&route_id=' . $route['id']),
+                        admin_url('options-general.php?page=reverse-proxy&action=toggle&route_id=' . $route['id']),
                         'toggle_route_' . $route['id']
                     );
                     $deleteUrl = wp_nonce_url(
-                        admin_url('admin.php?page=reverse-proxy&action=delete&route_id=' . $route['id']),
+                        admin_url('options-general.php?page=reverse-proxy&action=delete&route_id=' . $route['id']),
                         'delete_route_' . $route['id']
                     );
                     ?>
