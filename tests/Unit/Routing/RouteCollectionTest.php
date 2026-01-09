@@ -2,459 +2,254 @@
 
 namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
-use InvalidArgumentException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
-use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
-use Recca0120\ReverseProxy\Routing\Loaders\JsonLoader;
-use Recca0120\ReverseProxy\Routing\Loaders\PhpArrayLoader;
-use Recca0120\ReverseProxy\Routing\Loaders\YamlLoader;
-use Recca0120\ReverseProxy\Routing\MiddlewareFactory;
+use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 class RouteCollectionTest extends TestCase
 {
-    /** @var string */
-    private $fixturesPath;
-
-    protected function setUp(): void
-    {
-        $this->fixturesPath = __DIR__.'/../../fixtures/config';
-        if (! is_dir($this->fixturesPath)) {
-            mkdir($this->fixturesPath, 0755, true);
-        }
-    }
-
     protected function tearDown(): void
     {
         Mockery::close();
+    }
 
-        $files = glob($this->fixturesPath.'/*');
-        foreach ($files as $file) {
-            if (is_file($file)) {
-                unlink($file);
-            }
+    public function test_can_add_single_route(): void
+    {
+        $collection = new RouteCollection();
+        $route = new Route('/api/*', 'https://api.example.com');
+
+        $collection->add($route);
+
+        $this->assertCount(1, $collection);
+        $this->assertSame($route, $collection[0]);
+    }
+
+    public function test_can_add_multiple_routes(): void
+    {
+        $collection = new RouteCollection();
+        $routes = [
+            new Route('/api/*', 'https://api.example.com'),
+            new Route('/web/*', 'https://web.example.com'),
+        ];
+
+        $collection->add($routes);
+
+        $this->assertCount(2, $collection);
+    }
+
+    public function test_all_returns_all_routes(): void
+    {
+        $collection = new RouteCollection();
+        $route1 = new Route('/api/*', 'https://api.example.com');
+        $route2 = new Route('/web/*', 'https://web.example.com');
+
+        $collection->add($route1)->add($route2);
+
+        $all = $collection->all();
+
+        $this->assertCount(2, $all);
+        $this->assertSame($route1, $all[0]);
+        $this->assertSame($route2, $all[1]);
+    }
+
+    public function test_is_countable(): void
+    {
+        $collection = new RouteCollection();
+        $collection->add(new Route('/api/*', 'https://api.example.com'));
+        $collection->add(new Route('/web/*', 'https://web.example.com'));
+
+        $this->assertCount(2, $collection);
+        $this->assertEquals(2, count($collection));
+    }
+
+    public function test_is_iterable(): void
+    {
+        $collection = new RouteCollection();
+        $collection->add(new Route('/api/*', 'https://api.example.com'));
+        $collection->add(new Route('/web/*', 'https://web.example.com'));
+
+        $count = 0;
+        foreach ($collection as $route) {
+            $this->assertInstanceOf(Route::class, $route);
+            $count++;
         }
+
+        $this->assertEquals(2, $count);
     }
 
-    public function test_load_routes_from_json_file(): void
+    public function test_array_access_exists(): void
     {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'path' => '/api/*',
-                    'target' => 'https://api.example.com',
-                ],
-            ],
-        ]));
+        $collection = new RouteCollection();
+        $collection->add(new Route('/api/*', 'https://api.example.com'));
 
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile($filePath);
-
-        $this->assertCount(1, $routes);
-        $this->assertInstanceOf(Route::class, $routes[0]);
+        $this->assertTrue(isset($collection[0]));
+        $this->assertFalse(isset($collection[1]));
     }
 
-    public function test_load_routes_from_yaml_file(): void
+    public function test_array_access_get(): void
     {
-        $filePath = $this->fixturesPath.'/routes.yaml';
-        $yaml = "routes:\n  - path: /api/*\n    target: https://api.example.com\n";
-        file_put_contents($filePath, $yaml);
+        $collection = new RouteCollection();
+        $route = new Route('/api/*', 'https://api.example.com');
+        $collection->add($route);
 
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile($filePath);
-
-        $this->assertCount(1, $routes);
-        $this->assertInstanceOf(Route::class, $routes[0]);
+        $this->assertSame($route, $collection[0]);
+        $this->assertNull($collection[1]);
     }
 
-    public function test_load_routes_from_yaml_file_with_anchors(): void
+    public function test_array_access_set(): void
     {
-        $filePath = $this->fixturesPath.'/routes.yaml';
-        $yaml = implode("\n", [
-            'defaults: &defaults',
-            '  middlewares:',
-            '    - ProxyHeaders',
-            '',
-            'routes:',
-            '  - path: /api/*',
-            '    target: https://api.example.com',
-            '    <<: *defaults',
-            '  - path: /web/*',
-            '    target: https://web.example.com',
-            '    <<: *defaults',
+        $collection = new RouteCollection();
+        $route = new Route('/api/*', 'https://api.example.com');
+
+        $collection[] = $route;
+
+        $this->assertSame($route, $collection[0]);
+    }
+
+    public function test_array_access_unset(): void
+    {
+        $collection = new RouteCollection();
+        $collection->add(new Route('/api/*', 'https://api.example.com'));
+
+        unset($collection[0]);
+
+        $this->assertFalse(isset($collection[0]));
+    }
+
+    public function test_load_from_single_loader(): void
+    {
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturnNull();
+        $loader->shouldReceive('load')->once()->andReturn([
+            ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
-        file_put_contents($filePath, $yaml);
 
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile($filePath);
+        $collection = new RouteCollection([$loader]);
+        $collection->load();
 
-        $this->assertCount(2, $routes);
-        $this->assertCount(1, $routes[0]->getMiddlewares());
-        $this->assertCount(1, $routes[1]->getMiddlewares());
+        $this->assertCount(1, $collection);
+        $this->assertEquals('api.example.com', $collection[0]->getTargetHost());
     }
 
-    public function test_load_routes_from_php_file(): void
+    public function test_load_from_multiple_loaders(): void
     {
-        $filePath = $this->fixturesPath.'/routes.php';
-        file_put_contents($filePath, '<?php return [
-            "routes" => [
-                [
-                    "path" => "/api/*",
-                    "target" => "https://api.example.com",
-                ],
-            ],
-        ];');
+        $loader1 = Mockery::mock(RouteLoaderInterface::class);
+        $loader1->shouldReceive('getCacheKey')->andReturnNull();
+        $loader1->shouldReceive('load')->once()->andReturn([
+            ['path' => '/api/*', 'target' => 'https://api.example.com'],
+        ]);
 
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile($filePath);
+        $loader2 = Mockery::mock(RouteLoaderInterface::class);
+        $loader2->shouldReceive('getCacheKey')->andReturnNull();
+        $loader2->shouldReceive('load')->once()->andReturn([
+            ['path' => '/web/*', 'target' => 'https://web.example.com'],
+        ]);
 
-        $this->assertCount(1, $routes);
-        $this->assertInstanceOf(Route::class, $routes[0]);
+        $collection = new RouteCollection([$loader1, $loader2]);
+        $collection->load();
+
+        $this->assertCount(2, $collection);
     }
 
-    public function test_load_routes_from_directory(): void
+    public function test_load_skips_invalid_routes(): void
     {
-        file_put_contents($this->fixturesPath.'/api.routes.json', json_encode([
-            'routes' => [
-                ['path' => '/api/*', 'target' => 'https://api.example.com'],
-            ],
-        ]));
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturnNull();
+        $loader->shouldReceive('load')->once()->andReturn([
+            ['target' => 'https://api.example.com'], // missing path
+            ['path' => '/valid/*', 'target' => 'https://valid.example.com'],
+        ]);
 
-        file_put_contents($this->fixturesPath.'/web.routes.php', '<?php return [
-            "routes" => [
-                ["path" => "/web/*", "target" => "https://web.example.com"],
-            ],
-        ];');
+        $collection = new RouteCollection([$loader]);
+        $collection->load();
 
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromDirectory($this->fixturesPath, '*.routes.*');
-
-        $this->assertCount(2, $routes);
+        $this->assertCount(1, $collection);
+        $this->assertEquals('valid.example.com', $collection[0]->getTargetHost());
     }
 
-    public function test_merge_routes_from_multiple_files(): void
+    public function test_load_uses_cache_when_available(): void
     {
-        file_put_contents($this->fixturesPath.'/first.routes.json', json_encode([
-            'routes' => [
-                ['path' => '/first/*', 'target' => 'https://first.example.com'],
-            ],
-        ]));
+        $cachedConfigs = [
+            ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
+        ];
 
-        file_put_contents($this->fixturesPath.'/second.routes.json', json_encode([
-            'routes' => [
-                ['path' => '/second/*', 'target' => 'https://second.example.com'],
-            ],
-        ]));
-
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromDirectory($this->fixturesPath, '*.routes.json');
-
-        $this->assertCount(2, $routes);
-    }
-
-    public function test_create_route_with_path_and_target(): void
-    {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'path' => '/api/users/*',
-                    'target' => 'https://api.example.com',
-                ],
-            ],
-        ]));
-
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile($filePath);
-
-        $this->assertCount(1, $routes);
-        $this->assertEquals('api.example.com', $routes[0]->getTargetHost());
-    }
-
-    public function test_create_route_with_methods(): void
-    {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'path' => '/api/*',
-                    'target' => 'https://api.example.com',
-                    'methods' => ['GET', 'POST'],
-                ],
-            ],
-        ]));
-
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile($filePath);
-
-        $this->assertCount(1, $routes);
-        $this->assertInstanceOf(Route::class, $routes[0]);
-    }
-
-    public function test_create_route_with_middlewares(): void
-    {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'path' => '/api/*',
-                    'target' => 'https://api.example.com',
-                    'middlewares' => [
-                        ['name' => 'ProxyHeaders'],
-                    ],
-                ],
-            ],
-        ]));
-
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile($filePath);
-
-        $middlewares = $routes[0]->getMiddlewares();
-        $this->assertCount(1, $middlewares);
-        $this->assertInstanceOf(ProxyHeaders::class, $middlewares[0]);
-    }
-
-    public function test_throws_exception_for_missing_path(): void
-    {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'target' => 'https://api.example.com',
-                ],
-            ],
-        ]));
-
-        $routes = $this->createRouteCollection();
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Route configuration must have a "path" field');
-
-        $routes->loadFromFile($filePath);
-    }
-
-    public function test_throws_exception_for_missing_target(): void
-    {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'path' => '/api/*',
-                ],
-            ],
-        ]));
-
-        $routes = $this->createRouteCollection();
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Route configuration must have a "target" field');
-
-        $routes->loadFromFile($filePath);
-    }
-
-    public function test_throws_exception_for_invalid_target_url(): void
-    {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'path' => '/api/*',
-                    'target' => 'not-a-valid-url',
-                ],
-            ],
-        ]));
-
-        $routes = $this->createRouteCollection();
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid target URL');
-
-        $routes->loadFromFile($filePath);
-    }
-
-    public function test_uses_cache_when_mtime_matches(): void
-    {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                ['path' => '/api/*', 'target' => 'https://api.example.com'],
-            ],
-        ]));
-
-        $mtime = filemtime($filePath);
-        $cachedRoutes = [new Route('/cached/*', 'https://cached.example.com')];
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
+        $loader->shouldReceive('isCacheValid')->with(12345)->andReturn(true);
+        $loader->shouldNotReceive('load');
 
         $cache = Mockery::mock(CacheInterface::class);
         $cache->shouldReceive('get')
+            ->with('test_loader_key')
             ->once()
-            ->andReturn(['mtime' => $mtime, 'data' => $cachedRoutes]);
+            ->andReturn(['metadata' => 12345, 'data' => $cachedConfigs]);
 
-        $routes = $this->createRouteCollection($cache)->loadFromFile($filePath);
+        $collection = new RouteCollection([$loader], null, $cache);
+        $collection->load();
 
-        $this->assertSame($cachedRoutes[0], $routes[0]);
+        $this->assertCount(1, $collection);
+        $this->assertEquals('cached.example.com', $collection[0]->getTargetHost());
     }
 
-    public function test_invalidates_cache_when_mtime_differs(): void
+    public function test_load_stores_cache_when_not_cached(): void
     {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                ['path' => '/api/*', 'target' => 'https://api.example.com'],
-            ],
-        ]));
-
-        $oldMtime = filemtime($filePath) - 100; // Simulate old mtime
-        $cachedRoutes = [new Route('/cached/*', 'https://cached.example.com')];
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
+        $loader->shouldReceive('getCacheMetadata')->andReturn(12345);
+        $loader->shouldReceive('load')->once()->andReturn([
+            ['path' => '/api/*', 'target' => 'https://api.example.com'],
+        ]);
 
         $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')
-            ->once()
-            ->andReturn(['mtime' => $oldMtime, 'data' => $cachedRoutes]);
-        $cache->shouldReceive('set')->once();
+        $cache->shouldReceive('get')->with('test_loader_key')->once()->andReturnNull();
+        $cache->shouldReceive('set')->with('test_loader_key', Mockery::on(function ($data) {
+            return isset($data['metadata']) && isset($data['data']);
+        }))->once();
 
-        $routes = $this->createRouteCollection($cache)->loadFromFile($filePath);
+        $collection = new RouteCollection([$loader], null, $cache);
+        $collection->load();
 
-        // Should load fresh data, not cached
-        $this->assertCount(1, $routes);
-        $this->assertEquals('api.example.com', $routes[0]->getTargetHost());
+        $this->assertCount(1, $collection);
     }
 
-    public function test_stores_cache_when_not_cached(): void
+    public function test_clear_cache(): void
     {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                ['path' => '/api/*', 'target' => 'https://api.example.com'],
-            ],
-        ]));
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->once()->andReturnNull();
-        $cache->shouldReceive('set')->once();
+        $cache = Mockery::spy(CacheInterface::class);
 
-        $routes = $this->createRouteCollection($cache)->loadFromFile($filePath);
+        $collection = new RouteCollection([$loader], null, $cache);
+        $collection->clearCache();
 
-        $this->assertCount(1, $routes);
+        $cache->shouldHaveReceived('delete')->with('test_loader_key')->once();
+        $this->addToAssertionCount(1);
     }
 
-    public function test_works_without_cache(): void
+    public function test_clear_cache_without_cache_does_nothing(): void
     {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                ['path' => '/api/*', 'target' => 'https://api.example.com'],
-            ],
-        ]));
+        $collection = new RouteCollection();
+        $collection->clearCache(); // Should not throw
 
-        $routes = $this->createRouteCollection(null)->loadFromFile($filePath);
-
-        $this->assertCount(1, $routes);
+        $this->assertTrue(true);
     }
 
-    public function test_returns_empty_collection_for_nonexistent_file(): void
+    public function test_load_returns_self_for_chaining(): void
     {
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile('/nonexistent/path/routes.json');
+        $collection = new RouteCollection();
+        $result = $collection->load();
 
-        $this->assertInstanceOf(RouteCollection::class, $routes);
-        $this->assertEmpty($routes);
+        $this->assertSame($collection, $result);
     }
 
-    public function test_returns_empty_collection_for_empty_directory(): void
+    public function test_add_returns_self_for_chaining(): void
     {
-        $emptyDir = $this->fixturesPath.'/empty';
-        if (! is_dir($emptyDir)) {
-            mkdir($emptyDir, 0755, true);
-        }
+        $collection = new RouteCollection();
+        $result = $collection->add(new Route('/api/*', 'https://api.example.com'));
 
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromDirectory($emptyDir, '*.routes.*');
-
-        $this->assertInstanceOf(RouteCollection::class, $routes);
-        $this->assertEmpty($routes);
-
-        rmdir($emptyDir);
-    }
-
-    public function test_load_routes_with_brace_expansion_pattern(): void
-    {
-        file_put_contents($this->fixturesPath.'/api.json', json_encode([
-            'routes' => [
-                ['path' => '/api/*', 'target' => 'https://api.example.com'],
-            ],
-        ]));
-
-        file_put_contents($this->fixturesPath.'/web.php', '<?php return [
-            "routes" => [
-                ["path" => "/web/*", "target" => "https://web.example.com"],
-            ],
-        ];');
-
-        // Should not match .txt files
-        file_put_contents($this->fixturesPath.'/ignore.txt', 'should be ignored');
-
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromDirectory($this->fixturesPath, '*.{json,php}');
-
-        $this->assertCount(2, $routes);
-    }
-
-    public function test_brace_expansion_fallback_without_glob_brace(): void
-    {
-        file_put_contents($this->fixturesPath.'/first.json', json_encode([
-            'routes' => [
-                ['path' => '/first/*', 'target' => 'https://first.example.com'],
-            ],
-        ]));
-
-        file_put_contents($this->fixturesPath.'/second.php', '<?php return [
-            "routes" => [
-                ["path" => "/second/*", "target" => "https://second.example.com"],
-            ],
-        ];');
-
-        $routes = $this->createRouteCollection();
-
-        // Test that brace expansion pattern works
-        $routes = $routes->loadFromDirectory($this->fixturesPath, '*.{json,php}');
-
-        $this->assertCount(2, $routes);
-    }
-
-    public function test_create_route_with_pipe_separated_middlewares(): void
-    {
-        $filePath = $this->fixturesPath.'/routes.json';
-        file_put_contents($filePath, json_encode([
-            'routes' => [
-                [
-                    'path' => '/api/*',
-                    'target' => 'https://api.example.com',
-                    'middlewares' => 'ProxyHeaders|SetHost:api.example.com|Timeout:30',
-                ],
-            ],
-        ]));
-
-        $routes = $this->createRouteCollection();
-        $routes = $routes->loadFromFile($filePath);
-
-        $middlewares = $routes[0]->getMiddlewares();
-        $this->assertCount(3, $middlewares);
-
-        // Verify all middleware types are present (order may vary due to priority sorting)
-        $classes = array_map('get_class', $middlewares);
-        $this->assertContains(ProxyHeaders::class, $classes);
-    }
-
-    private function createRouteCollection(?CacheInterface $cache = null): RouteCollection
-    {
-        return new RouteCollection(
-            [new JsonLoader(), new YamlLoader(), new PhpArrayLoader()],
-            new MiddlewareFactory(),
-            $cache
-        );
+        $this->assertSame($collection, $result);
     }
 }

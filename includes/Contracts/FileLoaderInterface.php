@@ -5,6 +5,13 @@ namespace Recca0120\ReverseProxy\Contracts;
 interface FileLoaderInterface
 {
     /**
+     * Get supported file extensions.
+     *
+     * @return array<string>
+     */
+    public function getExtensions(): array;
+
+    /**
      * Check if this loader supports the given file.
      */
     public function supports(string $file): bool;

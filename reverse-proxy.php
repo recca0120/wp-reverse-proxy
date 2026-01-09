@@ -84,26 +84,25 @@ function reverse_proxy_load_config_routes()
     $routes = apply_filters('reverse_proxy_route_collection', null);
 
     if ($routes === null) {
+        $directory = apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
+
         $middlewareFactory = apply_filters(
             'reverse_proxy_middleware_factory',
             new Recca0120\ReverseProxy\Routing\MiddlewareFactory()
         );
 
+        $loaders = apply_filters('reverse_proxy_route_loaders', [
+            new Recca0120\ReverseProxy\Routing\FileLoader([$directory]),
+        ]);
+
         $routes = new Recca0120\ReverseProxy\Routing\RouteCollection(
-            [
-                new Recca0120\ReverseProxy\Routing\Loaders\JsonLoader(),
-                new Recca0120\ReverseProxy\Routing\Loaders\YamlLoader(),
-                new Recca0120\ReverseProxy\Routing\Loaders\PhpArrayLoader(),
-            ],
+            $loaders,
             $middlewareFactory,
             apply_filters('reverse_proxy_route_cache', null)
         );
     }
 
-    $directory = apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
-    $pattern = apply_filters('reverse_proxy_routes_pattern', '*.{json,yaml,yml,php}');
-
-    return $routes->loadFromDirectory($directory, $pattern);
+    return $routes->load();
 }
 
 function reverse_proxy_handle()

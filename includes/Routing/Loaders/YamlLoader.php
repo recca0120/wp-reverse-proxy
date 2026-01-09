@@ -5,13 +5,14 @@ namespace Recca0120\ReverseProxy\Routing\Loaders;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
-class YamlLoader extends AbstractLoader
+class YamlLoader extends AbstractFileLoader
 {
-    public function supports(string $file): bool
+    /**
+     * @return array<string>
+     */
+    public function getExtensions(): array
     {
-        $extension = pathinfo($file, PATHINFO_EXTENSION);
-
-        return in_array($extension, ['yaml', 'yml'], true);
+        return ['yaml', 'yml'];
     }
 
     /**
