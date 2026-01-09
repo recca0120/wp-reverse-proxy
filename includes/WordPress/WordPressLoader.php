@@ -50,25 +50,23 @@ class WordPressLoader implements RouteLoaderInterface
     }
 
     /**
-     * Get metadata for cache validation (hash of option value).
+     * Get metadata for cache validation (version number).
      *
-     * @return string
+     * @return int
      */
     public function getCacheMetadata()
     {
-        $routes = get_option($this->optionName, []);
-
-        return md5(serialize($routes));
+        return RoutesPage::getVersion();
     }
 
     /**
-     * Check if cached data is still valid by comparing hash.
+     * Check if cached data is still valid by comparing version.
      *
-     * @param mixed $metadata The hash stored with cached data
+     * @param mixed $metadata The version stored with cached data
      */
     public function isCacheValid($metadata): bool
     {
-        return $metadata === $this->getCacheMetadata();
+        return (int) $metadata === $this->getCacheMetadata();
     }
 
     /**

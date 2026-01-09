@@ -9,6 +9,8 @@ class RoutesPage
 {
     public const OPTION_NAME = 'reverse_proxy_admin_routes';
 
+    public const VERSION_OPTION_NAME = 'reverse_proxy_admin_routes_version';
+
     private const VALID_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
     public function render(): void
@@ -70,7 +72,13 @@ class RoutesPage
             }
         }
 
-        return update_option(self::OPTION_NAME, $routes);
+        $result = update_option(self::OPTION_NAME, $routes);
+
+        if ($result) {
+            $this->incrementVersion();
+        }
+
+        return $result;
     }
 
     public function deleteRoute(string $id): bool
@@ -80,7 +88,13 @@ class RoutesPage
             return $route['id'] !== $id;
         });
 
-        return update_option(self::OPTION_NAME, array_values($routes));
+        $result = update_option(self::OPTION_NAME, array_values($routes));
+
+        if ($result) {
+            $this->incrementVersion();
+        }
+
+        return $result;
     }
 
     public function toggleRoute(string $id): bool
@@ -94,7 +108,18 @@ class RoutesPage
             }
         }
 
-        return update_option(self::OPTION_NAME, $routes);
+        $result = update_option(self::OPTION_NAME, $routes);
+
+        if ($result) {
+            $this->incrementVersion();
+        }
+
+        return $result;
+    }
+
+    public static function getVersion(): int
+    {
+        return (int) get_option(self::VERSION_OPTION_NAME, 0);
     }
 
     public function sanitizeRoute(array $input): array
@@ -163,6 +188,12 @@ class RoutesPage
         $middlewares = $factory->createMany($middlewaresConfig);
 
         return new Route($path, $target, $middlewares);
+    }
+
+    private function incrementVersion(): void
+    {
+        $version = self::getVersion();
+        update_option(self::VERSION_OPTION_NAME, $version + 1);
     }
 
     private function sanitizeMiddlewares(array $middlewares): array

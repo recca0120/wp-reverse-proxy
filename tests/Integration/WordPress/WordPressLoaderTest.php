@@ -13,11 +13,13 @@ class WordPressLoaderTest extends WP_UnitTestCase
     {
         parent::setUp();
         delete_option(RoutesPage::OPTION_NAME);
+        delete_option(RoutesPage::VERSION_OPTION_NAME);
     }
 
     protected function tearDown(): void
     {
         delete_option(RoutesPage::OPTION_NAME);
+        delete_option(RoutesPage::VERSION_OPTION_NAME);
         parent::tearDown();
     }
 
@@ -129,70 +131,57 @@ class WordPressLoaderTest extends WP_UnitTestCase
         $this->assertEquals($loader1->getCacheKey(), $loader2->getCacheKey());
     }
 
-    public function test_get_cache_metadata_returns_hash_of_option(): void
+    public function test_get_cache_metadata_returns_version(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
-            [
-                'id' => 'route_1',
-                'enabled' => true,
-                'path' => '/api/*',
-                'target' => 'https://api.example.com',
-                'methods' => [],
-                'middlewares' => [],
-            ],
+        $loader = new WordPressLoader();
+
+        // Initial version is 0
+        $this->assertEquals(0, $loader->getCacheMetadata());
+
+        // After saving a route, version increments
+        $routesPage = new RoutesPage();
+        $routesPage->saveRoute([
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+            'enabled' => true,
         ]);
 
-        $loader = new WordPressLoader();
-        $metadata = $loader->getCacheMetadata();
-
-        $this->assertIsString($metadata);
-        $this->assertNotEmpty($metadata);
+        $this->assertEquals(1, $loader->getCacheMetadata());
     }
 
-    public function test_cache_metadata_changes_when_option_changes(): void
+    public function test_cache_metadata_changes_when_route_saved(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
-            [
-                'id' => 'route_1',
-                'enabled' => true,
-                'path' => '/api/*',
-                'target' => 'https://api.example.com',
-                'methods' => [],
-                'middlewares' => [],
-            ],
-        ]);
-
+        $routesPage = new RoutesPage();
         $loader = new WordPressLoader();
+
+        // Save first route
+        $routesPage->saveRoute([
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+            'enabled' => true,
+        ]);
         $metadata1 = $loader->getCacheMetadata();
 
-        // Update option
-        update_option(RoutesPage::OPTION_NAME, [
-            [
-                'id' => 'route_1',
-                'enabled' => true,
-                'path' => '/api/v2/*',
-                'target' => 'https://api.example.com',
-                'methods' => [],
-                'middlewares' => [],
-            ],
+        // Save second route
+        $routesPage->saveRoute([
+            'path' => '/web/*',
+            'target' => 'https://web.example.com',
+            'enabled' => true,
         ]);
-
         $metadata2 = $loader->getCacheMetadata();
 
         $this->assertNotEquals($metadata1, $metadata2);
+        $this->assertEquals(1, $metadata1);
+        $this->assertEquals(2, $metadata2);
     }
 
     public function test_is_cache_valid_returns_true_for_same_metadata(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
-            [
-                'id' => 'route_1',
-                'enabled' => true,
-                'path' => '/api/*',
-                'target' => 'https://api.example.com',
-                'methods' => [],
-                'middlewares' => [],
-            ],
+        $routesPage = new RoutesPage();
+        $routesPage->saveRoute([
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+            'enabled' => true,
         ]);
 
         $loader = new WordPressLoader();
@@ -201,35 +190,64 @@ class WordPressLoaderTest extends WP_UnitTestCase
         $this->assertTrue($loader->isCacheValid($metadata));
     }
 
-    public function test_is_cache_valid_returns_false_when_option_changed(): void
+    public function test_is_cache_valid_returns_false_when_route_changed(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
-            [
-                'id' => 'route_1',
-                'enabled' => true,
-                'path' => '/api/*',
-                'target' => 'https://api.example.com',
-                'methods' => [],
-                'middlewares' => [],
-            ],
+        $routesPage = new RoutesPage();
+        $routesPage->saveRoute([
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+            'enabled' => true,
         ]);
 
         $loader = new WordPressLoader();
         $oldMetadata = $loader->getCacheMetadata();
 
-        // Update option
-        update_option(RoutesPage::OPTION_NAME, [
-            [
-                'id' => 'route_2',
-                'enabled' => true,
-                'path' => '/web/*',
-                'target' => 'https://web.example.com',
-                'methods' => [],
-                'middlewares' => [],
-            ],
+        // Save another route (increments version)
+        $routesPage->saveRoute([
+            'path' => '/web/*',
+            'target' => 'https://web.example.com',
+            'enabled' => true,
         ]);
 
         $this->assertFalse($loader->isCacheValid($oldMetadata));
+    }
+
+    public function test_version_increments_on_delete(): void
+    {
+        $routesPage = new RoutesPage();
+        $routesPage->saveRoute([
+            'id' => 'route_1',
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+            'enabled' => true,
+        ]);
+
+        $loader = new WordPressLoader();
+        $versionAfterSave = $loader->getCacheMetadata();
+
+        $routesPage->deleteRoute('route_1');
+        $versionAfterDelete = $loader->getCacheMetadata();
+
+        $this->assertEquals($versionAfterSave + 1, $versionAfterDelete);
+    }
+
+    public function test_version_increments_on_toggle(): void
+    {
+        $routesPage = new RoutesPage();
+        $routesPage->saveRoute([
+            'id' => 'route_1',
+            'path' => '/api/*',
+            'target' => 'https://api.example.com',
+            'enabled' => true,
+        ]);
+
+        $loader = new WordPressLoader();
+        $versionAfterSave = $loader->getCacheMetadata();
+
+        $routesPage->toggleRoute('route_1');
+        $versionAfterToggle = $loader->getCacheMetadata();
+
+        $this->assertEquals($versionAfterSave + 1, $versionAfterToggle);
     }
 
     public function test_works_with_route_collection(): void
