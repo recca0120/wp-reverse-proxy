@@ -68,15 +68,6 @@ class MiddlewareReflector
     }
 
     /**
-     * Reflect a callable (closure or invokable).
-     * Returns null since closures cannot provide meaningful UI fields.
-     */
-    public function reflectCallable(callable $callable): ?array
-    {
-        return null;
-    }
-
-    /**
      * Build field definitions from constructor parameters.
      *
      * @return array<array>

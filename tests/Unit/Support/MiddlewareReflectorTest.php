@@ -181,16 +181,6 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEmpty($info['fields']);
     }
 
-    public function test_it_handles_closure_middleware()
-    {
-        // Closure cannot be reflected as class, should return null or empty
-        $result = $this->reflector->reflectCallable(function ($request, $next) {
-            return $next($request);
-        });
-
-        $this->assertNull($result);
-    }
-
     public function test_it_handles_parameter_without_type_hint()
     {
         $class = new class ('test') {
