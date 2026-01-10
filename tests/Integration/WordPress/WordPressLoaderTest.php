@@ -5,6 +5,7 @@ namespace Recca0120\ReverseProxy\Tests\Integration\WordPress;
 use WP_UnitTestCase;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\WordPress\WordPressLoader;
+use Recca0120\ReverseProxy\WordPress\Admin\OptionsStorage;
 use Recca0120\ReverseProxy\WordPress\Admin\RoutesPage;
 
 class WordPressLoaderTest extends WP_UnitTestCase
@@ -12,14 +13,14 @@ class WordPressLoaderTest extends WP_UnitTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        delete_option(RoutesPage::OPTION_NAME);
-        delete_option(RoutesPage::VERSION_OPTION_NAME);
+        delete_option(OptionsStorage::OPTION_NAME);
+        delete_option(OptionsStorage::VERSION_OPTION_NAME);
     }
 
     protected function tearDown(): void
     {
-        delete_option(RoutesPage::OPTION_NAME);
-        delete_option(RoutesPage::VERSION_OPTION_NAME);
+        delete_option(OptionsStorage::OPTION_NAME);
+        delete_option(OptionsStorage::VERSION_OPTION_NAME);
         parent::tearDown();
     }
 
@@ -42,7 +43,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_load_returns_only_enabled_routes(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -79,7 +80,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_load_converts_methods_to_path_prefix(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -99,7 +100,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_load_preserves_middlewares(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -252,7 +253,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_works_with_route_collection(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -279,7 +280,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
         $middlewareConfig,
         string $expectedClass
     ): void {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -366,7 +367,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_cors_middleware_parameters_are_applied_correctly(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -406,7 +407,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_timeout_middleware_parameter_is_applied(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -441,7 +442,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_set_host_middleware_parameter_is_applied(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -475,7 +476,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_ip_filter_middleware_parameters_are_applied(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -534,7 +535,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_allow_methods_middleware_parameters_are_applied(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -572,7 +573,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_request_id_middleware_parameter_is_applied(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,
@@ -608,7 +609,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
     public function test_multiple_middlewares_with_parameters(): void
     {
-        update_option(RoutesPage::OPTION_NAME, [
+        update_option(OptionsStorage::OPTION_NAME, [
             [
                 'id' => 'route_1',
                 'enabled' => true,

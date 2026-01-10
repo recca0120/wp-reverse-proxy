@@ -3,26 +3,27 @@
 namespace Recca0120\ReverseProxy\WordPress;
 
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
-use Recca0120\ReverseProxy\WordPress\Admin\RoutesPage;
+use Recca0120\ReverseProxy\WordPress\Admin\OptionsStorage;
+use Recca0120\ReverseProxy\WordPress\Admin\RouteStorageInterface;
 
 class WordPressLoader implements RouteLoaderInterface
 {
-    /** @var string */
-    private $optionName;
+    /** @var RouteStorageInterface */
+    private $storage;
 
-    public function __construct(?string $optionName = null)
+    public function __construct(?RouteStorageInterface $storage = null)
     {
-        $this->optionName = $optionName ?? RoutesPage::OPTION_NAME;
+        $this->storage = $storage ?? new OptionsStorage();
     }
 
     /**
-     * Load route configurations from wp_options.
+     * Load route configurations from storage.
      *
      * @return array<array<string, mixed>>
      */
     public function load(): array
     {
-        $routes = get_option($this->optionName, []);
+        $routes = $this->storage->getAll();
 
         if (empty($routes) || !is_array($routes)) {
             return [];
@@ -46,7 +47,7 @@ class WordPressLoader implements RouteLoaderInterface
      */
     public function getCacheKey(): ?string
     {
-        return 'wordpress_loader_' . md5($this->optionName);
+        return 'wordpress_loader_' . md5(get_class($this->storage));
     }
 
     /**
@@ -56,7 +57,7 @@ class WordPressLoader implements RouteLoaderInterface
      */
     public function getCacheMetadata()
     {
-        return RoutesPage::getVersion();
+        return $this->storage->getVersion();
     }
 
     /**

@@ -66,9 +66,11 @@ function reverse_proxy_load_config_routes()
 
         $middlewareManager = reverse_proxy_create_middleware_manager($cache);
 
+        $storage = reverse_proxy_create_route_storage();
+
         $loaders = apply_filters('reverse_proxy_route_loaders', [
             new Recca0120\ReverseProxy\Routing\FileLoader([$directory]),
-            new Recca0120\ReverseProxy\WordPress\WordPressLoader(),
+            new Recca0120\ReverseProxy\WordPress\WordPressLoader($storage),
         ]);
 
         $routes = new Recca0120\ReverseProxy\Routing\RouteCollection(
@@ -79,6 +81,14 @@ function reverse_proxy_load_config_routes()
     }
 
     return $routes->load();
+}
+
+function reverse_proxy_create_route_storage()
+{
+    return apply_filters(
+        'reverse_proxy_route_storage',
+        new Recca0120\ReverseProxy\WordPress\Admin\OptionsStorage()
+    );
 }
 
 function reverse_proxy_create_middleware_manager($cache = null)
@@ -156,7 +166,8 @@ if (is_admin()) {
     add_action('plugins_loaded', function () {
         $middlewareManager = reverse_proxy_create_middleware_manager();
         $registry = new Recca0120\ReverseProxy\WordPress\Admin\MiddlewareRegistry($middlewareManager);
-        $routesPage = new Recca0120\ReverseProxy\WordPress\Admin\RoutesPage($registry);
+        $storage = reverse_proxy_create_route_storage();
+        $routesPage = new Recca0120\ReverseProxy\WordPress\Admin\RoutesPage($registry, $storage);
         $admin = new Recca0120\ReverseProxy\WordPress\Admin\Admin($routesPage);
         $admin->register();
     });
