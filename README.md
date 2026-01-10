@@ -9,11 +9,14 @@
 - 路由匹配支援萬用字元 (`/api/*`) 與前綴匹配 (`/api`)
 - HTTP 方法匹配 (`POST /api/users`, `GET|POST /api/*`)
 - Nginx 風格的路徑前綴移除（目標 URL 以 `/` 結尾）
-- 透過中介層重寫路徑
 - 完整 HTTP 方法支援 (GET, POST, PUT, PATCH, DELETE)
 - 請求/回應標頭轉發
 - 中介層支援請求/回應處理
 - WordPress 後台管理介面（視覺化路由設定）
+
+## 快速預覽
+
+![Demo](docs/images/demo-add-route.gif)
 
 ## 系統需求
 
@@ -37,40 +40,9 @@ composer require recca0120/wp-reverse-proxy
 
 ## 快速開始
 
-### 方式一：配置檔（推薦）
+啟用外掛後，前往 **WordPress 後台 → 設定 → Reverse Proxy** 即可開始設定路由。
 
-在 `wp-content/reverse-proxy-routes/` 目錄建立 JSON 配置檔：
-
-```json
-{
-  "routes": [
-    {
-      "path": "/api/*",
-      "target": "https://api.example.com",
-      "middlewares": ["ProxyHeaders"]
-    }
-  ]
-}
-```
-
-### 方式二：PHP Filter Hook
-
-建立 `wp-content/mu-plugins/reverse-proxy-config.php`：
-
-```php
-<?php
-use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
-
-add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
-    $routes->add(new Route('/api/*', 'https://api.example.com'));
-    return $routes;
-});
-```
-
-### 方式三：WordPress 後台
-
-WordPress 後台 → 設定 → Reverse Proxy
+進階用戶可使用配置檔或 PHP Filter Hook，詳見 [配置參考](docs/zh/configuration.md)。
 
 ## 文件
 
@@ -100,35 +72,6 @@ WordPress 後台 → 設定 → Reverse Proxy
 | `Fallback` | 回退給 WordPress 處理 |
 
 詳細用法請參考 [中介層參考](docs/zh/middlewares.md)。
-
-## 實際範例
-
-等同於此 nginx 設定：
-
-```nginx
-location ^~ /api/v1 {
-    proxy_pass https://127.0.0.1:8080;
-    proxy_set_header Host api.example.com;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-}
-```
-
-WordPress 對應寫法：
-
-```php
-use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
-use Recca0120\ReverseProxy\Middleware\SetHost;
-
-add_filter('reverse_proxy_routes', function ($routes) {
-    $routes->add(new Route('/api/v1/*', 'https://127.0.0.1:8080', [
-        new ProxyHeaders(),
-        new SetHost('api.example.com'),
-    ]));
-    return $routes;
-});
-```
 
 ## 授權
 
