@@ -243,17 +243,12 @@ MiddlewareManager::registerAlias([
 
 ---
 
-## 自訂配置目錄
+## 自訂路由目錄
 
 ```php
-// 變更配置檔目錄
-add_filter('reverse_proxy_config_directory', function () {
+// 變更路由配置檔目錄
+add_filter('reverse_proxy_routes_directory', function () {
     return WP_CONTENT_DIR . '/my-proxy-routes';
-});
-
-// 變更檔案匹配模式（預設 *.{json,yaml,yml,php}）
-add_filter('reverse_proxy_config_pattern', function () {
-    return '*.routes.json';
 });
 ```
 

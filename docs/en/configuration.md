@@ -243,17 +243,12 @@ Then use in config files:
 
 ---
 
-## Custom Config Directory
+## Custom Routes Directory
 
 ```php
-// Change config directory
-add_filter('reverse_proxy_config_directory', function () {
+// Change routes config directory
+add_filter('reverse_proxy_routes_directory', function () {
     return WP_CONTENT_DIR . '/my-proxy-routes';
-});
-
-// Change file pattern (default *.{json,yaml,yml,php})
-add_filter('reverse_proxy_config_pattern', function () {
-    return '*.routes.json';
 });
 ```
 

@@ -10,13 +10,13 @@ This document provides detailed documentation for all available WordPress Filter
 |------|------------|-------------|
 | `reverse_proxy_action_hook` | `$hook` | Set the trigger action hook (default `plugins_loaded`) |
 | `reverse_proxy_routes` | `$routes` | Configure proxy routes |
-| `reverse_proxy_config_loader` | `$loader` | Override config loader |
-| `reverse_proxy_middleware_factory` | `$factory` | Customize middleware factory (register custom aliases) |
-| `reverse_proxy_config_directory` | `$directory` | Config file directory (default `WP_CONTENT_DIR/reverse-proxy-routes`) |
-| `reverse_proxy_config_pattern` | `$pattern` | Config file pattern (default `*.{json,yaml,yml,php}`) |
+| `reverse_proxy_route_collection` | `$collection` | Override the entire route collection instance |
+| `reverse_proxy_routes_directory` | `$directory` | Config file directory (default `WP_CONTENT_DIR/reverse-proxy-routes`) |
+| `reverse_proxy_route_loaders` | `$loaders` | Customize route loaders array |
 | `reverse_proxy_cache` | `$cache` | PSR-16 cache instance (for route caching and middleware injection) |
+| `reverse_proxy_middleware_manager` | `$manager` | Override the middleware manager instance |
+| `reverse_proxy_global_middlewares` | `$middlewares` | Customize global middlewares (applied to all routes) |
 | `reverse_proxy_route_storage` | `$storage` | Admin route storage implementation (default `OptionsStorage`, can switch to `JsonFileStorage`) |
-| `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
 | `reverse_proxy_psr17_factory` | `$factory` | Override PSR-17 HTTP factory |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |
 | `reverse_proxy_request` | `$request` | Override the entire request object (for testing) |
@@ -68,23 +68,31 @@ add_filter('reverse_proxy_response', function ($response) {
 });
 ```
 
-### Customize Default Middlewares
+### Customize Global Middlewares
 
 ```php
-// Remove all default middlewares
-add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+// Remove all global middlewares
+add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
 // Keep only error handling
-add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
+add_filter('reverse_proxy_global_middlewares', function ($middlewares) {
     return array_filter($middlewares, function ($m) {
         return $m instanceof \Recca0120\ReverseProxy\Middleware\ErrorHandling;
     });
 });
 
 // Add custom middleware
-add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
+add_filter('reverse_proxy_global_middlewares', function ($middlewares) {
     $middlewares[] = new MyCustomMiddleware();
     return $middlewares;
+});
+```
+
+### Custom Routes Directory
+
+```php
+add_filter('reverse_proxy_routes_directory', function () {
+    return WP_CONTENT_DIR . '/my-proxy-routes';
 });
 ```
 

@@ -10,13 +10,13 @@
 |------|------|------|
 | `reverse_proxy_action_hook` | `$hook` | 設定觸發的 action hook（預設 `plugins_loaded`） |
 | `reverse_proxy_routes` | `$routes` | 設定代理路由 |
-| `reverse_proxy_config_loader` | `$loader` | 覆寫配置載入器 |
-| `reverse_proxy_middleware_factory` | `$factory` | 自訂中介層工廠（可註冊自訂別名） |
-| `reverse_proxy_config_directory` | `$directory` | 配置檔目錄（預設 `WP_CONTENT_DIR/reverse-proxy-routes`） |
-| `reverse_proxy_config_pattern` | `$pattern` | 配置檔匹配模式（預設 `*.{json,yaml,yml,php}`） |
+| `reverse_proxy_route_collection` | `$collection` | 覆寫整個路由集合實例 |
+| `reverse_proxy_routes_directory` | `$directory` | 配置檔目錄（預設 `WP_CONTENT_DIR/reverse-proxy-routes`） |
+| `reverse_proxy_route_loaders` | `$loaders` | 自訂路由載入器陣列 |
 | `reverse_proxy_cache` | `$cache` | PSR-16 快取實例（用於路由快取與中介層注入） |
+| `reverse_proxy_middleware_manager` | `$manager` | 覆寫中介層管理器實例 |
+| `reverse_proxy_global_middlewares` | `$middlewares` | 自訂全域中介層（套用到所有路由） |
 | `reverse_proxy_route_storage` | `$storage` | 後台路由儲存實作（預設 `OptionsStorage`，可切換為 `JsonFileStorage`） |
-| `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_psr17_factory` | `$factory` | 覆寫 PSR-17 HTTP 工廠 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |
 | `reverse_proxy_request` | `$request` | 覆寫整個請求物件（用於測試） |
@@ -68,23 +68,31 @@ add_filter('reverse_proxy_response', function ($response) {
 });
 ```
 
-### 自訂預設中介層
+### 自訂全域中介層
 
 ```php
-// 移除所有預設中介層
-add_filter('reverse_proxy_default_middlewares', '__return_empty_array');
+// 移除所有全域中介層
+add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
 // 只保留錯誤處理
-add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
+add_filter('reverse_proxy_global_middlewares', function ($middlewares) {
     return array_filter($middlewares, function ($m) {
         return $m instanceof \Recca0120\ReverseProxy\Middleware\ErrorHandling;
     });
 });
 
 // 新增自訂中介層
-add_filter('reverse_proxy_default_middlewares', function ($middlewares) {
+add_filter('reverse_proxy_global_middlewares', function ($middlewares) {
     $middlewares[] = new MyCustomMiddleware();
     return $middlewares;
+});
+```
+
+### 自訂路由目錄
+
+```php
+add_filter('reverse_proxy_routes_directory', function () {
+    return WP_CONTENT_DIR . '/my-proxy-routes';
 });
 ```
 
