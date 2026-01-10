@@ -85,11 +85,9 @@ function reverse_proxy_load_config_routes()
 
 function reverse_proxy_create_route_storage()
 {
-    $directory = apply_filters('reverse_proxy_routes_directory', WP_CONTENT_DIR.'/reverse-proxy-routes');
-
     return apply_filters(
         'reverse_proxy_route_storage',
-        new Recca0120\ReverseProxy\Routing\JsonFileStorage($directory.'/admin-routes.json')
+        new Recca0120\ReverseProxy\WordPress\Admin\OptionsStorage()
     );
 }
 
