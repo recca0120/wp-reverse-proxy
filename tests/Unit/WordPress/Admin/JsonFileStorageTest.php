@@ -3,7 +3,7 @@
 namespace Recca0120\ReverseProxy\Tests\Unit\WordPress\Admin;
 
 use PHPUnit\Framework\TestCase;
-use Recca0120\ReverseProxy\WordPress\Admin\JsonFileStorage;
+use Recca0120\ReverseProxy\Routing\JsonFileStorage;
 
 class JsonFileStorageTest extends TestCase
 {

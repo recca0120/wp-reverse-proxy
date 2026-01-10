@@ -1,8 +1,8 @@
 <?php
 
-namespace Recca0120\ReverseProxy\WordPress\Admin;
+namespace Recca0120\ReverseProxy\Contracts;
 
-interface RouteStorageInterface
+interface StorageInterface
 {
     /**
      * Get all routes.

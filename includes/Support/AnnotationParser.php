@@ -1,8 +1,6 @@
 <?php
 
-namespace Recca0120\ReverseProxy\WordPress\Admin;
-
-use Recca0120\ReverseProxy\Support\Str;
+namespace Recca0120\ReverseProxy\Support;
 
 /**
  * Parse PHPDoc @param description annotations.

@@ -2,6 +2,8 @@
 
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
+use Recca0120\ReverseProxy\Contracts\StorageInterface;
+use Recca0120\ReverseProxy\Routing\MiddlewareRegistry;
 use Recca0120\ReverseProxy\Support\Arr;
 
 class RoutesPage
@@ -11,16 +13,16 @@ class RoutesPage
     /** @var MiddlewareRegistry|null */
     private $registry;
 
-    /** @var RouteStorageInterface */
+    /** @var StorageInterface */
     private $storage;
 
-    public function __construct(?MiddlewareRegistry $registry = null, ?RouteStorageInterface $storage = null)
+    public function __construct(?MiddlewareRegistry $registry = null, ?StorageInterface $storage = null)
     {
         $this->registry = $registry;
         $this->storage = $storage ?? new OptionsStorage();
     }
 
-    public function getStorage(): RouteStorageInterface
+    public function getStorage(): StorageInterface
     {
         return $this->storage;
     }

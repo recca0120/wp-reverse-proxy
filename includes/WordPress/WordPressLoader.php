@@ -3,15 +3,15 @@
 namespace Recca0120\ReverseProxy\WordPress;
 
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
+use Recca0120\ReverseProxy\Contracts\StorageInterface;
 use Recca0120\ReverseProxy\WordPress\Admin\OptionsStorage;
-use Recca0120\ReverseProxy\WordPress\Admin\RouteStorageInterface;
 
 class WordPressLoader implements RouteLoaderInterface
 {
-    /** @var RouteStorageInterface */
+    /** @var StorageInterface */
     private $storage;
 
-    public function __construct(?RouteStorageInterface $storage = null)
+    public function __construct(?StorageInterface $storage = null)
     {
         $this->storage = $storage ?? new OptionsStorage();
     }

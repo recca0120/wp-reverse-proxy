@@ -8,7 +8,7 @@ use Recca0120\ReverseProxy\Middleware\IpFilter;
 use Recca0120\ReverseProxy\Middleware\RequestId;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
-use Recca0120\ReverseProxy\WordPress\Admin\MiddlewareReflector;
+use Recca0120\ReverseProxy\Support\MiddlewareReflector;
 
 class MiddlewareReflectorTest extends TestCase
 {

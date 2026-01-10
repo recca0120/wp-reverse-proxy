@@ -1,9 +1,9 @@
 <?php
 
-namespace Recca0120\ReverseProxy\WordPress\Admin;
+namespace Recca0120\ReverseProxy\Routing;
 
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\MiddlewareReflector;
 use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareRegistry

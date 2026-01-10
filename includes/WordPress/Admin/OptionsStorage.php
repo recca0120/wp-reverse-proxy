@@ -2,7 +2,9 @@
 
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
-class OptionsStorage implements RouteStorageInterface
+use Recca0120\ReverseProxy\Contracts\StorageInterface;
+
+class OptionsStorage implements StorageInterface
 {
     public const OPTION_NAME = 'reverse_proxy_admin_routes';
 

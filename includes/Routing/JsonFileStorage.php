@@ -1,8 +1,10 @@
 <?php
 
-namespace Recca0120\ReverseProxy\WordPress\Admin;
+namespace Recca0120\ReverseProxy\Routing;
 
-class JsonFileStorage implements RouteStorageInterface
+use Recca0120\ReverseProxy\Contracts\StorageInterface;
+
+class JsonFileStorage implements StorageInterface
 {
     /** @var string */
     private $filePath;
