@@ -465,6 +465,59 @@ class FileLoaderTest extends TestCase
         $this->assertNotEquals($staleMtime, $cachedData['metadata']);
     }
 
+    public function test_skips_disabled_routes(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.json';
+        file_put_contents($filePath, json_encode([
+            'routes' => [
+                [
+                    'path' => '/enabled/*',
+                    'target' => 'https://enabled.example.com',
+                    'enabled' => true,
+                ],
+                [
+                    'path' => '/disabled/*',
+                    'target' => 'https://disabled.example.com',
+                    'enabled' => false,
+                ],
+                [
+                    'path' => '/no-enabled-field/*',
+                    'target' => 'https://no-enabled.example.com',
+                    // no enabled field - should be included (default true)
+                ],
+            ],
+        ]));
+
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
+
+        $this->assertCount(2, $routes);
+
+        $hosts = array_map(fn ($r) => $r->getTargetHost(), $routes);
+        $this->assertContains('enabled.example.com', $hosts);
+        $this->assertContains('no-enabled.example.com', $hosts);
+        $this->assertNotContains('disabled.example.com', $hosts);
+    }
+
+    public function test_skips_disabled_routes_in_yaml(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.yaml';
+        $yaml = implode("\n", [
+            'routes:',
+            '  - path: /enabled/*',
+            '    target: https://enabled.example.com',
+            '    enabled: true',
+            '  - path: /disabled/*',
+            '    target: https://disabled.example.com',
+            '    enabled: false',
+        ]);
+        file_put_contents($filePath, $yaml);
+
+        $routes = $this->loadRoutes(new FileLoader([$filePath]));
+
+        $this->assertCount(1, $routes);
+        $this->assertEquals('enabled.example.com', $routes[0]->getTargetHost());
+    }
+
     /**
      * Helper to load routes through RouteCollection.
      *

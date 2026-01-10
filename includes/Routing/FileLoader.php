@@ -135,7 +135,11 @@ class FileLoader implements RouteLoaderInterface
             return [];
         }
 
-        return $config['routes'];
+        return array_filter($config['routes'], function ($route) {
+            // Skip routes explicitly disabled (enabled: false)
+            // Routes without 'enabled' field or with enabled: true are included
+            return !isset($route['enabled']) || $route['enabled'] !== false;
+        });
     }
 
     /**
