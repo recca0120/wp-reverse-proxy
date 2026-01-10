@@ -1,12 +1,12 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Tests\Unit\WordPress\Admin;
+namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use PHPUnit\Framework\TestCase;
 use Recca0120\ReverseProxy\Middleware\ErrorHandling;
 use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 use Recca0120\ReverseProxy\Routing\MiddlewareManager;
-use Recca0120\ReverseProxy\WordPress\Admin\MiddlewareRegistry;
+use Recca0120\ReverseProxy\Routing\MiddlewareRegistry;
 
 /**
  * Tests for MiddlewareRegistry.

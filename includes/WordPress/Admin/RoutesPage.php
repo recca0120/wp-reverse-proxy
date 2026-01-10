@@ -2,22 +2,29 @@
 
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
+use Recca0120\ReverseProxy\Contracts\StorageInterface;
+use Recca0120\ReverseProxy\Routing\MiddlewareRegistry;
 use Recca0120\ReverseProxy\Support\Arr;
 
 class RoutesPage
 {
-    public const OPTION_NAME = 'reverse_proxy_admin_routes';
-
-    public const VERSION_OPTION_NAME = 'reverse_proxy_admin_routes_version';
-
     private const VALID_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
     /** @var MiddlewareRegistry|null */
     private $registry;
 
-    public function __construct(?MiddlewareRegistry $registry = null)
+    /** @var StorageInterface */
+    private $storage;
+
+    public function __construct(?MiddlewareRegistry $registry = null, ?StorageInterface $storage = null)
     {
         $this->registry = $registry;
+        $this->storage = $storage ?? new OptionsStorage();
+    }
+
+    public function getStorage(): StorageInterface
+    {
+        return $this->storage;
     }
 
     /**
@@ -52,7 +59,7 @@ class RoutesPage
 
     public function getRoutes(): array
     {
-        return get_option(self::OPTION_NAME, []);
+        return $this->storage->getAll();
     }
 
     public function getRouteById(string $id): ?array
@@ -120,9 +127,9 @@ class RoutesPage
         return $this->saveRoutes($routes);
     }
 
-    public static function getVersion(): int
+    public function getVersion(): int
     {
-        return (int) get_option(self::VERSION_OPTION_NAME, 0);
+        return $this->storage->getVersion();
     }
 
     public function sanitizeRoute(array $input): array
@@ -185,24 +192,7 @@ class RoutesPage
 
     private function saveRoutes(array $routes): bool
     {
-        // update_option returns false when value is unchanged, so we check if the save was successful
-        // by comparing with get_option after the update
-        update_option(self::OPTION_NAME, $routes);
-
-        $saved = get_option(self::OPTION_NAME, []);
-        $success = $saved === $routes;
-
-        if ($success) {
-            $this->incrementVersion();
-        }
-
-        return $success;
-    }
-
-    private function incrementVersion(): void
-    {
-        $version = self::getVersion();
-        update_option(self::VERSION_OPTION_NAME, $version + 1);
+        return $this->storage->save($routes);
     }
 
     private function sanitizeMiddlewares(array $middlewares): array

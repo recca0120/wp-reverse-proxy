@@ -1,12 +1,10 @@
 <?php
 
-namespace Recca0120\ReverseProxy\WordPress\Admin;
+namespace Recca0120\ReverseProxy\Support;
 
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionParameter;
-use Recca0120\ReverseProxy\Support\Arr;
-use Recca0120\ReverseProxy\Support\Str;
 
 class MiddlewareReflector
 {

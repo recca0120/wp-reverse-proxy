@@ -510,7 +510,7 @@ class RoutesPageTest extends WP_UnitTestCase
     public function test_get_available_middlewares_returns_middlewares_from_registry()
     {
         $middlewareManager = reverse_proxy_create_middleware_manager();
-        $registry = new \Recca0120\ReverseProxy\WordPress\Admin\MiddlewareRegistry($middlewareManager);
+        $registry = new \Recca0120\ReverseProxy\Routing\MiddlewareRegistry($middlewareManager);
         $routesPage = new RoutesPage($registry);
 
         $middlewares = $routesPage->getAvailableMiddlewares();
@@ -545,7 +545,7 @@ class RoutesPageTest extends WP_UnitTestCase
     {
         // Create properly initialized admin
         $middlewareManager = reverse_proxy_create_middleware_manager();
-        $registry = new \Recca0120\ReverseProxy\WordPress\Admin\MiddlewareRegistry($middlewareManager);
+        $registry = new \Recca0120\ReverseProxy\Routing\MiddlewareRegistry($middlewareManager);
         $routesPage = new RoutesPage($registry);
         $admin = new Admin($routesPage);
         $admin->register();
