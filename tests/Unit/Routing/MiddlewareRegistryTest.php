@@ -1,6 +1,6 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Tests\Unit\WordPress\Admin;
+namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use PHPUnit\Framework\TestCase;
 use Recca0120\ReverseProxy\Middleware\ErrorHandling;
