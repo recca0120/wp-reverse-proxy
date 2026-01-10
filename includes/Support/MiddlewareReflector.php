@@ -88,13 +88,7 @@ class MiddlewareReflector
      */
     private function extractDescription(ReflectionClass $class): string
     {
-        $docComment = $class->getDocComment();
-
-        if ($docComment === false) {
-            return '';
-        }
-
-        return $this->annotationParser->extractDescription($docComment);
+        return $this->annotationParser->parseClassDescription($class);
     }
 
     /**
@@ -120,8 +114,7 @@ class MiddlewareReflector
      */
     private function buildFields(ReflectionMethod $constructor): array
     {
-        $docComment = $constructor->getDocComment() ?: '';
-        $paramAnnotations = $this->annotationParser->parseParams($docComment);
+        $paramAnnotations = $this->annotationParser->parseConstructorParams($constructor);
         $fields = [];
 
         foreach ($constructor->getParameters() as $param) {
@@ -135,11 +128,6 @@ class MiddlewareReflector
 
             // Skip parameters marked with (skip)
             if ($annotation !== null && !empty($annotation['skip'])) {
-                continue;
-            }
-
-            // Skip complex config parameters (has @type block)
-            if ($this->annotationParser->hasTypeBlock($docComment, $name)) {
                 continue;
             }
 

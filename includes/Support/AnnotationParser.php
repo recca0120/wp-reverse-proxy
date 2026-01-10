@@ -2,6 +2,9 @@
 
 namespace Recca0120\ReverseProxy\Support;
 
+use ReflectionClass;
+use ReflectionMethod;
+
 /**
  * Parse PHPDoc @param description annotations.
  *
@@ -61,13 +64,15 @@ class AnnotationParser
     }
 
     /**
-     * Extract description from PHPDoc block.
+     * Parse class description from PHPDoc block.
      *
      * Extracts the description text before any @tags.
      */
-    public function extractDescription(string $docComment): string
+    public function parseClassDescription(ReflectionClass $class): string
     {
-        if ($docComment === '') {
+        $docComment = $class->getDocComment();
+
+        if ($docComment === false || $docComment === '') {
             return '';
         }
 
@@ -97,15 +102,17 @@ class AnnotationParser
     }
 
     /**
-     * Parse @param annotations from PHPDoc.
+     * Parse @param annotations from constructor PHPDoc.
      *
      * Format: @param type $name Label {options} = default
      *
      * @return array<string, array{type: string, label: string, options: string|null, default: string|null, labels: string|null, skip: bool}>
      */
-    public function parseParams(string $docComment): array
+    public function parseConstructorParams(ReflectionMethod $constructor): array
     {
-        if ($docComment === '') {
+        $docComment = $constructor->getDocComment();
+
+        if ($docComment === false || $docComment === '') {
             return [];
         }
 
@@ -128,21 +135,5 @@ class AnnotationParser
         }
 
         return $params;
-    }
-
-    /**
-     * Check if parameter has @type block in PHPDoc (complex config object).
-     *
-     * Example:
-     * @param array $options {
-     *     @type string $key Description
-     * }
-     */
-    public function hasTypeBlock(string $docComment, string $paramName): bool
-    {
-        // Match: @param ... $name ... { ... @type (handles types with spaces like "array<string, mixed>")
-        $pattern = '/@param\s+.+?\$' . preg_quote($paramName, '/') . '\s+.*?\{[\s\S]*?@type/';
-
-        return (bool) preg_match($pattern, $docComment);
     }
 }
