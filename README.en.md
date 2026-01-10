@@ -346,7 +346,23 @@ WordPress Admin → Settings → Reverse Proxy
 +--------------------------------------------------+
 ```
 
-> **Note**: Routes configured in admin are stored in `wp_options` and load after config files and Filter Hooks.
+> **Note**: Routes configured in admin are stored in `wp_options` by default and load after config files and Filter Hooks.
+
+**Switching Storage Method:**
+
+You can switch to JSON file storage via filter:
+
+```php
+add_filter('reverse_proxy_route_storage', function() {
+    $directory = WP_CONTENT_DIR . '/reverse-proxy-routes';
+    return new \Recca0120\ReverseProxy\Routing\JsonFileStorage($directory . '/admin-routes.json');
+});
+```
+
+| Storage | Class | Description |
+|---------|-------|-------------|
+| `OptionsStorage` | `WordPress\Admin\OptionsStorage` | Default, uses `wp_options` table |
+| `JsonFileStorage` | `Routing\JsonFileStorage` | JSON file storage, version control friendly |
 
 ---
 
@@ -1155,6 +1171,7 @@ add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
 | `reverse_proxy_config_directory` | `$directory` | Config file directory (default `WP_CONTENT_DIR/reverse-proxy-routes`) |
 | `reverse_proxy_config_pattern` | `$pattern` | Config file pattern (default `*.{json,yaml,yml,php}`) |
 | `reverse_proxy_cache` | `$cache` | PSR-16 cache instance (for route caching and middleware injection) |
+| `reverse_proxy_route_storage` | `$storage` | Admin route storage implementation (default `OptionsStorage`, can switch to `JsonFileStorage`) |
 | `reverse_proxy_default_middlewares` | `$middlewares` | Customize default middlewares |
 | `reverse_proxy_psr17_factory` | `$factory` | Override PSR-17 HTTP factory |
 | `reverse_proxy_http_client` | `$client` | Override PSR-18 HTTP client |

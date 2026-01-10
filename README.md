@@ -347,7 +347,23 @@ WordPress 後台 → 設定 → Reverse Proxy
 +--------------------------------------------------+
 ```
 
-> **注意**：後台設定的路由儲存在 `wp_options`，優先順序在配置檔和 Filter Hook 之後載入。
+> **注意**：後台設定的路由預設儲存在 `wp_options`，優先順序在配置檔和 Filter Hook 之後載入。
+
+**切換儲存方式：**
+
+可透過 filter 切換為 JSON 檔案儲存：
+
+```php
+add_filter('reverse_proxy_route_storage', function() {
+    $directory = WP_CONTENT_DIR . '/reverse-proxy-routes';
+    return new \Recca0120\ReverseProxy\Routing\JsonFileStorage($directory . '/admin-routes.json');
+});
+```
+
+| 儲存方式 | 類別 | 說明 |
+|----------|------|------|
+| `OptionsStorage` | `WordPress\Admin\OptionsStorage` | 預設，使用 `wp_options` 表儲存 |
+| `JsonFileStorage` | `Routing\JsonFileStorage` | JSON 檔案儲存，方便版本控制 |
 
 ---
 
@@ -1156,6 +1172,7 @@ add_filter('reverse_proxy_routes', function (RouteCollection $routes) {
 | `reverse_proxy_config_directory` | `$directory` | 配置檔目錄（預設 `WP_CONTENT_DIR/reverse-proxy-routes`） |
 | `reverse_proxy_config_pattern` | `$pattern` | 配置檔匹配模式（預設 `*.{json,yaml,yml,php}`） |
 | `reverse_proxy_cache` | `$cache` | PSR-16 快取實例（用於路由快取與中介層注入） |
+| `reverse_proxy_route_storage` | `$storage` | 後台路由儲存實作（預設 `OptionsStorage`，可切換為 `JsonFileStorage`） |
 | `reverse_proxy_default_middlewares` | `$middlewares` | 自訂預設中介層 |
 | `reverse_proxy_psr17_factory` | `$factory` | 覆寫 PSR-17 HTTP 工廠 |
 | `reverse_proxy_http_client` | `$client` | 覆寫 PSR-18 HTTP 客戶端 |
