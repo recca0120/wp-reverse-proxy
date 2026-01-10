@@ -150,7 +150,7 @@ class MiddlewareReflector
         $options = $annotation['options'] ?? null;
         $uiType = $this->resolveUiType($phpType, $docType, $options, $isVariadic);
 
-        return array_merge(
+        return Arr::merge(
             [
                 'name' => $name,
                 'type' => $uiType,
