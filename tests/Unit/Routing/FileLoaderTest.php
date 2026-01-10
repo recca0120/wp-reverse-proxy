@@ -492,7 +492,9 @@ class FileLoaderTest extends TestCase
 
         $this->assertCount(2, $routes);
 
-        $hosts = array_map(fn ($r) => $r->getTargetHost(), $routes);
+        $hosts = array_map(function ($r) {
+            return $r->getTargetHost();
+        }, $routes);
         $this->assertContains('enabled.example.com', $hosts);
         $this->assertContains('no-enabled.example.com', $hosts);
         $this->assertNotContains('disabled.example.com', $hosts);
