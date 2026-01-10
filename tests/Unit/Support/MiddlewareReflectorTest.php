@@ -158,7 +158,7 @@ class MiddlewareReflectorTest extends TestCase
             }
         };
 
-        $info = $this->reflector->reflect(get_class($class));
+        $info = $this->reflector->reflect($class);
 
         $this->assertEmpty($info['description']);
         $this->assertCount(1, $info['fields']);
@@ -176,26 +176,9 @@ class MiddlewareReflectorTest extends TestCase
             }
         };
 
-        $info = $this->reflector->reflect(get_class($class));
+        $info = $this->reflector->reflect($class);
 
         $this->assertEmpty($info['fields']);
-    }
-
-    public function test_it_handles_closure_middleware()
-    {
-        // Closure cannot be reflected as class, should return null or empty
-        $result = $this->reflector->reflectCallable(function ($request, $next) {
-            return $next($request);
-        });
-
-        $this->assertNull($result);
-    }
-
-    public function test_it_returns_null_for_non_existent_class()
-    {
-        $result = $this->reflector->reflect('NonExistentClass');
-
-        $this->assertNull($result);
     }
 
     public function test_it_handles_parameter_without_type_hint()
@@ -209,7 +192,7 @@ class MiddlewareReflectorTest extends TestCase
             }
         };
 
-        $info = $this->reflector->reflect(get_class($class));
+        $info = $this->reflector->reflect($class);
 
         // Without type hint, defaults to text
         $this->assertEquals('text', $info['fields'][0]['type']);

@@ -2,6 +2,9 @@
 
 namespace Recca0120\ReverseProxy\Support;
 
+use ReflectionClass;
+use ReflectionMethod;
+
 /**
  * Parse PHPDoc @param description annotations.
  *
@@ -14,11 +17,11 @@ namespace Recca0120\ReverseProxy\Support;
 class AnnotationParser
 {
     /**
-     * Extract annotations from @param description text.
+     * Parse @param description text and extract annotations.
      *
      * @return array{label: string, options: string|null, default: string|null, labels: string|null, skip: bool}
      */
-    public function extractAnnotations(string $text): array
+    public function parseParamDescription(string $text): array
     {
         $label = $text;
         $options = null;
@@ -61,13 +64,15 @@ class AnnotationParser
     }
 
     /**
-     * Parse description from PHPDoc block.
+     * Parse class description from PHPDoc block.
      *
      * Extracts the description text before any @tags.
      */
-    public function parseDocBlock(string $docComment): string
+    public function parseClassDescription(ReflectionClass $class): string
     {
-        if ($docComment === '') {
+        $docComment = $class->getDocComment();
+
+        if ($docComment === false || $docComment === '') {
             return '';
         }
 
@@ -94,5 +99,41 @@ class AnnotationParser
         }
 
         return implode(' ', $description);
+    }
+
+    /**
+     * Parse @param annotations from constructor PHPDoc.
+     *
+     * Format: @param type $name Label {options} = default
+     *
+     * @return array<string, array{type: string, label: string, options: string|null, default: string|null, labels: string|null, skip: bool}>
+     */
+    public function parseConstructorParams(ReflectionMethod $constructor): array
+    {
+        $docComment = $constructor->getDocComment();
+
+        if ($docComment === false || $docComment === '') {
+            return [];
+        }
+
+        $params = [];
+
+        // Match @param type $name description
+        // Type can be: string, int, bool, array, string[], array<string, mixed>, etc.
+        // Use .+? to handle types with spaces like "array<string, mixed>"
+        if (preg_match_all('/@param\s+(.+?)\s+\$(\w+)(?:\s+(.*))?$/m', $docComment, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $type = $match[1];
+                $name = $match[2];
+                $description = isset($match[3]) ? trim($match[3]) : '';
+
+                $parsed = $this->parseParamDescription($description);
+                $parsed['type'] = $type;
+
+                $params[$name] = $parsed;
+            }
+        }
+
+        return $params;
     }
 }
