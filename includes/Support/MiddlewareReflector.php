@@ -52,59 +52,28 @@ class MiddlewareReflector
     /**
      * Reflect a middleware class and extract UI field definitions.
      *
-     * @param string $className
-     * @return array{label: string, description: string, fields: array}|null
+     * @param string|object $class Class name or object instance
+     * @return array{label: string, description: string, fields: array}
      */
-    public function reflect(string $className): ?array
+    public function reflect($class): array
     {
-        if (!class_exists($className)) {
-            return null;
-        }
-
-        $reflectionClass = new ReflectionClass($className);
+        $reflectionClass = new ReflectionClass($class);
+        $constructor = $reflectionClass->getConstructor();
 
         return [
             'label' => $this->generateLabel($reflectionClass->getShortName()),
-            'description' => $this->extractDescription($reflectionClass),
-            'fields' => $this->extractFields($reflectionClass),
+            'description' => $this->annotationParser->parseClassDescription($reflectionClass),
+            'fields' => $constructor !== null ? $this->buildFields($constructor) : [],
         ];
     }
 
     /**
      * Reflect a callable (closure or invokable).
      * Returns null since closures cannot provide meaningful UI fields.
-     *
-     * @param callable $callable
-     * @return array|null
      */
     public function reflectCallable(callable $callable): ?array
     {
-        // Closures and callable arrays cannot provide meaningful UI fields
         return null;
-    }
-
-    /**
-     * Extract description from class PHPDoc.
-     */
-    private function extractDescription(ReflectionClass $class): string
-    {
-        return $this->annotationParser->parseClassDescription($class);
-    }
-
-    /**
-     * Extract fields from @param annotations or constructor parameters.
-     *
-     * @return array<array>
-     */
-    private function extractFields(ReflectionClass $class): array
-    {
-        $constructor = $class->getConstructor();
-
-        if ($constructor === null) {
-            return [];
-        }
-
-        return $this->buildFields($constructor);
     }
 
     /**
@@ -181,18 +150,17 @@ class MiddlewareReflector
         $options = $annotation['options'] ?? null;
         $uiType = $this->resolveUiType($phpType, $docType, $options, $isVariadic);
 
-        $field = [
-            'name' => $name,
-            'type' => $uiType,
-            'label' => !empty($annotation['label']) ? $annotation['label'] : $this->generateLabel($name),
-        ];
-
-        $this->addFieldOptions($field, $options, $uiType);
-        $this->addRepeaterInputType($field, $uiType, $docType, $isVariadic, $phpType);
-        $this->addKeyValueLabels($field, $uiType, $annotation['labels'] ?? null);
-        $this->addFieldDefault($field, $param, $annotation, $isVariadic, $uiType);
-
-        return $field;
+        return array_merge(
+            [
+                'name' => $name,
+                'type' => $uiType,
+                'label' => !empty($annotation['label']) ? $annotation['label'] : $this->generateLabel($name),
+            ],
+            $this->getFieldOptions($options, $uiType),
+            $this->getRepeaterInputType($uiType, $docType, $isVariadic, $phpType),
+            $this->getKeyValueLabels($uiType, $annotation['labels'] ?? null),
+            $this->getFieldDefault($param, $annotation, $isVariadic, $uiType)
+        );
     }
 
     /**
@@ -210,22 +178,24 @@ class MiddlewareReflector
     }
 
     /**
-     * Add options for select/checkboxes fields.
+     * Get options for select/checkboxes fields.
      */
-    private function addFieldOptions(array &$field, ?string $options, string $uiType): void
+    private function getFieldOptions(?string $options, string $uiType): array
     {
         if ($options !== null && Arr::contains(['select', 'checkboxes'], $uiType)) {
-            $field['options'] = $options;
+            return ['options' => $options];
         }
+
+        return [];
     }
 
     /**
-     * Add inputType for repeater fields.
+     * Get inputType for repeater fields.
      */
-    private function addRepeaterInputType(array &$field, string $uiType, ?string $docType, bool $isVariadic, string $phpType): void
+    private function getRepeaterInputType(string $uiType, ?string $docType, bool $isVariadic, string $phpType): array
     {
         if ($uiType !== 'repeater') {
-            return;
+            return [];
         }
 
         $inputType = null;
@@ -235,46 +205,47 @@ class MiddlewareReflector
             $inputType = 'number';
         }
 
-        if ($inputType !== null) {
-            $field['inputType'] = $inputType;
-        }
+        return $inputType !== null ? ['inputType' => $inputType] : [];
     }
 
     /**
-     * Add keyLabel/valueLabel for keyvalue fields.
+     * Get keyLabel/valueLabel for keyvalue fields.
      */
-    private function addKeyValueLabels(array &$field, string $uiType, ?string $labels): void
+    private function getKeyValueLabels(string $uiType, ?string $labels): array
     {
         if ($uiType !== 'keyvalue' || $labels === null) {
-            return;
+            return [];
         }
 
         $labelParts = explode('|', $labels);
         if (count($labelParts) >= 2) {
-            $field['keyLabel'] = trim($labelParts[0]);
-            $field['valueLabel'] = trim($labelParts[1]);
+            return [
+                'keyLabel' => trim($labelParts[0]),
+                'valueLabel' => trim($labelParts[1]),
+            ];
         }
+
+        return [];
     }
 
     /**
-     * Add default value or required flag.
+     * Get default value or required flag.
      */
-    private function addFieldDefault(array &$field, ReflectionParameter $param, ?array $annotation, bool $isVariadic, string $uiType): void
+    private function getFieldDefault(ReflectionParameter $param, ?array $annotation, bool $isVariadic, string $uiType): array
     {
         if ($isVariadic) {
-            if (isset($annotation['default'])) {
-                $field['default'] = $annotation['default'];
-            }
-            return;
+            return isset($annotation['default']) ? ['default' => $annotation['default']] : [];
         }
 
         if ($param->isDefaultValueAvailable()) {
-            $field['default'] = $this->formatDefault($param->getDefaultValue(), $uiType);
-        } elseif (isset($annotation['default'])) {
-            $field['default'] = $annotation['default'];
-        } else {
-            $field['required'] = true;
+            return ['default' => $this->formatDefault($param->getDefaultValue(), $uiType)];
         }
+
+        if (isset($annotation['default'])) {
+            return ['default' => $annotation['default']];
+        }
+
+        return ['required' => true];
     }
 
     /**
