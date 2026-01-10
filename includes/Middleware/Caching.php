@@ -5,7 +5,7 @@ namespace Recca0120\ReverseProxy\Middleware;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Recca0120\ReverseProxy\Concerns\HasCache;
+use Recca0120\ReverseProxy\Middleware\Concerns\HasCache;
 use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Support\Arr;

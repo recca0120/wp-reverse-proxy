@@ -1,6 +1,6 @@
 <?php
 
-namespace Recca0120\ReverseProxy\Concerns;
+namespace Recca0120\ReverseProxy\Middleware\Concerns;
 
 use Psr\SimpleCache\CacheInterface;
 use RuntimeException;
