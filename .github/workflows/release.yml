@@ -52,7 +52,8 @@ jobs:
             --exclude='.phpunit.cache' \
             --exclude='.phpunit.result.cache' \
             --exclude='vendor' \
-            --exclude='lefthook.yml'
+            --exclude='lefthook.yml' \
+            --exclude='pint.json'
 
           cp LICENSE build/reverse-proxy/ 2>/dev/null || true
           cp README.md build/reverse-proxy/ 2>/dev/null || true

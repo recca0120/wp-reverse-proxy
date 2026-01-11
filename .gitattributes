@@ -9,3 +9,4 @@
 /phpunit.xml.dist export-ignore
 /README.en.md export-ignore
 /lefthook.yml export-ignore
+/pint.json export-ignore
