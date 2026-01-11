@@ -61,41 +61,8 @@ class StreamClient implements ClientInterface
         }
 
         [$protocolVersion, $statusCode, $reasonPhrase, $headers] = $this->parseResponseHeaders($http_response_header);
-        $body = $this->decodeBody($body, $headers);
+        [$body, $headers] = $this->decodeBody($body, $headers, $this->options['decode_content'] ?? true, true);
 
         return new Response($statusCode, $headers, $body, $protocolVersion, $reasonPhrase);
-    }
-
-    private function decodeBody(string $body, array &$headers): string
-    {
-        if (! ($this->options['decode_content'] ?? true)) {
-            return $body;
-        }
-
-        $encodingName = $this->findHeaderName($headers, 'Content-Encoding');
-
-        if ($encodingName === null) {
-            return $body;
-        }
-
-        $encoding = $headers[$encodingName][0] ?? null;
-        $decoded = null;
-
-        switch (strtolower($encoding)) {
-            case 'gzip':
-                $decoded = @gzdecode($body);
-                break;
-            case 'deflate':
-                $decoded = @gzinflate($body);
-                break;
-        }
-
-        if ($decoded !== false && $decoded !== null) {
-            unset($headers[$encodingName]);
-
-            return $decoded;
-        }
-
-        return $body;
     }
 }

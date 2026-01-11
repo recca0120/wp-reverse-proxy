@@ -33,6 +33,55 @@ trait ParsesResponse
     }
 
     /**
+     * Decode response body and remove Content-Encoding header.
+     *
+     * @return array{0: string, 1: array}
+     */
+    private function decodeBody(string $body, array $headers, bool $decodeContent, bool $manualDecode = false): array
+    {
+        if (! $decodeContent) {
+            return [$body, $headers];
+        }
+
+        $encodingName = $this->findHeaderName($headers, 'Content-Encoding');
+
+        if ($encodingName === null) {
+            return [$body, $headers];
+        }
+
+        if ($manualDecode) {
+            $encoding = strtolower($headers[$encodingName][0] ?? '');
+            $decoded = $this->decompressBody($body, $encoding);
+
+            if ($decoded === null) {
+                return [$body, $headers];
+            }
+
+            $body = $decoded;
+        }
+
+        unset($headers[$encodingName]);
+
+        return [$body, $headers];
+    }
+
+    private function decompressBody(string $body, string $encoding): ?string
+    {
+        switch ($encoding) {
+            case 'gzip':
+                $decoded = @gzdecode($body);
+
+                return $decoded !== false ? $decoded : null;
+            case 'deflate':
+                $decoded = @gzinflate($body);
+
+                return $decoded !== false ? $decoded : null;
+        }
+
+        return null;
+    }
+
+    /**
      * @return array{0: string, 1: int, 2: string, 3: array}
      */
     private function parseResponseHeaders(array $headerLines): array
