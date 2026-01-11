@@ -101,10 +101,7 @@ class Admin
     {
         $this->verifyAjaxRequest();
 
-        $route = isset($_POST['route']) ? (array) $_POST['route'] : [];
-        $route['middlewares'] = $this->parseMiddlewaresJson();
-
-        $result = $this->routesPage->saveRoute($route);
+        $result = $this->routesPage->saveRoute($this->getRouteFromRequest());
 
         if ($result) {
             wp_send_json_success([
@@ -191,10 +188,7 @@ class Admin
     {
         $this->verifyFormRequest('reverse_proxy_nonce', 'reverse_proxy_save_route');
 
-        $route = isset($_POST['route']) ? (array) $_POST['route'] : [];
-        $route['middlewares'] = $this->parseMiddlewaresJson();
-
-        $message = $this->routesPage->saveRoute($route) ? 'message=saved' : 'error=save_failed';
+        $message = $this->routesPage->saveRoute($this->getRouteFromRequest()) ? 'message=saved' : 'error=save_failed';
         $this->redirectToRoutesPage($message);
     }
 
@@ -258,6 +252,14 @@ class Admin
         $nonce = isset($_POST[$field]) ? $_POST[$field] : '';
 
         return wp_verify_nonce($nonce, $action) !== false;
+    }
+
+    private function getRouteFromRequest(): array
+    {
+        $route = isset($_POST['route']) ? (array) $_POST['route'] : [];
+        $route['middlewares'] = $this->parseMiddlewaresJson();
+
+        return $route;
     }
 
     private function parseMiddlewaresJson(): array

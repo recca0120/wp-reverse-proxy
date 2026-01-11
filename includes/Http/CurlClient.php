@@ -75,23 +75,8 @@ class CurlClient implements ClientInterface
         $body = substr($response, $headerSize);
         $headerLines = explode("\r\n", trim(substr($response, 0, $headerSize)));
         [$protocolVersion, $statusCode, $reasonPhrase, $headers] = $this->parseResponseHeaders($headerLines);
-        $body = $this->decodeBody($body, $headers);
+        [$body, $headers] = $this->decodeBody($body, $headers, $this->options['decode_content'] ?? true);
 
         return new Response($statusCode, $headers, $body, $protocolVersion, $reasonPhrase);
-    }
-
-    private function decodeBody(string $body, array &$headers): string
-    {
-        if (! ($this->options['decode_content'] ?? true)) {
-            return $body;
-        }
-
-        $encodingName = $this->findHeaderName($headers, 'Content-Encoding');
-
-        if ($encodingName !== null) {
-            unset($headers[$encodingName]);
-        }
-
-        return $body;
     }
 }
