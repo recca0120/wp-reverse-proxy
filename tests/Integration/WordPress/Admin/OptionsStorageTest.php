@@ -29,7 +29,7 @@ class OptionsStorageTest extends WP_UnitTestCase
 
     public function test_get_all_returns_empty_array_when_no_routes()
     {
-        $routes = $this->storage->getAll();
+        $routes = $this->storage->all();
 
         $this->assertIsArray($routes);
         $this->assertEmpty($routes);
@@ -76,7 +76,7 @@ class OptionsStorageTest extends WP_UnitTestCase
         ];
 
         $this->storage->save($routes);
-        $retrieved = $this->storage->getAll();
+        $retrieved = $this->storage->all();
 
         $this->assertEquals($routes, $retrieved);
     }
@@ -123,7 +123,7 @@ class OptionsStorageTest extends WP_UnitTestCase
         $this->storage->save($routes1);
         $this->storage->save($routes2);
 
-        $retrieved = $this->storage->getAll();
+        $retrieved = $this->storage->all();
 
         $this->assertEquals($routes2, $retrieved);
         $this->assertCount(1, $retrieved);

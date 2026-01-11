@@ -472,17 +472,17 @@ class RoutesPageTest extends WP_UnitTestCase
         $routes = $routesPage->getRoutes();
         $routeId = $routes[0]['id'];
 
-        $found = $routesPage->getRouteById($routeId);
+        $found = $routesPage->findRoute($routeId);
 
         $this->assertNotNull($found);
         $this->assertEquals('/find-me/*', $found['path']);
     }
 
-    public function test_get_route_by_id_returns_null_for_nonexistent()
+    public function test_find_route_returns_null_for_nonexistent()
     {
         $routesPage = new RoutesPage();
 
-        $found = $routesPage->getRouteById('nonexistent_id');
+        $found = $routesPage->findRoute('nonexistent_id');
 
         $this->assertNull($found);
     }

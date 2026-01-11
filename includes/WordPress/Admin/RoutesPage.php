@@ -59,15 +59,12 @@ class RoutesPage
 
     public function getRoutes(): array
     {
-        return $this->storage->getAll();
+        return $this->storage->all();
     }
 
-    public function getRouteById(string $id): ?array
+    public function findRoute(string $id): ?array
     {
-        $routes = $this->getRoutes();
-        $index = $this->findRouteIndex($routes, $id);
-
-        return $index !== null ? $routes[$index] : null;
+        return $this->storage->find($id);
     }
 
     public function getActionUrl(string $routeId, string $action): string
@@ -86,45 +83,29 @@ class RoutesPage
             return false;
         }
 
-        $routes = $this->getRoutes();
-
         if (empty($sanitized['id'])) {
             $sanitized['id'] = 'route_' . wp_generate_uuid4();
-            $routes[] = $sanitized;
-        } else {
-            $index = $this->findRouteIndex($routes, $sanitized['id']);
-            if ($index !== null) {
-                $routes[$index] = $sanitized;
-            } else {
-                $routes[] = $sanitized;
-            }
         }
 
-        return $this->saveRoutes($routes);
+        return $this->storage->update($sanitized['id'], $sanitized);
     }
 
     public function deleteRoute(string $id): bool
     {
-        $routes = $this->getRoutes();
-        $routes = array_values(array_filter($routes, function ($route) use ($id) {
-            return $route['id'] !== $id;
-        }));
-
-        return $this->saveRoutes($routes);
+        return $this->storage->delete($id);
     }
 
     public function toggleRoute(string $id): bool
     {
-        $routes = $this->getRoutes();
-        $index = $this->findRouteIndex($routes, $id);
+        $route = $this->storage->find($id);
 
-        if ($index === null) {
+        if ($route === null) {
             return false;
         }
 
-        $routes[$index]['enabled'] = !$routes[$index]['enabled'];
+        $route['enabled'] = !$route['enabled'];
 
-        return $this->saveRoutes($routes);
+        return $this->storage->update($id, $route);
     }
 
     public function getVersion(): int
@@ -177,22 +158,6 @@ class RoutesPage
                 return Arr::contains(self::VALID_METHODS, $method);
             }
         ));
-    }
-
-    private function findRouteIndex(array $routes, string $id): ?int
-    {
-        foreach ($routes as $index => $route) {
-            if ($route['id'] === $id) {
-                return $index;
-            }
-        }
-
-        return null;
-    }
-
-    private function saveRoutes(array $routes): bool
-    {
-        return $this->storage->save($routes);
     }
 
     private function sanitizeMiddlewares(array $middlewares): array
@@ -278,7 +243,7 @@ class RoutesPage
 
     private function renderEditPage(?string $routeId): void
     {
-        $route = $routeId ? $this->getRouteById($routeId) : null;
+        $route = $routeId ? $this->findRoute($routeId) : null;
         $middlewares = $this->getAvailableMiddlewares();
         include REVERSE_PROXY_PLUGIN_DIR . 'templates/admin/route-form.php';
     }
