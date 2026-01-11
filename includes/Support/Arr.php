@@ -135,20 +135,39 @@ class Arr
     }
 
     /**
-     * Find the first item matching a callback.
+     * Get the first item where the given key matches the value.
      *
-     * @template TKey
      * @template TValue
      *
-     * @param array<TKey, TValue> $array
-     * @param callable(TValue, TKey): bool $callback
+     * @param array<TValue> $array
+     * @param string $key
+     * @param mixed $value
      * @return TValue|null
      */
-    public static function find(array $array, callable $callback)
+    public static function firstWhere(array $array, string $key, $value)
     {
-        foreach ($array as $key => $value) {
-            if ($callback($value, $key)) {
-                return $value;
+        foreach ($array as $item) {
+            if (isset($item[$key]) && $item[$key] === $value) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Search the array for the key where the given field matches the value.
+     *
+     * @param array<mixed> $array
+     * @param string $key
+     * @param mixed $value
+     * @return int|string|null
+     */
+    public static function search(array $array, string $key, $value)
+    {
+        foreach ($array as $k => $item) {
+            if (isset($item[$key]) && $item[$key] === $value) {
+                return $k;
             }
         }
 

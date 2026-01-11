@@ -18,9 +18,7 @@ class OptionsStorage implements StorageInterface
 
     public function find(string $id): ?array
     {
-        return Arr::find($this->all(), static function ($route) use ($id) {
-            return $route['id'] === $id;
-        });
+        return Arr::firstWhere($this->all(), 'id', $id);
     }
 
     public function save(array $routes): bool
@@ -45,7 +43,7 @@ class OptionsStorage implements StorageInterface
     public function update(string $id, array $route): bool
     {
         $routes = $this->all();
-        $index = $this->findIndex($id);
+        $index = Arr::search($routes, 'id', $id);
 
         if ($index !== null) {
             $routes[$index] = $route;
@@ -59,24 +57,14 @@ class OptionsStorage implements StorageInterface
     public function delete(string $id): bool
     {
         $routes = $this->all();
-        $routes = array_values(array_filter($routes, function ($route) use ($id) {
-            return $route['id'] !== $id;
-        }));
+        $index = Arr::search($routes, 'id', $id);
 
-        return $this->save($routes);
-    }
-
-    private function findIndex(string $id): ?int
-    {
-        $routes = $this->all();
-
-        foreach ($routes as $index => $route) {
-            if ($route['id'] === $id) {
-                return $index;
-            }
+        if ($index !== null) {
+            unset($routes[$index]);
+            $routes = array_values($routes);
         }
 
-        return null;
+        return $this->save($routes);
     }
 
     private function incrementVersion(): void
