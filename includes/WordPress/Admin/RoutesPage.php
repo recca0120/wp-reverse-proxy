@@ -5,6 +5,7 @@ namespace Recca0120\ReverseProxy\WordPress\Admin;
 use Recca0120\ReverseProxy\Contracts\StorageInterface;
 use Recca0120\ReverseProxy\Routing\MiddlewareRegistry;
 use Recca0120\ReverseProxy\Support\Arr;
+use Recca0120\ReverseProxy\Support\Str;
 
 class RoutesPage
 {
@@ -226,7 +227,7 @@ class RoutesPage
 
         // Require at least one dot for domain names (e.g., example.com)
         // This prevents single-word hosts like 'not-a-valid-url'
-        if (strpos($host, '.') === false) {
+        if (!Str::contains($host, '.')) {
             return false;
         }
 
