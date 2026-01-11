@@ -8,3 +8,4 @@
 /phpunit.xml export-ignore
 /phpunit.xml.dist export-ignore
 /README.en.md export-ignore
+/lefthook.yml export-ignore
