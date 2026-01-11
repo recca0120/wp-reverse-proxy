@@ -2,6 +2,12 @@
 
 **繁體中文** | [English](README.en.md)
 
+![Tests](https://github.com/recca0120/wp-reverse-proxy/actions/workflows/tests.yml/badge.svg)
+[![codecov](https://codecov.io/gh/recca0120/wp-reverse-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/recca0120/wp-reverse-proxy)
+![PHP Version](https://img.shields.io/badge/PHP-7.2%2B-blue)
+![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 一個 WordPress 外掛，可將特定 URL 路徑代理到外部後端伺服器。
 
 ## 功能特色

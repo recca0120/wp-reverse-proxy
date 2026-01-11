@@ -2,6 +2,12 @@
 
 [繁體中文](README.md) | **English**
 
+![Tests](https://github.com/recca0120/wp-reverse-proxy/actions/workflows/tests.yml/badge.svg)
+[![codecov](https://codecov.io/gh/recca0120/wp-reverse-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/recca0120/wp-reverse-proxy)
+![PHP Version](https://img.shields.io/badge/PHP-7.2%2B-blue)
+![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 A WordPress plugin that proxies specific URL paths to external backend servers.
 
 ## Features
