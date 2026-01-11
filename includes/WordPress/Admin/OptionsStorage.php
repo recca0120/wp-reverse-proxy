@@ -3,6 +3,7 @@
 namespace Recca0120\ReverseProxy\WordPress\Admin;
 
 use Recca0120\ReverseProxy\Contracts\StorageInterface;
+use Recca0120\ReverseProxy\Support\Arr;
 
 class OptionsStorage implements StorageInterface
 {
@@ -17,15 +18,9 @@ class OptionsStorage implements StorageInterface
 
     public function find(string $id): ?array
     {
-        $index = $this->findIndex($id);
-
-        if ($index === null) {
-            return null;
-        }
-
-        $routes = $this->all();
-
-        return $routes[$index];
+        return Arr::find($this->all(), static function ($route) use ($id) {
+            return $route['id'] === $id;
+        });
     }
 
     public function save(array $routes): bool

@@ -133,4 +133,25 @@ class Arr
 
         return $values;
     }
+
+    /**
+     * Find the first item matching a callback.
+     *
+     * @template TKey
+     * @template TValue
+     *
+     * @param array<TKey, TValue> $array
+     * @param callable(TValue, TKey): bool $callback
+     * @return TValue|null
+     */
+    public static function find(array $array, callable $callback)
+    {
+        foreach ($array as $key => $value) {
+            if ($callback($value, $key)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
 }
