@@ -81,7 +81,7 @@ class Admin
         $existingMiddlewares = [];
         if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['route_id'])) {
             $routeId = sanitize_text_field($_GET['route_id']);
-            $route = $this->routesPage->getRouteById($routeId);
+            $route = $this->routesPage->findRoute($routeId);
             if ($route !== null) {
                 $existingMiddlewares = $route['middlewares'] ?? [];
             }

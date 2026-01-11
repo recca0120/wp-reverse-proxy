@@ -23,7 +23,7 @@ class WordPressLoader implements RouteLoaderInterface
      */
     public function load(): array
     {
-        $routes = $this->storage->getAll();
+        $routes = $this->storage->all();
 
         if (empty($routes) || !is_array($routes)) {
             return [];

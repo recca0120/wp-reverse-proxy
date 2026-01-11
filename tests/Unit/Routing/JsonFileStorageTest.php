@@ -28,7 +28,7 @@ class JsonFileStorageTest extends TestCase
 
     public function test_get_all_returns_empty_array_when_file_not_exists()
     {
-        $routes = $this->storage->getAll();
+        $routes = $this->storage->all();
 
         $this->assertIsArray($routes);
         $this->assertEmpty($routes);
@@ -78,7 +78,7 @@ class JsonFileStorageTest extends TestCase
         ];
 
         $this->storage->save($routes);
-        $retrieved = $this->storage->getAll();
+        $retrieved = $this->storage->all();
 
         $this->assertEquals($routes, $retrieved);
     }
@@ -121,7 +121,7 @@ class JsonFileStorageTest extends TestCase
         $this->storage->save($routes1);
         $this->storage->save($routes2);
 
-        $retrieved = $this->storage->getAll();
+        $retrieved = $this->storage->all();
 
         $this->assertEquals($routes2, $retrieved);
         $this->assertCount(1, $retrieved);
@@ -160,7 +160,7 @@ class JsonFileStorageTest extends TestCase
     {
         file_put_contents($this->testFile, 'invalid json content');
 
-        $routes = $this->storage->getAll();
+        $routes = $this->storage->all();
 
         $this->assertIsArray($routes);
         $this->assertEmpty($routes);

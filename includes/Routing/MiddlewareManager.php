@@ -273,7 +273,7 @@ class MiddlewareManager
      */
     private function castValue(string $value)
     {
-        if (array_key_exists($value, self::$castMap)) {
+        if (Arr::has(self::$castMap, $value)) {
             return self::$castMap[$value];
         }
 
