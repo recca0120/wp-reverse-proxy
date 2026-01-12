@@ -26,9 +26,9 @@
         checkboxes: collectCheckboxes,
         repeater: collectRepeater,
         keyvalue: collectKeyValue,
-        select: collectSelect,
-        number: collectNumber,
-        json: collectJson
+        json: collectJson,
+        select: collectDefault,
+        number: collectDefault
     };
 
     // DOM Helper functions
@@ -43,6 +43,30 @@
     function cloneTemplate(templateId) {
         var template = $('#' + templateId);
         return template ? template.content.cloneNode(true).firstElementChild : null;
+    }
+
+    function setupField(templateId, ctx, inputSelector) {
+        var wrapper = cloneTemplate(templateId);
+        if (!wrapper) return null;
+
+        var label = $('label', wrapper);
+        var input = $(inputSelector || 'input, textarea, select', wrapper);
+
+        if (label && !$('.label-text', label)) {
+            label.setAttribute('for', ctx.inputId);
+            label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
+        }
+
+        if (input) {
+            input.id = ctx.inputId;
+            input.name = ctx.inputName;
+        }
+
+        return { wrapper: wrapper, label: label, input: input };
+    }
+
+    function getFieldInput(item, fieldName) {
+        return $('[name*="[' + fieldName + ']"]', item);
     }
 
     function on(element, event, selectorOrHandler, handler) {
@@ -340,95 +364,59 @@
 
     // Field Renderers using templates
     function renderTextarea(ctx) {
-        var wrapper = cloneTemplate('field-textarea-template');
-        var label = $('label', wrapper);
-        var textarea = $('textarea', wrapper);
-
-        label.setAttribute('for', ctx.inputId);
-        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
-        textarea.id = ctx.inputId;
-        textarea.name = ctx.inputName;
-        textarea.placeholder = ctx.field.placeholder || '';
-        if (ctx.value !== undefined) textarea.value = ctx.value;
-
-        return wrapper;
+        var field = setupField('field-textarea-template', ctx, 'textarea');
+        field.input.placeholder = ctx.field.placeholder || '';
+        if (ctx.value !== undefined) field.input.value = ctx.value;
+        return field.wrapper;
     }
 
     function renderCheckbox(ctx) {
-        var wrapper = cloneTemplate('field-checkbox-template');
-        var label = $('label', wrapper);
-        var input = $('input', wrapper);
-        var labelText = $('.label-text', wrapper);
-
-        label.setAttribute('for', ctx.inputId);
-        input.id = ctx.inputId;
-        input.name = ctx.inputName;
-        if (isTruthy(ctx.value)) input.checked = true;
-        labelText.textContent = ctx.field.label;
-
-        return wrapper;
+        var field = setupField('field-checkbox-template', ctx, 'input');
+        field.label.setAttribute('for', ctx.inputId);
+        if (isTruthy(ctx.value)) field.input.checked = true;
+        $('.label-text', field.wrapper).textContent = ctx.field.label;
+        return field.wrapper;
     }
 
     function renderSelect(ctx) {
-        var wrapper = cloneTemplate('field-select-template');
-        var label = $('label', wrapper);
-        var select = $('select', wrapper);
-
-        label.setAttribute('for', ctx.inputId);
-        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
-        select.id = ctx.inputId;
-        select.name = ctx.inputName;
-
+        var field = setupField('field-select-template', ctx, 'select');
         parseOptions(ctx.field.options).forEach(function(opt) {
             var option = cloneTemplate('select-option-template');
             option.value = opt.value;
             option.textContent = opt.label;
             if (ctx.value !== undefined && String(ctx.value) === String(opt.value)) option.selected = true;
-            select.appendChild(option);
+            field.input.appendChild(option);
         });
-
-        return wrapper;
+        return field.wrapper;
     }
 
     function renderCheckboxes(ctx) {
-        var wrapper = cloneTemplate('field-checkboxes-template');
-        var label = $('label', wrapper);
-        var group = $('.checkbox-group', wrapper);
-
-        label.setAttribute('for', ctx.inputId);
-        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
-
+        var field = setupField('field-checkboxes-template', ctx);
+        var group = $('.checkbox-group', field.wrapper);
         var selectedValues = parseArrayValue(ctx.value);
 
         parseOptions(ctx.field.options).forEach(function(opt) {
             var cbId = ctx.inputId + '-' + opt.value;
             var optionEl = cloneTemplate('field-checkbox-option-template');
             var cb = $('input', optionEl);
-            var optLabel = $('.option-label', optionEl);
 
             optionEl.setAttribute('for', cbId);
             cb.id = cbId;
             cb.name = ctx.inputName + '[]';
             cb.value = opt.value;
             if (selectedValues.indexOf(opt.value) !== -1) cb.checked = true;
-            optLabel.textContent = opt.label;
-
+            $('.option-label', optionEl).textContent = opt.label;
             group.appendChild(optionEl);
         });
-
-        return wrapper;
+        return field.wrapper;
     }
 
     function renderRepeater(ctx) {
-        var wrapper = cloneTemplate('field-repeater-template');
-        var label = $('label', wrapper);
-        var container = $('.dynamic-list-container', wrapper);
-        var items = $('.dynamic-list-items', wrapper);
+        var field = setupField('field-repeater-template', ctx);
+        var container = $('.dynamic-list-container', field.wrapper);
+        var items = $('.dynamic-list-items', field.wrapper);
 
-        label.setAttribute('for', ctx.inputId);
-        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
         container.dataset.name = ctx.inputName;
-
         var inputType = ctx.field.inputType || 'text';
         var placeholder = ctx.field.placeholder || '';
         var values = parseArrayValue(ctx.value);
@@ -437,23 +425,17 @@
         values.forEach(function(val) {
             items.appendChild(createRepeaterItem(ctx.inputName, inputType, placeholder, val));
         });
-
-        return wrapper;
+        return field.wrapper;
     }
 
     function renderKeyValue(ctx) {
-        var wrapper = cloneTemplate('field-keyvalue-template');
-        var label = $('label', wrapper);
-        var container = $('.dynamic-list-container', wrapper);
-        var items = $('.dynamic-list-items', wrapper);
-        var keyHeader = $('.keyvalue-key-header', wrapper);
-        var valueHeader = $('.keyvalue-value-header', wrapper);
+        var field = setupField('field-keyvalue-template', ctx);
+        var container = $('.dynamic-list-container', field.wrapper);
+        var items = $('.dynamic-list-items', field.wrapper);
 
-        label.setAttribute('for', ctx.inputId);
-        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
         container.dataset.name = ctx.inputName;
-        keyHeader.textContent = ctx.field.keyLabel || 'Key';
-        valueHeader.textContent = ctx.field.valueLabel || 'Value';
+        $('.keyvalue-key-header', field.wrapper).textContent = ctx.field.keyLabel || 'Key';
+        $('.keyvalue-value-header', field.wrapper).textContent = ctx.field.valueLabel || 'Value';
 
         var entries = ctx.value && typeof ctx.value === 'object' ? Object.keys(ctx.value) : [];
         if (entries.length === 0) {
@@ -463,29 +445,23 @@
                 items.appendChild(createKeyValueItem(ctx.inputName, key, ctx.value[key]));
             });
         }
-
-        return wrapper;
+        return field.wrapper;
     }
 
     function renderJson(ctx) {
-        var wrapper = cloneTemplate('field-json-template');
-        var label = $('label', wrapper);
-        var textarea = $('textarea', wrapper);
-
-        label.setAttribute('for', ctx.inputId);
-        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
-        textarea.id = ctx.inputId;
-        textarea.name = ctx.inputName;
+        var field = setupField('field-textarea-template', ctx, 'textarea');
+        field.wrapper.classList.add('middleware-json-wrapper');
+        field.input.rows = 6;
+        field.input.classList.add('code', 'json-editor');
 
         if (ctx.value !== undefined && ctx.value !== null) {
             try {
-                textarea.value = typeof ctx.value === 'string' ? ctx.value : JSON.stringify(ctx.value, null, 2);
-            } catch (e) { textarea.value = ''; }
+                field.input.value = typeof ctx.value === 'string' ? ctx.value : JSON.stringify(ctx.value, null, 2);
+            } catch (e) { field.input.value = ''; }
         }
 
-        setTimeout(function() { initCodeMirror(textarea); }, 0);
-
-        return wrapper;
+        setTimeout(function() { initCodeMirror(field.input); }, 0);
+        return field.wrapper;
     }
 
     function initCodeMirror(textarea) {
@@ -501,21 +477,13 @@
     }
 
     function renderDefaultInput(ctx) {
-        var wrapper = cloneTemplate('field-input-template');
-        var label = $('label', wrapper);
-        var input = $('input', wrapper);
-
-        label.setAttribute('for', ctx.inputId);
-        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
-        input.type = ctx.field.type || 'text';
-        input.id = ctx.inputId;
-        input.name = ctx.inputName;
-        input.placeholder = ctx.field.placeholder || '';
-        input.className = ctx.field.type === 'number' ? 'small-text' : 'regular-text';
-        if (ctx.field.required) input.required = true;
-        if (ctx.value !== undefined) input.value = ctx.value;
-
-        return wrapper;
+        var field = setupField('field-input-template', ctx, 'input');
+        field.input.type = ctx.field.type || 'text';
+        field.input.placeholder = ctx.field.placeholder || '';
+        field.input.className = ctx.field.type === 'number' ? 'small-text' : 'regular-text';
+        if (ctx.field.required) field.input.required = true;
+        if (ctx.value !== undefined) field.input.value = ctx.value;
+        return field.wrapper;
     }
 
     // Helper functions
@@ -685,69 +653,53 @@
 
     // Field value collectors
     function collectCheckbox(item, field) {
-        var input = $('[name*="[' + field.name + ']"]', item);
+        var input = getFieldInput(item, field.name);
         return input ? input.checked : false;
     }
 
     function collectCheckboxes(item, field) {
-        var checked = [];
-        $$('[name*="[' + field.name + ']"]:checked', item).forEach(function(input) {
-            checked.push(input.value);
+        var checked = $$('[name*="[' + field.name + ']"]:checked', item).map(function(input) {
+            return input.value;
         });
         return checked.length > 0 ? checked : null;
     }
 
     function collectRepeater(item, field) {
-        var values = [];
         var isNumber = field.inputType === 'number';
-        $$('.middleware-repeater-wrapper .dynamic-list-item input', item).forEach(function(input) {
-            var v = input.value;
-            if (v !== '' && v !== null) values.push(isNumber && !isNaN(v) ? parseFloat(v) : v);
-        });
+        var values = $$('.middleware-repeater-wrapper .dynamic-list-item input', item)
+            .map(function(input) { return input.value; })
+            .filter(function(v) { return v !== '' && v !== null; })
+            .map(function(v) { return isNumber && !isNaN(v) ? parseFloat(v) : v; });
         return values.length > 0 ? values : null;
     }
 
     function collectKeyValue(item) {
         var obj = {};
         $$('.middleware-keyvalue-wrapper .dynamic-list-item', item).forEach(function(row) {
-            var k = $('.keyvalue-key', row);
-            var v = $('.keyvalue-value', row);
+            var k = $('.keyvalue-key', row), v = $('.keyvalue-value', row);
             if (k && k.value) obj[k.value] = v ? v.value : '';
         });
         return Object.keys(obj).length > 0 ? obj : null;
     }
 
-    function collectSelect(item, field) {
-        var input = $('[name*="[' + field.name + ']"]', item);
-        var val = input ? input.value : '';
-        return val !== '' ? val : null;
-    }
-
-    function collectNumber(item, field) {
-        var input = $('[name*="[' + field.name + ']"]', item);
-        var val = input ? input.value : '';
-        if (val !== '' && val !== null && !isNaN(val)) return parseFloat(val);
-        return field.default !== undefined ? field.default : null;
-    }
-
     function collectJson(item, field) {
         var textarea = $('.json-editor[name*="[' + field.name + ']"]', item);
         if (!textarea) return null;
-        var cm = textarea._codemirror;
-        var val = cm ? cm.getValue() : textarea.value;
+        var val = textarea._codemirror ? textarea._codemirror.getValue() : textarea.value;
         if (!val || val.trim() === '') return null;
         try { return JSON.parse(val); } catch (e) { return val; }
     }
 
     function collectDefault(item, field) {
-        var input = $('[name*="[' + field.name + ']"]', item);
+        var input = getFieldInput(item, field.name);
         var val = input ? input.value : '';
-        if (val !== '' && val !== null && val !== undefined) {
-            if (val === 'true') return true;
-            if (val === 'false') return false;
-            return val;
+        if (val === '' || val === null || val === undefined) {
+            return field.type === 'number' && field.default !== undefined ? field.default : null;
         }
-        return null;
+        if (val === 'true') return true;
+        if (val === 'false') return false;
+        if (field.type === 'number' && !isNaN(val)) return parseFloat(val);
+        return val;
     }
 
     function formDataToObject(formData) {

@@ -131,12 +131,6 @@ echo esc_attr(json_encode($currentMiddlewares));
     </div>
 </template>
 
-<template id="field-wrapper-template">
-    <div class="middleware-field-wrapper">
-        <label></label>
-    </div>
-</template>
-
 <template id="field-textarea-template">
     <div class="middleware-field-wrapper">
         <label></label>
@@ -194,13 +188,6 @@ echo esc_attr(json_encode($currentMiddlewares));
                 <?php esc_html_e('+ Add', 'reverse-proxy'); ?>
             </button>
         </div>
-    </div>
-</template>
-
-<template id="field-json-template">
-    <div class="middleware-field-wrapper middleware-json-wrapper">
-        <label></label>
-        <textarea rows="6" class="large-text code json-editor"></textarea>
     </div>
 </template>
 
