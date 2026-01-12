@@ -79,6 +79,140 @@ composer require recca0120/wp-reverse-proxy
 
 詳細用法請參考 [中介層參考](docs/zh/middlewares.md)。
 
+## 獨立使用（不依賴 WordPress）
+
+這個套件的核心元件可以獨立於 WordPress 使用，適用於任何 PHP 專案。
+
+### 安裝
+
+```bash
+composer require recca0120/wp-reverse-proxy
+```
+
+### 基本用法
+
+```php
+<?php
+
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Recca0120\ReverseProxy\ReverseProxy;
+use Recca0120\ReverseProxy\Http\CurlClient;
+use Recca0120\ReverseProxy\Http\ServerRequestFactory;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+
+// 建立 PSR-17 Factory
+$psr17Factory = new Psr17Factory();
+
+// 建立路由集合
+$routes = new RouteCollection();
+$routes->add(new Route('/api/*', 'https://api.example.com/'));
+$routes->add(new Route('GET /users/*', 'https://users.example.com/'));
+
+// 建立 HTTP Client
+$httpClient = new CurlClient([
+    'verify' => true,           // SSL 驗證
+    'timeout' => 30,            // 超時秒數
+    'decode_content' => true,   // 自動解碼 gzip/deflate
+]);
+
+// 建立 Reverse Proxy
+$proxy = new ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
+
+// 從全域變數建立請求
+$requestFactory = new ServerRequestFactory($psr17Factory);
+$request = $requestFactory->createFromGlobals();
+
+// 處理請求
+$response = $proxy->handle($request);
+
+if ($response !== null) {
+    // 發送回應
+    http_response_code($response->getStatusCode());
+    foreach ($response->getHeaders() as $name => $values) {
+        foreach ($values as $value) {
+            header("{$name}: {$value}", false);
+        }
+    }
+    echo $response->getBody();
+} else {
+    // 沒有匹配的路由，處理 404 或其他邏輯
+    http_response_code(404);
+    echo 'Not Found';
+}
+```
+
+### 使用中介層
+
+```php
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Middleware\Cors;
+use Recca0120\ReverseProxy\Middleware\RateLimiting;
+use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
+
+// 建立中介層管理器
+$middlewareManager = new MiddlewareManager();
+
+// 註冊全域中介層（套用到所有路由）
+$middlewareManager->registerGlobalMiddleware([
+    new ProxyHeaders(),
+]);
+
+// 建立路由集合，傳入中介層管理器
+$routes = new RouteCollection([], $middlewareManager);
+
+// 新增帶有中介層的路由
+$routes->add(new Route('/api/*', 'https://api.example.com/', [
+    new Cors(['*']),
+    new RateLimiting(100, 60),  // 每分鐘 100 次請求
+]));
+```
+
+### 使用快取
+
+```php
+use Psr\SimpleCache\CacheInterface;
+
+// 實作 PSR-16 CacheInterface 或使用現有套件
+// 例如：symfony/cache, phpfastcache 等
+$cache = new YourCacheImplementation();
+
+// 中介層管理器可注入快取（供 RateLimiting、CircuitBreaker 等使用）
+$middlewareManager = new MiddlewareManager($cache);
+
+// 路由集合也可使用快取（快取路由配置）
+$routes = new RouteCollection($loaders, $middlewareManager, $cache);
+```
+
+### 使用設定檔載入路由
+
+```php
+use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+
+// 從目錄載入 JSON/PHP 設定檔
+$loader = new FileLoader(['/path/to/routes']);
+
+$routes = new RouteCollection([$loader], $middlewareManager);
+// 路由會在第一次存取時自動載入（Lazy Loading）
+```
+
+**routes.json 範例：**
+
+```json
+[
+    {
+        "path": "/api/*",
+        "target": "https://api.example.com/",
+        "methods": ["GET", "POST"],
+        "middlewares": [
+            "Cors",
+            ["RateLimiting", 100, 60]
+        ]
+    }
+]
+```
+
 ## 授權
 
 MIT License - 詳見 [LICENSE](LICENSE)。
