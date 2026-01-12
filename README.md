@@ -91,24 +91,53 @@ composer require recca0120/wp-reverse-proxy
 
 ### 基本用法
 
+**1. 建立路由設定檔 `routes/proxy.json`：**
+
+```json
+{
+    "routes": [
+        {
+            "path": "/api/*",
+            "target": "https://api.example.com/",
+            "middlewares": [
+                "Cors",
+                ["RateLimiting", 100, 60]
+            ]
+        }
+    ]
+}
+```
+
+**2. 建立入口檔案：**
+
 ```php
 <?php
 
+require_once 'vendor/autoload.php';
+
 use Recca0120\ReverseProxy\ReverseProxy;
-use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-// 建立路由集合
-$routes = new RouteCollection();
-$routes->add(new Route('/api/*', 'https://api.example.com/'));
-$routes->add(new Route('GET /users/*', 'https://users.example.com/'));
+// 實作 PSR-16 CacheInterface 或使用現有套件（如 symfony/cache）
+$cache = new YourCacheImplementation();
 
-// 建立 Reverse Proxy 並處理請求
+// 中介層管理器注入快取（RateLimiting、CircuitBreaker、Caching 需要）
+$middlewareManager = new MiddlewareManager($cache);
+
+// 從目錄載入路由設定檔
+$routes = new RouteCollection(
+    [new FileLoader([__DIR__ . '/routes'])],
+    $middlewareManager,
+    $cache
+);
+
+// 處理請求
 $proxy = new ReverseProxy($routes);
-$response = $proxy->handle();  // 自動從 $_SERVER 建立請求
+$response = $proxy->handle();
 
 if ($response !== null) {
-    // 發送回應
     http_response_code($response->getStatusCode());
     foreach ($response->getHeaders() as $name => $values) {
         foreach ($values as $value) {
@@ -116,17 +145,51 @@ if ($response !== null) {
         }
     }
     echo $response->getBody();
-} else {
-    // 沒有匹配的路由，處理 404 或其他邏輯
-    http_response_code(404);
-    echo 'Not Found';
 }
+```
+
+### 路由設定檔格式
+
+支援 JSON 和 PHP 格式：
+
+**routes.json：**
+```json
+{
+    "routes": [
+        {
+            "path": "/api/*",
+            "target": "https://api.example.com/",
+            "methods": ["GET", "POST"],
+            "middlewares": [
+                "Cors",
+                "ProxyHeaders",
+                ["RateLimiting", 100, 60]
+            ]
+        }
+    ]
+}
+```
+
+**routes.php：**
+```php
+<?php
+return [
+    'routes' => [
+        [
+            'path' => '/api/*',
+            'target' => 'https://api.example.com/',
+            'middlewares' => [
+                'Cors',
+                ['RateLimiting', 100, 60],
+            ],
+        ],
+    ],
+];
 ```
 
 ### 自訂 HTTP Client
 
 預設使用 `CurlClient`，參數為 `['verify' => false, 'decode_content' => false]`。
-如需自訂：
 
 ```php
 use Recca0120\ReverseProxy\Http\CurlClient;
@@ -138,105 +201,6 @@ $httpClient = new CurlClient([
 ]);
 
 $proxy = new ReverseProxy($routes, $httpClient);
-```
-
-### 使用中介層
-
-```php
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
-use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Middleware\Cors;
-use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
-
-// 建立中介層管理器
-$middlewareManager = new MiddlewareManager();
-
-// 註冊全域中介層（套用到所有路由）
-$middlewareManager->registerGlobalMiddleware([
-    new ProxyHeaders(),
-]);
-
-// 建立路由集合，傳入中介層管理器
-$routes = new RouteCollection([], $middlewareManager);
-
-// 新增帶有中介層的路由
-$routes->add(new Route('/api/*', 'https://api.example.com/', [
-    new Cors(['*']),
-]));
-```
-
-### 使用快取
-
-部分中介層（`RateLimiting`、`CircuitBreaker`、`Caching`）需要快取才能正常運作。
-
-**方式一：透過 MiddlewareManager 自動注入（推薦）**
-
-```php
-use Psr\SimpleCache\CacheInterface;
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
-use Recca0120\ReverseProxy\Routing\Route;
-
-// 實作 PSR-16 CacheInterface 或使用現有套件
-// 例如：symfony/cache, phpfastcache 等
-$cache = new YourCacheImplementation();
-
-// 中介層管理器注入快取
-$middlewareManager = new MiddlewareManager($cache);
-
-// 路由集合也可使用快取（快取路由配置）
-$routes = new RouteCollection([], $middlewareManager, $cache);
-
-// 使用字串或陣列格式定義中介層，MiddlewareManager 會自動建立並注入快取
-$routes->add(new Route('/api/*', 'https://api.example.com/', [
-    'RateLimiting:100,60',           // 每分鐘 100 次請求
-    ['CircuitBreaker', 5, 30],       // 5 次失敗後熔斷 30 秒
-]));
-```
-
-**方式二：手動注入快取**
-
-```php
-use Recca0120\ReverseProxy\Middleware\RateLimiting;
-
-$rateLimiting = new RateLimiting(100, 60);
-$rateLimiting->setCache($cache);
-
-$routes->add(new Route('/api/*', 'https://api.example.com/', [
-    $rateLimiting,
-]));
-```
-
-### 使用設定檔載入路由
-
-```php
-use Recca0120\ReverseProxy\Routing\FileLoader;
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
-
-// 從目錄載入 JSON/PHP 設定檔
-$loader = new FileLoader(['/path/to/routes']);
-$middlewareManager = new MiddlewareManager();
-
-$routes = new RouteCollection([$loader], $middlewareManager);
-// 路由會在第一次存取時自動載入（Lazy Loading）
-```
-
-**routes.json 範例：**
-
-```json
-[
-    {
-        "path": "/api/*",
-        "target": "https://api.example.com/",
-        "methods": ["GET", "POST"],
-        "middlewares": [
-            "Cors",
-            ["RateLimiting", 100, 60]
-        ]
-    }
-]
 ```
 
 ## 授權

@@ -91,24 +91,53 @@ composer require recca0120/wp-reverse-proxy
 
 ### Basic Usage
 
+**1. Create route config file `routes/proxy.json`:**
+
+```json
+{
+    "routes": [
+        {
+            "path": "/api/*",
+            "target": "https://api.example.com/",
+            "middlewares": [
+                "Cors",
+                ["RateLimiting", 100, 60]
+            ]
+        }
+    ]
+}
+```
+
+**2. Create entry file:**
+
 ```php
 <?php
 
+require_once 'vendor/autoload.php';
+
 use Recca0120\ReverseProxy\ReverseProxy;
-use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-// Create route collection
-$routes = new RouteCollection();
-$routes->add(new Route('/api/*', 'https://api.example.com/'));
-$routes->add(new Route('GET /users/*', 'https://users.example.com/'));
+// Implement PSR-16 CacheInterface or use existing packages (e.g., symfony/cache)
+$cache = new YourCacheImplementation();
 
-// Create Reverse Proxy and handle request
+// Middleware manager injects cache (required for RateLimiting, CircuitBreaker, Caching)
+$middlewareManager = new MiddlewareManager($cache);
+
+// Load route config files from directory
+$routes = new RouteCollection(
+    [new FileLoader([__DIR__ . '/routes'])],
+    $middlewareManager,
+    $cache
+);
+
+// Handle request
 $proxy = new ReverseProxy($routes);
-$response = $proxy->handle();  // Auto-creates request from $_SERVER
+$response = $proxy->handle();
 
 if ($response !== null) {
-    // Send response
     http_response_code($response->getStatusCode());
     foreach ($response->getHeaders() as $name => $values) {
         foreach ($values as $value) {
@@ -116,17 +145,51 @@ if ($response !== null) {
         }
     }
     echo $response->getBody();
-} else {
-    // No matching route, handle 404 or other logic
-    http_response_code(404);
-    echo 'Not Found';
 }
+```
+
+### Route Config File Formats
+
+Supports JSON and PHP formats:
+
+**routes.json:**
+```json
+{
+    "routes": [
+        {
+            "path": "/api/*",
+            "target": "https://api.example.com/",
+            "methods": ["GET", "POST"],
+            "middlewares": [
+                "Cors",
+                "ProxyHeaders",
+                ["RateLimiting", 100, 60]
+            ]
+        }
+    ]
+}
+```
+
+**routes.php:**
+```php
+<?php
+return [
+    'routes' => [
+        [
+            'path' => '/api/*',
+            'target' => 'https://api.example.com/',
+            'middlewares' => [
+                'Cors',
+                ['RateLimiting', 100, 60],
+            ],
+        ],
+    ],
+];
 ```
 
 ### Custom HTTP Client
 
 Default uses `CurlClient` with `['verify' => false, 'decode_content' => false]`.
-To customize:
 
 ```php
 use Recca0120\ReverseProxy\Http\CurlClient;
@@ -138,105 +201,6 @@ $httpClient = new CurlClient([
 ]);
 
 $proxy = new ReverseProxy($routes, $httpClient);
-```
-
-### Using Middlewares
-
-```php
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
-use Recca0120\ReverseProxy\Routing\Route;
-use Recca0120\ReverseProxy\Middleware\Cors;
-use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
-
-// Create middleware manager
-$middlewareManager = new MiddlewareManager();
-
-// Register global middlewares (applied to all routes)
-$middlewareManager->registerGlobalMiddleware([
-    new ProxyHeaders(),
-]);
-
-// Create route collection with middleware manager
-$routes = new RouteCollection([], $middlewareManager);
-
-// Add route with middlewares
-$routes->add(new Route('/api/*', 'https://api.example.com/', [
-    new Cors(['*']),
-]));
-```
-
-### Using Cache
-
-Some middlewares (`RateLimiting`, `CircuitBreaker`, `Caching`) require cache to work properly.
-
-**Option 1: Auto-inject via MiddlewareManager (Recommended)**
-
-```php
-use Psr\SimpleCache\CacheInterface;
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
-use Recca0120\ReverseProxy\Routing\Route;
-
-// Implement PSR-16 CacheInterface or use existing packages
-// e.g., symfony/cache, phpfastcache, etc.
-$cache = new YourCacheImplementation();
-
-// Inject cache into middleware manager
-$middlewareManager = new MiddlewareManager($cache);
-
-// Route collection can also use cache (for caching route configuration)
-$routes = new RouteCollection([], $middlewareManager, $cache);
-
-// Use string or array format to define middlewares, MiddlewareManager will auto-create and inject cache
-$routes->add(new Route('/api/*', 'https://api.example.com/', [
-    'RateLimiting:100,60',           // 100 requests per minute
-    ['CircuitBreaker', 5, 30],       // Circuit break after 5 failures for 30 seconds
-]));
-```
-
-**Option 2: Manual cache injection**
-
-```php
-use Recca0120\ReverseProxy\Middleware\RateLimiting;
-
-$rateLimiting = new RateLimiting(100, 60);
-$rateLimiting->setCache($cache);
-
-$routes->add(new Route('/api/*', 'https://api.example.com/', [
-    $rateLimiting,
-]));
-```
-
-### Loading Routes from Config Files
-
-```php
-use Recca0120\ReverseProxy\Routing\FileLoader;
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
-use Recca0120\ReverseProxy\Routing\RouteCollection;
-
-// Load JSON/PHP config files from directory
-$loader = new FileLoader(['/path/to/routes']);
-$middlewareManager = new MiddlewareManager();
-
-$routes = new RouteCollection([$loader], $middlewareManager);
-// Routes are automatically loaded on first access (Lazy Loading)
-```
-
-**routes.json example:**
-
-```json
-[
-    {
-        "path": "/api/*",
-        "target": "https://api.example.com/",
-        "methods": ["GET", "POST"],
-        "middlewares": [
-            "Cors",
-            ["RateLimiting", 100, 60]
-        ]
-    }
-]
 ```
 
 ## License
