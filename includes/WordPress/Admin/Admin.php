@@ -69,10 +69,19 @@ class Admin
         // Enqueue CodeMirror for JSON editing
         $codeEditorSettings = wp_enqueue_code_editor(['type' => 'application/json']);
 
+        // Register SortableJS (no jQuery dependency)
+        wp_register_script(
+            'sortablejs',
+            REVERSE_PROXY_PLUGIN_URL . 'assets/js/sortable.min.js',
+            [],
+            '1.15.6',
+            true
+        );
+
         wp_enqueue_script(
             'reverse-proxy-admin',
             REVERSE_PROXY_PLUGIN_URL . 'assets/js/admin.js',
-            ['jquery', 'jquery-ui-sortable', 'wp-i18n', 'wp-util'],
+            ['sortablejs', 'wp-i18n'],
             REVERSE_PROXY_VERSION,
             true
         );
