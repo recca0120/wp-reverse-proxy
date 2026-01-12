@@ -282,38 +282,25 @@
     }
 
     function createMiddlewareItem(index, selectedName) {
+        var template = $('#middleware-item-template');
+        if (!template) return null;
+
+        var item = template.content.cloneNode(true).firstElementChild;
+        item.dataset.index = index;
+
+        var select = $('.middleware-select', item);
+        select.name = 'route[middlewares][' + index + '][name]';
+
+        // Add middleware options sorted by label
         var sortedNames = Object.keys(middlewares).sort(function(a, b) {
             return middlewares[a].label.localeCompare(middlewares[b].label);
         });
 
-        var item = createElement('div', { className: 'middleware-item', dataset: { index: index } });
-        var header = createElement('div', { className: 'middleware-header' });
-        var dragHandle = createElement('span', {
-            className: 'middleware-drag-handle dashicons dashicons-menu',
-            title: __('Drag to reorder', 'reverse-proxy')
-        });
-        var select = createElement('select', {
-            className: 'middleware-select',
-            name: 'route[middlewares][' + index + '][name]'
-        });
-
-        select.appendChild(createElement('option', { value: '' }, __('-- Select Middleware --', 'reverse-proxy')));
         sortedNames.forEach(function(name) {
             var opt = createElement('option', { value: name }, middlewares[name].label);
             if (name === selectedName) opt.selected = true;
             select.appendChild(opt);
         });
-
-        var removeBtn = createElement('button', {
-            type: 'button',
-            className: 'button button-small button-link-delete remove-middleware'
-        }, __('Remove', 'reverse-proxy'));
-
-        header.appendChild(dragHandle);
-        header.appendChild(select);
-        header.appendChild(removeBtn);
-        item.appendChild(header);
-        item.appendChild(createElement('div', { className: 'middleware-body empty' }));
 
         return item;
     }

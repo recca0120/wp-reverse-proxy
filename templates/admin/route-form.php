@@ -115,3 +115,18 @@ echo esc_attr(json_encode($currentMiddlewares));
         </p>
     </form>
 </div>
+
+<template id="middleware-item-template">
+    <div class="middleware-item">
+        <div class="middleware-header">
+            <span class="middleware-drag-handle dashicons dashicons-menu" title="<?php esc_attr_e('Drag to reorder', 'reverse-proxy'); ?>"></span>
+            <select class="middleware-select">
+                <option value=""><?php esc_html_e('-- Select Middleware --', 'reverse-proxy'); ?></option>
+            </select>
+            <button type="button" class="button button-small button-link-delete remove-middleware">
+                <?php esc_html_e('Remove', 'reverse-proxy'); ?>
+            </button>
+        </div>
+        <div class="middleware-body empty"></div>
+    </div>
+</template>
