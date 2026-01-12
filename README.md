@@ -144,8 +144,9 @@ $proxy = new ReverseProxy($routes, $httpClient);
 
 ```php
 use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Middleware\Cors;
-use Recca0120\ReverseProxy\Middleware\RateLimiting;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 
 // 建立中介層管理器
@@ -162,26 +163,49 @@ $routes = new RouteCollection([], $middlewareManager);
 // 新增帶有中介層的路由
 $routes->add(new Route('/api/*', 'https://api.example.com/', [
     new Cors(['*']),
-    new RateLimiting(100, 60),  // 每分鐘 100 次請求
 ]));
 ```
 
 ### 使用快取
 
+部分中介層（`RateLimiting`、`CircuitBreaker`、`Caching`）需要快取才能正常運作。
+
+**方式一：透過 MiddlewareManager 自動注入（推薦）**
+
 ```php
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Routing\Route;
 
 // 實作 PSR-16 CacheInterface 或使用現有套件
 // 例如：symfony/cache, phpfastcache 等
 $cache = new YourCacheImplementation();
 
-// 中介層管理器可注入快取（供 RateLimiting、CircuitBreaker 等使用）
+// 中介層管理器注入快取
 $middlewareManager = new MiddlewareManager($cache);
 
 // 路由集合也可使用快取（快取路由配置）
 $routes = new RouteCollection([], $middlewareManager, $cache);
+
+// 使用字串或陣列格式定義中介層，MiddlewareManager 會自動建立並注入快取
+$routes->add(new Route('/api/*', 'https://api.example.com/', [
+    'RateLimiting:100,60',           // 每分鐘 100 次請求
+    ['CircuitBreaker', 5, 30],       // 5 次失敗後熔斷 30 秒
+]));
+```
+
+**方式二：手動注入快取**
+
+```php
+use Recca0120\ReverseProxy\Middleware\RateLimiting;
+
+$rateLimiting = new RateLimiting(100, 60);
+$rateLimiting->setCache($cache);
+
+$routes->add(new Route('/api/*', 'https://api.example.com/', [
+    $rateLimiting,
+]));
 ```
 
 ### 使用設定檔載入路由

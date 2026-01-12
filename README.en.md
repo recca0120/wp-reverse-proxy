@@ -144,8 +144,9 @@ $proxy = new ReverseProxy($routes, $httpClient);
 
 ```php
 use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Middleware\Cors;
-use Recca0120\ReverseProxy\Middleware\RateLimiting;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 
 // Create middleware manager
@@ -162,26 +163,49 @@ $routes = new RouteCollection([], $middlewareManager);
 // Add route with middlewares
 $routes->add(new Route('/api/*', 'https://api.example.com/', [
     new Cors(['*']),
-    new RateLimiting(100, 60),  // 100 requests per minute
 ]));
 ```
 
 ### Using Cache
 
+Some middlewares (`RateLimiting`, `CircuitBreaker`, `Caching`) require cache to work properly.
+
+**Option 1: Auto-inject via MiddlewareManager (Recommended)**
+
 ```php
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Routing\Route;
 
 // Implement PSR-16 CacheInterface or use existing packages
 // e.g., symfony/cache, phpfastcache, etc.
 $cache = new YourCacheImplementation();
 
-// Middleware manager can inject cache (for RateLimiting, CircuitBreaker, etc.)
+// Inject cache into middleware manager
 $middlewareManager = new MiddlewareManager($cache);
 
 // Route collection can also use cache (for caching route configuration)
 $routes = new RouteCollection([], $middlewareManager, $cache);
+
+// Use string or array format to define middlewares, MiddlewareManager will auto-create and inject cache
+$routes->add(new Route('/api/*', 'https://api.example.com/', [
+    'RateLimiting:100,60',           // 100 requests per minute
+    ['CircuitBreaker', 5, 30],       // Circuit break after 5 failures for 30 seconds
+]));
+```
+
+**Option 2: Manual cache injection**
+
+```php
+use Recca0120\ReverseProxy\Middleware\RateLimiting;
+
+$rateLimiting = new RateLimiting(100, 60);
+$rateLimiting->setCache($cache);
+
+$routes->add(new Route('/api/*', 'https://api.example.com/', [
+    $rateLimiting,
+]));
 ```
 
 ### Loading Routes from Config Files
