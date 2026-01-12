@@ -170,6 +170,8 @@ $routes->add(new Route('/api/*', 'https://api.example.com/', [
 
 ```php
 use Psr\SimpleCache\CacheInterface;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 // Implement PSR-16 CacheInterface or use existing packages
 // e.g., symfony/cache, phpfastcache, etc.
@@ -179,17 +181,19 @@ $cache = new YourCacheImplementation();
 $middlewareManager = new MiddlewareManager($cache);
 
 // Route collection can also use cache (for caching route configuration)
-$routes = new RouteCollection($loaders, $middlewareManager, $cache);
+$routes = new RouteCollection([], $middlewareManager, $cache);
 ```
 
 ### Loading Routes from Config Files
 
 ```php
 use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 // Load JSON/PHP config files from directory
 $loader = new FileLoader(['/path/to/routes']);
+$middlewareManager = new MiddlewareManager();
 
 $routes = new RouteCollection([$loader], $middlewareManager);
 // Routes are automatically loaded on first access (Lazy Loading)

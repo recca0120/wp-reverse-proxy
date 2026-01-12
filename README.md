@@ -170,6 +170,8 @@ $routes->add(new Route('/api/*', 'https://api.example.com/', [
 
 ```php
 use Psr\SimpleCache\CacheInterface;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 // 實作 PSR-16 CacheInterface 或使用現有套件
 // 例如：symfony/cache, phpfastcache 等
@@ -179,17 +181,19 @@ $cache = new YourCacheImplementation();
 $middlewareManager = new MiddlewareManager($cache);
 
 // 路由集合也可使用快取（快取路由配置）
-$routes = new RouteCollection($loaders, $middlewareManager, $cache);
+$routes = new RouteCollection([], $middlewareManager, $cache);
 ```
 
 ### 使用設定檔載入路由
 
 ```php
 use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 // 從目錄載入 JSON/PHP 設定檔
 $loader = new FileLoader(['/path/to/routes']);
+$middlewareManager = new MiddlewareManager();
 
 $routes = new RouteCollection([$loader], $middlewareManager);
 // 路由會在第一次存取時自動載入（Lazy Loading）
