@@ -20,9 +20,9 @@ class ServerRequestFactory
         $this->streamFactory = $streamFactory ?? new Psr17Factory();
     }
 
-    public static function createFromGlobals(): ServerRequestInterface
+    public static function createFromGlobals(?StreamFactoryInterface $streamFactory = null): ServerRequestInterface
     {
-        return (new self())->create(
+        return (new self($streamFactory))->create(
             $_SERVER,
             function () {
                 return file_get_contents('php://input') ?: '';
