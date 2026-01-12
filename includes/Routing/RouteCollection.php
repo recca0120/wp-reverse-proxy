@@ -26,6 +26,9 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     /** @var array<Route> */
     private $routes = [];
 
+    /** @var bool */
+    private $loaded = false;
+
     /**
      * @param array<RouteLoaderInterface> $loaders
      */
@@ -52,6 +55,10 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function load(): self
     {
+        if ($this->loaded) {
+            return $this;
+        }
+
         foreach ($this->loaders as $loader) {
             foreach ($this->loadFromLoader($loader) as $config) {
                 try {
@@ -62,6 +69,8 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
                 }
             }
         }
+
+        $this->loaded = true;
 
         return $this;
     }
@@ -91,6 +100,8 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function all(): array
     {
+        $this->ensureLoaded();
+
         return $this->routes;
     }
 
@@ -99,6 +110,8 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function getIterator(): Traversable
     {
+        $this->ensureLoaded();
+
         return new ArrayIterator($this->routes);
     }
 
@@ -107,6 +120,8 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function count(): int
     {
+        $this->ensureLoaded();
+
         return count($this->routes);
     }
 
@@ -117,6 +132,8 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function offsetExists($offset): bool
     {
+        $this->ensureLoaded();
+
         return isset($this->routes[$offset]);
     }
 
@@ -129,6 +146,8 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
+        $this->ensureLoaded();
+
         return $this->routes[$offset] ?? null;
     }
 
@@ -158,19 +177,28 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
-     * Clear cached routes for all loaders.
+     * Clear cached routes for all loaders and reset loaded state.
      */
     public function clearCache(): void
     {
-        if ($this->cache === null) {
-            return;
-        }
-
         foreach ($this->loaders as $loader) {
             $cacheKey = $loader->getCacheKey();
-            if ($cacheKey !== null) {
+            if ($cacheKey !== null && $this->cache !== null) {
                 $this->cache->delete($cacheKey);
             }
+        }
+
+        $this->routes = [];
+        $this->loaded = false;
+    }
+
+    /**
+     * Ensure routes are loaded before access.
+     */
+    private function ensureLoaded(): void
+    {
+        if (! $this->loaded) {
+            $this->load();
         }
     }
 

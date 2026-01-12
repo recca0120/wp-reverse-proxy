@@ -80,7 +80,7 @@ function reverse_proxy_load_config_routes()
         );
     }
 
-    return $routes->load();
+    return $routes;
 }
 
 function reverse_proxy_create_route_storage()
