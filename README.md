@@ -94,7 +94,6 @@ composer require recca0120/wp-reverse-proxy
 ```php
 <?php
 
-use Nyholm\Psr7\Factory\Psr17Factory;
 use Recca0120\ReverseProxy\ReverseProxy;
 use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 use Recca0120\ReverseProxy\Routing\Route;
@@ -105,12 +104,11 @@ $routes = new RouteCollection();
 $routes->add(new Route('/api/*', 'https://api.example.com/'));
 $routes->add(new Route('GET /users/*', 'https://users.example.com/'));
 
-// 建立 Reverse Proxy（使用預設 HTTP Client）
+// 建立 Reverse Proxy
 $proxy = new ReverseProxy($routes);
 
 // 從全域變數建立請求
-$psr17Factory = new Psr17Factory();
-$request = (new ServerRequestFactory($psr17Factory))->createFromGlobals();
+$request = (new ServerRequestFactory())->createFromGlobals();
 
 // 處理請求
 $response = $proxy->handle($request);
@@ -133,13 +131,16 @@ if ($response !== null) {
 
 ### 自訂 HTTP Client
 
+預設使用 `CurlClient`，參數為 `['verify' => false, 'decode_content' => false]`。
+如需自訂：
+
 ```php
 use Recca0120\ReverseProxy\Http\CurlClient;
 
 $httpClient = new CurlClient([
-    'verify' => true,           // SSL 驗證
+    'verify' => true,           // 啟用 SSL 驗證（預設 false）
     'timeout' => 30,            // 超時秒數
-    'decode_content' => true,   // 自動解碼 gzip/deflate
+    'decode_content' => true,   // 自動解碼 gzip/deflate（預設 false）
 ]);
 
 $proxy = new ReverseProxy($routes, $httpClient);

@@ -116,11 +116,6 @@ function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollecti
     return new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient);
 }
 
-function reverse_proxy_create_psr17_factory()
-{
-    return apply_filters('reverse_proxy_psr17_factory', new Nyholm\Psr7\Factory\Psr17Factory());
-}
-
 function reverse_proxy_create_request()
 {
     $request = apply_filters('reverse_proxy_request', null);
@@ -128,7 +123,7 @@ function reverse_proxy_create_request()
         return $request;
     }
 
-    return (new Recca0120\ReverseProxy\Http\ServerRequestFactory(reverse_proxy_create_psr17_factory()))->createFromGlobals();
+    return (new Recca0120\ReverseProxy\Http\ServerRequestFactory())->createFromGlobals();
 }
 
 function reverse_proxy_send_response($response)

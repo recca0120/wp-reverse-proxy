@@ -94,7 +94,6 @@ composer require recca0120/wp-reverse-proxy
 ```php
 <?php
 
-use Nyholm\Psr7\Factory\Psr17Factory;
 use Recca0120\ReverseProxy\ReverseProxy;
 use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 use Recca0120\ReverseProxy\Routing\Route;
@@ -105,12 +104,11 @@ $routes = new RouteCollection();
 $routes->add(new Route('/api/*', 'https://api.example.com/'));
 $routes->add(new Route('GET /users/*', 'https://users.example.com/'));
 
-// Create Reverse Proxy (uses default HTTP Client)
+// Create Reverse Proxy
 $proxy = new ReverseProxy($routes);
 
 // Create request from globals
-$psr17Factory = new Psr17Factory();
-$request = (new ServerRequestFactory($psr17Factory))->createFromGlobals();
+$request = (new ServerRequestFactory())->createFromGlobals();
 
 // Handle request
 $response = $proxy->handle($request);
@@ -133,13 +131,16 @@ if ($response !== null) {
 
 ### Custom HTTP Client
 
+Default uses `CurlClient` with `['verify' => false, 'decode_content' => false]`.
+To customize:
+
 ```php
 use Recca0120\ReverseProxy\Http\CurlClient;
 
 $httpClient = new CurlClient([
-    'verify' => true,           // SSL verification
+    'verify' => true,           // Enable SSL verification (default: false)
     'timeout' => 30,            // Timeout in seconds
-    'decode_content' => true,   // Auto decode gzip/deflate
+    'decode_content' => true,   // Auto decode gzip/deflate (default: false)
 ]);
 
 $proxy = new ReverseProxy($routes, $httpClient);
