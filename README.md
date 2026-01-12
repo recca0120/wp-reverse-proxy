@@ -99,10 +99,7 @@ composer require recca0120/wp-reverse-proxy
         {
             "path": "/api/*",
             "target": "https://api.example.com/",
-            "middlewares": [
-                "Cors",
-                ["RateLimiting", 100, 60]
-            ]
+            "middlewares": ["Cors", "ProxyHeaders"]
         }
     ]
 }
@@ -119,17 +116,10 @@ use Recca0120\ReverseProxy\ReverseProxy;
 use Recca0120\ReverseProxy\Routing\FileLoader;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-// 實作 PSR-16 CacheInterface 或使用現有套件（如 symfony/cache）
-// RateLimiting、CircuitBreaker、Caching 等中介層需要快取
-$cache = new YourCacheImplementation();
+$routes = new RouteCollection([
+    new FileLoader([__DIR__ . '/routes']),
+]);
 
-// 從目錄載入路由設定檔
-$routes = new RouteCollection(
-    [new FileLoader([__DIR__ . '/routes'])],
-    $cache
-);
-
-// 處理請求
 $proxy = new ReverseProxy($routes);
 $response = $proxy->handle();
 
@@ -144,9 +134,30 @@ if ($response !== null) {
 }
 ```
 
+### 使用快取
+
+若使用 `RateLimiting`、`CircuitBreaker`、`Caching` 等中介層，需要注入 PSR-16 快取：
+
+```php
+use Recca0120\ReverseProxy\ReverseProxy;
+use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+
+// 實作 PSR-16 CacheInterface 或使用現有套件（如 symfony/cache）
+$cache = new YourCacheImplementation();
+
+$routes = new RouteCollection(
+    [new FileLoader([__DIR__ . '/routes'])],
+    $cache
+);
+
+$proxy = new ReverseProxy($routes);
+$response = $proxy->handle();
+```
+
 ### 路由設定檔格式
 
-支援 JSON 和 PHP 格式：
+支援 JSON、YAML、PHP 格式，檔案須包含 `routes` 鍵：
 
 **routes.json：**
 ```json
@@ -156,11 +167,7 @@ if ($response !== null) {
             "path": "/api/*",
             "target": "https://api.example.com/",
             "methods": ["GET", "POST"],
-            "middlewares": [
-                "Cors",
-                "ProxyHeaders",
-                ["RateLimiting", 100, 60]
-            ]
+            "middlewares": ["Cors", "ProxyHeaders", ["RateLimiting", 100, 60]]
         }
     ]
 }
@@ -174,10 +181,7 @@ return [
         [
             'path' => '/api/*',
             'target' => 'https://api.example.com/',
-            'middlewares' => [
-                'Cors',
-                ['RateLimiting', 100, 60],
-            ],
+            'middlewares' => ['Cors', ['RateLimiting', 100, 60]],
         ],
     ],
 ];

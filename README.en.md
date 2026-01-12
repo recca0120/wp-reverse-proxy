@@ -99,10 +99,7 @@ composer require recca0120/wp-reverse-proxy
         {
             "path": "/api/*",
             "target": "https://api.example.com/",
-            "middlewares": [
-                "Cors",
-                ["RateLimiting", 100, 60]
-            ]
+            "middlewares": ["Cors", "ProxyHeaders"]
         }
     ]
 }
@@ -119,17 +116,10 @@ use Recca0120\ReverseProxy\ReverseProxy;
 use Recca0120\ReverseProxy\Routing\FileLoader;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-// Implement PSR-16 CacheInterface or use existing packages (e.g., symfony/cache)
-// Required for RateLimiting, CircuitBreaker, Caching middlewares
-$cache = new YourCacheImplementation();
+$routes = new RouteCollection([
+    new FileLoader([__DIR__ . '/routes']),
+]);
 
-// Load route config files from directory
-$routes = new RouteCollection(
-    [new FileLoader([__DIR__ . '/routes'])],
-    $cache
-);
-
-// Handle request
 $proxy = new ReverseProxy($routes);
 $response = $proxy->handle();
 
@@ -144,9 +134,30 @@ if ($response !== null) {
 }
 ```
 
+### Using Cache
+
+`RateLimiting`, `CircuitBreaker`, `Caching` middlewares require PSR-16 cache:
+
+```php
+use Recca0120\ReverseProxy\ReverseProxy;
+use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+
+// Implement PSR-16 CacheInterface or use existing packages (e.g., symfony/cache)
+$cache = new YourCacheImplementation();
+
+$routes = new RouteCollection(
+    [new FileLoader([__DIR__ . '/routes'])],
+    $cache
+);
+
+$proxy = new ReverseProxy($routes);
+$response = $proxy->handle();
+```
+
 ### Route Config File Formats
 
-Supports JSON and PHP formats:
+Supports JSON, YAML, PHP formats. Files must contain `routes` key:
 
 **routes.json:**
 ```json
@@ -156,11 +167,7 @@ Supports JSON and PHP formats:
             "path": "/api/*",
             "target": "https://api.example.com/",
             "methods": ["GET", "POST"],
-            "middlewares": [
-                "Cors",
-                "ProxyHeaders",
-                ["RateLimiting", 100, 60]
-            ]
+            "middlewares": ["Cors", "ProxyHeaders", ["RateLimiting", 100, 60]]
         }
     ]
 }
@@ -174,10 +181,7 @@ return [
         [
             'path' => '/api/*',
             'target' => 'https://api.example.com/',
-            'middlewares' => [
-                'Cors',
-                ['RateLimiting', 100, 60],
-            ],
+            'middlewares' => ['Cors', ['RateLimiting', 100, 60]],
         ],
     ],
 ];
