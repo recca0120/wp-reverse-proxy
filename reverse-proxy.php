@@ -123,7 +123,7 @@ function reverse_proxy_create_request()
         return $request;
     }
 
-    return (new Recca0120\ReverseProxy\Http\ServerRequestFactory())->createFromGlobals();
+    return Recca0120\ReverseProxy\Http\ServerRequestFactory::createFromGlobals();
 }
 
 function reverse_proxy_send_response($response)

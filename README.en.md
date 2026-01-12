@@ -108,7 +108,7 @@ $routes->add(new Route('GET /users/*', 'https://users.example.com/'));
 $proxy = new ReverseProxy($routes);
 
 // Create request from globals
-$request = (new ServerRequestFactory())->createFromGlobals();
+$request = ServerRequestFactory::createFromGlobals();
 
 // Handle request
 $response = $proxy->handle($request);

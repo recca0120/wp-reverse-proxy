@@ -108,7 +108,7 @@ $routes->add(new Route('GET /users/*', 'https://users.example.com/'));
 $proxy = new ReverseProxy($routes);
 
 // 從全域變數建立請求
-$request = (new ServerRequestFactory())->createFromGlobals();
+$request = ServerRequestFactory::createFromGlobals();
 
 // 處理請求
 $response = $proxy->handle($request);
