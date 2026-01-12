@@ -115,19 +115,3 @@ echo esc_attr(json_encode($currentMiddlewares));
         </p>
     </form>
 </div>
-
-<script type="text/html" id="tmpl-middleware-item">
-    <div class="middleware-item" data-index="{{ data.index }}">
-        <div class="middleware-header">
-            <span class="middleware-drag-handle dashicons dashicons-move" title="<?php esc_attr_e('Drag to reorder', 'reverse-proxy'); ?>"></span>
-            <select name="route[middlewares][{{ data.index }}][name]" class="middleware-select">
-                <option value=""><?php esc_html_e('-- Select Middleware --', 'reverse-proxy'); ?></option>
-                <# _.each(data.middlewares, function(mw, name) { #>
-                    <option value="{{ name }}"<# if (name === data.selected) { #> selected<# } #>>{{ mw.label }}</option>
-                <# }); #>
-            </select>
-            <button type="button" class="button button-small button-link-delete remove-middleware"><?php esc_html_e('Remove', 'reverse-proxy'); ?></button>
-        </div>
-        <div class="middleware-body"></div>
-    </div>
-</script>
