@@ -282,7 +282,7 @@ class FileLoaderTest extends TestCase
         $cache = new ArrayCache();
         $cache->set($cacheKey, ['metadata' => $mtime, 'data' => $cachedConfigs]);
 
-        $collection = new RouteCollection([$loader], null, $cache);
+        $collection = new RouteCollection([$loader], $cache);
         $collection->load();
 
         $this->assertCount(1, $collection);
@@ -303,7 +303,7 @@ class FileLoaderTest extends TestCase
 
         $cache = new ArrayCache();
 
-        $collection = new RouteCollection([$loader], null, $cache);
+        $collection = new RouteCollection([$loader], $cache);
         $collection->load();
 
         $this->assertCount(1, $collection);
@@ -452,7 +452,7 @@ class FileLoaderTest extends TestCase
             'data' => [['path' => '/cached/*', 'target' => 'https://cached.example.com']],
         ]);
 
-        $collection = new RouteCollection([$loader], null, $cache);
+        $collection = new RouteCollection([$loader], $cache);
         $collection->load();
 
         // Should reload from file, not use stale cache

@@ -61,21 +61,25 @@ composer require recca0120/wp-reverse-proxy
 
 ## 內建中介層
 
-| 中介層 | 說明 |
-|--------|------|
-| `ProxyHeaders` | 新增 X-Forwarded-* 標頭 |
-| `SetHost` | 設定自訂 Host 標頭 |
-| `RewritePath` | 重寫請求路徑 |
-| `RewriteBody` | 重寫回應內容 |
-| `AllowMethods` | 限制 HTTP 方法 |
-| `Cors` | 處理 CORS |
-| `IpFilter` | IP 白名單/黑名單 |
-| `RateLimiting` | 請求限流 |
-| `Caching` | 回應快取 |
-| `Timeout` | 請求超時控制 |
-| `Retry` | 失敗自動重試 |
-| `CircuitBreaker` | 熔斷器模式 |
-| `Fallback` | 回退給 WordPress 處理 |
+| 中介層 | 參數 | 快取 | 說明 |
+|--------|------|:----:|------|
+| `ProxyHeaders` | `options` | - | 新增 X-Forwarded-* 標頭 |
+| `SetHost` | `host` | - | 設定自訂 Host 標頭 |
+| `RewritePath` | `replacement` | - | 重寫請求路徑（支援 $1, $2 等捕獲群組） |
+| `RewriteBody` | `replacements` | - | 重寫回應內容（正則替換） |
+| `AllowMethods` | `methods...` | - | 限制 HTTP 方法 |
+| `Cors` | `origins, methods, headers, credentials, maxAge` | - | 處理 CORS |
+| `IpFilter` | `mode, ips...` | - | IP 白名單/黑名單（支援 CIDR） |
+| `Timeout` | `seconds` | - | 請求超時控制 |
+| `Retry` | `retries, methods, statusCodes` | - | 失敗自動重試 |
+| `Fallback` | `statusCodes...` | - | 回退給 WordPress 處理 |
+| `RateLimiting` | `limit, window` | ✓ | 請求限流 |
+| `CircuitBreaker` | `serviceName, threshold, timeout` | ✓ | 熔斷器模式 |
+| `Caching` | `ttl` | ✓ | 回應快取 |
+| `ErrorHandling` | - | - | 捕獲網路錯誤並返回 502 |
+| `Logging` | `logger` | - | 記錄請求/回應（需 PSR-3 Logger） |
+| `RequestId` | `header` | - | 新增唯一請求 ID |
+| `SanitizeHeaders` | - | - | 移除 hop-by-hop 標頭 |
 
 詳細用法請參考 [中介層參考](docs/zh/middlewares.md)。
 
@@ -99,10 +103,7 @@ composer require recca0120/wp-reverse-proxy
         {
             "path": "/api/*",
             "target": "https://api.example.com/",
-            "middlewares": [
-                "Cors",
-                ["RateLimiting", 100, 60]
-            ]
+            "middlewares": ["Cors", "ProxyHeaders"]
         }
     ]
 }
@@ -117,23 +118,12 @@ require_once 'vendor/autoload.php';
 
 use Recca0120\ReverseProxy\ReverseProxy;
 use Recca0120\ReverseProxy\Routing\FileLoader;
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
-// 實作 PSR-16 CacheInterface 或使用現有套件（如 symfony/cache）
-$cache = new YourCacheImplementation();
+$routes = new RouteCollection([
+    new FileLoader([__DIR__ . '/routes']),
+]);
 
-// 中介層管理器注入快取（RateLimiting、CircuitBreaker、Caching 需要）
-$middlewareManager = new MiddlewareManager($cache);
-
-// 從目錄載入路由設定檔
-$routes = new RouteCollection(
-    [new FileLoader([__DIR__ . '/routes'])],
-    $middlewareManager,
-    $cache
-);
-
-// 處理請求
 $proxy = new ReverseProxy($routes);
 $response = $proxy->handle();
 
@@ -148,9 +138,26 @@ if ($response !== null) {
 }
 ```
 
+### 使用快取
+
+`RateLimiting`、`CircuitBreaker`、`Caching` 中介層需要 PSR-16 快取：
+
+```php
+// 實作 PSR-16 CacheInterface 或使用現有套件（如 symfony/cache）
+$cache = new YourCacheImplementation();
+
+$routes = new RouteCollection(
+    [new FileLoader([__DIR__ . '/routes'])],
+    $cache
+);
+
+$proxy = new ReverseProxy($routes);
+$response = $proxy->handle();
+```
+
 ### 路由設定檔格式
 
-支援 JSON 和 PHP 格式：
+支援 JSON、YAML、PHP 格式，檔案須包含 `routes` 鍵：
 
 **routes.json：**
 ```json
@@ -160,14 +167,22 @@ if ($response !== null) {
             "path": "/api/*",
             "target": "https://api.example.com/",
             "methods": ["GET", "POST"],
-            "middlewares": [
-                "Cors",
-                "ProxyHeaders",
-                ["RateLimiting", 100, 60]
-            ]
+            "middlewares": ["Cors", "ProxyHeaders", ["RateLimiting", 100, 60]]
         }
     ]
 }
+```
+
+**routes.yaml：**
+```yaml
+routes:
+  - path: /api/*
+    target: https://api.example.com/
+    methods: [GET, POST]
+    middlewares:
+      - Cors
+      - ProxyHeaders
+      - [RateLimiting, 100, 60]
 ```
 
 **routes.php：**
@@ -178,13 +193,30 @@ return [
         [
             'path' => '/api/*',
             'target' => 'https://api.example.com/',
-            'middlewares' => [
-                'Cors',
-                ['RateLimiting', 100, 60],
-            ],
+            'middlewares' => ['Cors', ['RateLimiting', 100, 60]],
         ],
     ],
 ];
+```
+
+### 中介層配置格式
+
+```json
+{
+    "middlewares": [
+        "Cors",
+        "ProxyHeaders",
+        ["SetHost", "api.example.com"],
+        ["RateLimiting", 100, 60],
+        ["IpFilter", "allow", "192.168.1.0/24", "10.0.0.1"]
+    ]
+}
+```
+
+或使用冒號格式（適用於字串配置）：
+
+```
+ProxyHeaders|SetHost:api.example.com|Timeout:30|Fallback:404,500
 ```
 
 ### 自訂 HTTP Client
@@ -197,10 +229,78 @@ use Recca0120\ReverseProxy\Http\CurlClient;
 $httpClient = new CurlClient([
     'verify' => true,           // 啟用 SSL 驗證（預設 false）
     'timeout' => 30,            // 超時秒數
+    'connect_timeout' => 10,    // 連線超時秒數
     'decode_content' => true,   // 自動解碼 gzip/deflate（預設 false）
+    'proxy' => 'http://proxy:8080', // 代理伺服器
 ]);
 
 $proxy = new ReverseProxy($routes, $httpClient);
+```
+
+也可以使用 `StreamClient`（不需要 curl 擴展）：
+
+```php
+use Recca0120\ReverseProxy\Http\StreamClient;
+
+$httpClient = new StreamClient([
+    'verify' => true,
+    'timeout' => 30,
+]);
+
+$proxy = new ReverseProxy($routes, $httpClient);
+```
+
+### 程式化建立路由
+
+除了設定檔，也可以直接用程式碼建立路由：
+
+```php
+use Recca0120\ReverseProxy\ReverseProxy;
+use Recca0120\ReverseProxy\Routing\Route;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Middleware\Cors;
+use Recca0120\ReverseProxy\Middleware\RateLimiting;
+
+$routes = new RouteCollection();
+
+// 方法 1：透過建構子傳入中介層
+$routes->add(new Route('/api/*', 'https://api.example.com/', [
+    new Cors(),
+    new RateLimiting(100, 60),
+]));
+
+// 方法 2：鏈式呼叫
+$routes->add(
+    (new Route('POST /users', 'https://api.example.com/'))
+        ->middleware(new Cors())
+        ->middleware(function ($request, $next) {
+            // 自訂中介層邏輯
+            return $next($request);
+        })
+);
+
+$proxy = new ReverseProxy($routes);
+```
+
+### 全域中介層
+
+適用於所有路由的中介層可以透過 MiddlewareManager 註冊：
+
+```php
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
+use Recca0120\ReverseProxy\Middleware\ErrorHandling;
+
+$manager = new MiddlewareManager();
+$manager->registerGlobalMiddleware(new SanitizeHeaders());
+$manager->registerGlobalMiddleware(new ErrorHandling());
+
+$routes = new RouteCollection(
+    [new FileLoader([__DIR__ . '/routes'])],
+    $cache,
+    $manager
+);
 ```
 
 ## 授權

@@ -293,7 +293,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
         $loader = new WordPressLoader();
         $manager = new \Recca0120\ReverseProxy\Routing\MiddlewareManager();
-        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], $manager);
+        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], null, $manager);
         $collection->load();
 
         $route = $collection[0];
@@ -382,7 +382,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
         $loader = new WordPressLoader();
         $manager = new \Recca0120\ReverseProxy\Routing\MiddlewareManager();
-        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], $manager);
+        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], null, $manager);
         $collection->load();
 
         $route = $collection[0];
@@ -422,7 +422,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
         $loader = new WordPressLoader();
         $manager = new \Recca0120\ReverseProxy\Routing\MiddlewareManager();
-        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], $manager);
+        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], null, $manager);
         $collection->load();
 
         $route = $collection[0];
@@ -457,7 +457,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
         $loader = new WordPressLoader();
         $manager = new \Recca0120\ReverseProxy\Routing\MiddlewareManager();
-        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], $manager);
+        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], null, $manager);
         $collection->load();
 
         $route = $collection[0];
@@ -491,7 +491,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
         $loader = new WordPressLoader();
         $manager = new \Recca0120\ReverseProxy\Routing\MiddlewareManager();
-        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], $manager);
+        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], null, $manager);
         $collection->load();
 
         $route = $collection[0];
@@ -550,7 +550,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
         $loader = new WordPressLoader();
         $manager = new \Recca0120\ReverseProxy\Routing\MiddlewareManager();
-        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], $manager);
+        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], null, $manager);
         $collection->load();
 
         $route = $collection[0];
@@ -588,7 +588,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
         $loader = new WordPressLoader();
         $manager = new \Recca0120\ReverseProxy\Routing\MiddlewareManager();
-        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], $manager);
+        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], null, $manager);
         $collection->load();
 
         $route = $collection[0];
@@ -627,7 +627,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
 
         $loader = new WordPressLoader();
         $manager = new \Recca0120\ReverseProxy\Routing\MiddlewareManager();
-        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], $manager);
+        $collection = new \Recca0120\ReverseProxy\Routing\RouteCollection([$loader], null, $manager);
         $collection->load();
 
         $route = $collection[0];

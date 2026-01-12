@@ -64,7 +64,7 @@ function reverse_proxy_load_config_routes()
             new Recca0120\ReverseProxy\WordPress\TransientCache()
         );
 
-        $middlewareManager = reverse_proxy_create_middleware_manager($cache);
+        $middlewareManager = reverse_proxy_create_middleware_manager();
 
         $storage = reverse_proxy_create_route_storage();
 
@@ -75,8 +75,8 @@ function reverse_proxy_load_config_routes()
 
         $routes = new Recca0120\ReverseProxy\Routing\RouteCollection(
             $loaders,
-            $middlewareManager,
-            $cache
+            $cache,
+            $middlewareManager
         );
     }
 
@@ -91,11 +91,11 @@ function reverse_proxy_create_route_storage()
     );
 }
 
-function reverse_proxy_create_middleware_manager($cache = null)
+function reverse_proxy_create_middleware_manager()
 {
     $manager = apply_filters(
         'reverse_proxy_middleware_manager',
-        new Recca0120\ReverseProxy\Routing\MiddlewareManager($cache)
+        new Recca0120\ReverseProxy\Routing\MiddlewareManager()
     );
 
     $manager->registerGlobalMiddleware(

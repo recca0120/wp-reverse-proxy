@@ -184,7 +184,7 @@ class RouteCollectionTest extends TestCase
         $cache = new ArrayCache();
         $cache->set('test_loader_key', ['metadata' => 12345, 'data' => $cachedConfigs]);
 
-        $collection = new RouteCollection([$loader], null, $cache);
+        $collection = new RouteCollection([$loader], $cache);
         $collection->load();
 
         $this->assertCount(1, $collection);
@@ -202,7 +202,7 @@ class RouteCollectionTest extends TestCase
 
         $cache = new ArrayCache();
 
-        $collection = new RouteCollection([$loader], null, $cache);
+        $collection = new RouteCollection([$loader], $cache);
         $collection->load();
 
         $this->assertCount(1, $collection);
@@ -221,7 +221,7 @@ class RouteCollectionTest extends TestCase
         $cache = new ArrayCache();
         $cache->set('test_loader_key', ['metadata' => 12345, 'data' => []]);
 
-        $collection = new RouteCollection([$loader], null, $cache);
+        $collection = new RouteCollection([$loader], $cache);
         $collection->clearCache();
 
         $this->assertFalse($cache->has('test_loader_key'));
@@ -250,4 +250,5 @@ class RouteCollectionTest extends TestCase
 
         $this->assertSame($collection, $result);
     }
+
 }
