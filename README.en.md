@@ -96,32 +96,21 @@ composer require recca0120/wp-reverse-proxy
 
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Recca0120\ReverseProxy\ReverseProxy;
-use Recca0120\ReverseProxy\Http\CurlClient;
 use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
-
-// Create PSR-17 Factory
-$psr17Factory = new Psr17Factory();
 
 // Create route collection
 $routes = new RouteCollection();
 $routes->add(new Route('/api/*', 'https://api.example.com/'));
 $routes->add(new Route('GET /users/*', 'https://users.example.com/'));
 
-// Create HTTP Client
-$httpClient = new CurlClient([
-    'verify' => true,           // SSL verification
-    'timeout' => 30,            // Timeout in seconds
-    'decode_content' => true,   // Auto decode gzip/deflate
-]);
-
-// Create Reverse Proxy
-$proxy = new ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
+// Create Reverse Proxy (uses default HTTP Client)
+$proxy = new ReverseProxy($routes);
 
 // Create request from globals
-$requestFactory = new ServerRequestFactory($psr17Factory);
-$request = $requestFactory->createFromGlobals();
+$psr17Factory = new Psr17Factory();
+$request = (new ServerRequestFactory($psr17Factory))->createFromGlobals();
 
 // Handle request
 $response = $proxy->handle($request);
@@ -140,6 +129,20 @@ if ($response !== null) {
     http_response_code(404);
     echo 'Not Found';
 }
+```
+
+### Custom HTTP Client
+
+```php
+use Recca0120\ReverseProxy\Http\CurlClient;
+
+$httpClient = new CurlClient([
+    'verify' => true,           // SSL verification
+    'timeout' => 30,            // Timeout in seconds
+    'decode_content' => true,   // Auto decode gzip/deflate
+]);
+
+$proxy = new ReverseProxy($routes, $httpClient);
 ```
 
 ### Using Middlewares

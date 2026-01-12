@@ -111,10 +111,9 @@ function reverse_proxy_create_middleware_manager($cache = null)
 
 function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollection $routes)
 {
-    $psr17Factory = reverse_proxy_create_psr17_factory();
-    $httpClient = apply_filters('reverse_proxy_http_client', new Recca0120\ReverseProxy\Http\CurlClient(['verify' => false, 'decode_content' => false]));
+    $httpClient = apply_filters('reverse_proxy_http_client', null);
 
-    return new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
+    return new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient);
 }
 
 function reverse_proxy_create_psr17_factory()

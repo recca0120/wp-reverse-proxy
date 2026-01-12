@@ -26,7 +26,7 @@ class ReverseProxyTest extends TestCase
     protected function setUp(): void
     {
         $this->mockClient = new MockClient();
-        $this->psr17Factory = new Psr17Factory();
+        $this->psr17Factory = new Psr17Factory();  // Still needed for creating stream bodies in tests
     }
 
     public function test_it_returns_null_when_no_routes_match()
@@ -518,11 +518,6 @@ class ReverseProxyTest extends TestCase
         $manager = $manager ?? new MiddlewareManager();
         $routes = (new RouteCollection([], $manager))->add($routeArray);
 
-        return new ReverseProxy(
-            $routes,
-            $this->mockClient,
-            $this->psr17Factory,
-            $this->psr17Factory
-        );
+        return new ReverseProxy($routes, $this->mockClient);
     }
 }

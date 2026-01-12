@@ -96,32 +96,21 @@ composer require recca0120/wp-reverse-proxy
 
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Recca0120\ReverseProxy\ReverseProxy;
-use Recca0120\ReverseProxy\Http\CurlClient;
 use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
-
-// 建立 PSR-17 Factory
-$psr17Factory = new Psr17Factory();
 
 // 建立路由集合
 $routes = new RouteCollection();
 $routes->add(new Route('/api/*', 'https://api.example.com/'));
 $routes->add(new Route('GET /users/*', 'https://users.example.com/'));
 
-// 建立 HTTP Client
-$httpClient = new CurlClient([
-    'verify' => true,           // SSL 驗證
-    'timeout' => 30,            // 超時秒數
-    'decode_content' => true,   // 自動解碼 gzip/deflate
-]);
-
-// 建立 Reverse Proxy
-$proxy = new ReverseProxy($routes, $httpClient, $psr17Factory, $psr17Factory);
+// 建立 Reverse Proxy（使用預設 HTTP Client）
+$proxy = new ReverseProxy($routes);
 
 // 從全域變數建立請求
-$requestFactory = new ServerRequestFactory($psr17Factory);
-$request = $requestFactory->createFromGlobals();
+$psr17Factory = new Psr17Factory();
+$request = (new ServerRequestFactory($psr17Factory))->createFromGlobals();
 
 // 處理請求
 $response = $proxy->handle($request);
@@ -140,6 +129,20 @@ if ($response !== null) {
     http_response_code(404);
     echo 'Not Found';
 }
+```
+
+### 自訂 HTTP Client
+
+```php
+use Recca0120\ReverseProxy\Http\CurlClient;
+
+$httpClient = new CurlClient([
+    'verify' => true,           // SSL 驗證
+    'timeout' => 30,            // 超時秒數
+    'decode_content' => true,   // 自動解碼 gzip/deflate
+]);
+
+$proxy = new ReverseProxy($routes, $httpClient);
 ```
 
 ### 使用中介層
