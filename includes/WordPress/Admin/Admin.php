@@ -137,7 +137,7 @@ class Admin
 
     public function handleExportRoutes(): void
     {
-        $this->verifyAjaxExportRequest();
+        $this->verifyAjaxRequest('GET');
 
         wp_send_json_success($this->routesPage->exportRoutes());
     }
@@ -274,33 +274,24 @@ class Admin
         exit;
     }
 
-    private function verifyAjaxRequest(): void
+    private function verifyAjaxRequest(string $method = 'POST'): void
     {
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Permission denied.', 'reverse-proxy')], 403);
         }
 
-        if (!$this->verifyNonce('nonce', 'reverse_proxy_admin') &&
-            !$this->verifyNonce('reverse_proxy_nonce', 'reverse_proxy_save_route')) {
+        $source = $method === 'GET' ? $_GET : $_POST;
+
+        if (!$this->verifyNonce('nonce', 'reverse_proxy_admin', $source) &&
+            !$this->verifyNonce('reverse_proxy_nonce', 'reverse_proxy_save_route', $source)) {
             wp_send_json_error(['message' => __('Security check failed.', 'reverse-proxy')], 403);
         }
     }
 
-    private function verifyAjaxExportRequest(): void
+    private function verifyNonce(string $field, string $action, ?array $source = null): bool
     {
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Permission denied.', 'reverse-proxy')], 403);
-        }
-
-        $nonce = isset($_GET['nonce']) ? $_GET['nonce'] : '';
-        if (!wp_verify_nonce($nonce, 'reverse_proxy_admin')) {
-            wp_send_json_error(['message' => __('Security check failed.', 'reverse-proxy')], 403);
-        }
-    }
-
-    private function verifyNonce(string $field, string $action): bool
-    {
-        $nonce = isset($_POST[$field]) ? $_POST[$field] : '';
+        $source = $source ?? $_POST;
+        $nonce = $source[$field] ?? '';
 
         return wp_verify_nonce($nonce, $action) !== false;
     }
