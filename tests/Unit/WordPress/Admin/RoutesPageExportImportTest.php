@@ -79,9 +79,9 @@ class RoutesPageExportImportTest extends TestCase
     {
         $exported = $this->routesPage->exportRoutes();
 
-        $this->assertMatchesRegularExpression(
-            '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/',
-            $exported['exported_at']
+        $this->assertSame(
+            1,
+            preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/', $exported['exported_at'])
         );
     }
 
