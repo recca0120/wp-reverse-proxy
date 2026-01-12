@@ -30,6 +30,45 @@
             ],
             "An error occurred while saving.": [
                 "儲存時發生錯誤。"
+            ],
+            "Export": [
+                "匯出"
+            ],
+            "Import": [
+                "匯入"
+            ],
+            "Exporting...": [
+                "匯出中..."
+            ],
+            "Importing...": [
+                "匯入中..."
+            ],
+            "Export failed.": [
+                "匯出失敗。"
+            ],
+            "Import failed.": [
+                "匯入失敗。"
+            ],
+            "Invalid JSON file.": [
+                "無效的 JSON 檔案。"
+            ],
+            "Import %d routes?": [
+                "匯入 %d 個路由？"
+            ],
+            "Choose import mode:": [
+                "選擇匯入模式："
+            ],
+            "Merge: Add new routes, update existing by ID": [
+                "合併：新增路由，依 ID 更新現有路由"
+            ],
+            "Replace: Remove all existing routes first": [
+                "取代：先移除所有現有路由"
+            ],
+            "Enter \"merge\" or \"replace\":": [
+                "輸入「merge」或「replace」："
+            ],
+            "Invalid mode. Please enter \"merge\" or \"replace\".": [
+                "無效的模式。請輸入「merge」或「replace」。"
             ]
         }
     }

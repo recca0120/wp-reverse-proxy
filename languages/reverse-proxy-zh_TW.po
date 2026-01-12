@@ -239,3 +239,70 @@ msgstr "儲存路由失敗。"
 #: assets/js/admin.js:314
 msgid "An error occurred while saving."
 msgstr "儲存時發生錯誤。"
+
+#. Export/Import strings
+#: templates/admin/routes.php:57
+#: assets/js/admin.js
+msgid "Export"
+msgstr "匯出"
+
+#: templates/admin/routes.php:60
+#: assets/js/admin.js
+msgid "Import"
+msgstr "匯入"
+
+#: assets/js/admin.js
+msgid "Exporting..."
+msgstr "匯出中..."
+
+#: assets/js/admin.js
+msgid "Importing..."
+msgstr "匯入中..."
+
+#: assets/js/admin.js
+msgid "Export failed."
+msgstr "匯出失敗。"
+
+#: assets/js/admin.js
+msgid "Import failed."
+msgstr "匯入失敗。"
+
+#: assets/js/admin.js
+msgid "Invalid JSON file."
+msgstr "無效的 JSON 檔案。"
+
+#: assets/js/admin.js
+msgid "Import %d routes?"
+msgstr "匯入 %d 個路由？"
+
+#: assets/js/admin.js
+msgid "Choose import mode:"
+msgstr "選擇匯入模式："
+
+#: assets/js/admin.js
+msgid "Merge: Add new routes, update existing by ID"
+msgstr "合併：新增路由，依 ID 更新現有路由"
+
+#: assets/js/admin.js
+msgid "Replace: Remove all existing routes first"
+msgstr "取代：先移除所有現有路由"
+
+#: assets/js/admin.js
+msgid "Enter \"merge\" or \"replace\":"
+msgstr "輸入「merge」或「replace」："
+
+#: assets/js/admin.js
+msgid "Invalid mode. Please enter \"merge\" or \"replace\"."
+msgstr "無效的模式。請輸入「merge」或「replace」。"
+
+#: includes/WordPress/Admin/Admin.php
+msgid "Import completed. %d routes imported, %d skipped."
+msgstr "匯入完成。已匯入 %d 個路由，略過 %d 個。"
+
+#: includes/WordPress/Admin/Admin.php
+msgid "Invalid JSON data."
+msgstr "無效的 JSON 資料。"
+
+#: includes/WordPress/Admin/RoutesPage.php
+msgid "Invalid import data: missing routes array"
+msgstr "無效的匯入資料：缺少 routes 陣列"
