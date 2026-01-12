@@ -5,8 +5,6 @@ namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
-use Nyholm\Psr7\Response;
-use Nyholm\Psr7\ServerRequest;
 use Recca0120\ReverseProxy\Middleware\AllowMethods;
 use Recca0120\ReverseProxy\Middleware\Caching;
 use Recca0120\ReverseProxy\Middleware\Fallback;
@@ -16,7 +14,6 @@ use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 use Recca0120\ReverseProxy\Middleware\SetHost;
 use Recca0120\ReverseProxy\Middleware\Timeout;
 use Recca0120\ReverseProxy\Routing\MiddlewareManager;
-use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 
 class MiddlewareManagerTest extends TestCase
 {
@@ -382,49 +379,7 @@ class MiddlewareManagerTest extends TestCase
         $this->assertInstanceOf(Timeout::class, $middlewares[2]);
     }
 
-    public function test_inject_cache_into_caching_middleware(): void
-    {
-        $cache = new ArrayCache();
-        $factory = new MiddlewareManager($cache);
-        $middleware = $factory->create('Caching:300');
-
-        $request = new ServerRequest('GET', 'https://example.com/test');
-        $middleware->process($request, function () {
-            return new Response(200, [], 'OK');
-        });
-
-        $this->assertNotEmpty($cache->all());
-    }
-
-    public function test_inject_cache_into_circuit_breaker_middleware(): void
-    {
-        $cache = new ArrayCache();
-        $factory = new MiddlewareManager($cache);
-        $middleware = $factory->create(['name' => 'CircuitBreaker', 'args' => ['my-service']]);
-
-        $request = new ServerRequest('GET', 'https://example.com/test');
-        $middleware->process($request, function () {
-            return new Response(200, [], 'OK');
-        });
-
-        $this->assertNotEmpty($cache->all());
-    }
-
-    public function test_inject_cache_into_rate_limiting_middleware(): void
-    {
-        $cache = new ArrayCache();
-        $factory = new MiddlewareManager($cache);
-        $middleware = $factory->create('RateLimiting:100,60');
-
-        $request = new ServerRequest('GET', 'https://example.com/test', [], null, '1.1', ['REMOTE_ADDR' => '127.0.0.1']);
-        $middleware->process($request, function () {
-            return new Response(200, [], 'OK');
-        });
-
-        $this->assertNotEmpty($cache->all());
-    }
-
-    public function test_factory_without_cache_creates_middleware(): void
+    public function test_create_cache_aware_middleware_without_cache(): void
     {
         $factory = new MiddlewareManager();
 

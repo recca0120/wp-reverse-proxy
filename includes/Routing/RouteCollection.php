@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use IteratorAggregate;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
+use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 use Traversable;
 
@@ -34,12 +35,12 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function __construct(
         array $loaders = [],
-        ?MiddlewareManager $middlewareManager = null,
-        ?CacheInterface $cache = null
+        ?CacheInterface $cache = null,
+        ?MiddlewareManager $middlewareManager = null
     ) {
         $this->loaders = $loaders;
-        $this->middlewareManager = $middlewareManager ?? new MiddlewareManager();
         $this->cache = $cache;
+        $this->middlewareManager = $middlewareManager ?? new MiddlewareManager();
     }
 
     /**
@@ -242,8 +243,27 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
         $path = $this->buildPath($config);
         $target = $config['target'];
         $middlewares = $this->middlewareManager->createMany($config['middlewares'] ?? []);
+        $this->injectCache($middlewares);
 
         return new Route($path, $target, $middlewares);
+    }
+
+    /**
+     * Inject cache into middlewares that implement CacheAwareInterface.
+     *
+     * @param array<\Recca0120\ReverseProxy\Contracts\MiddlewareInterface> $middlewares
+     */
+    private function injectCache(array $middlewares): void
+    {
+        if ($this->cache === null) {
+            return;
+        }
+
+        foreach ($middlewares as $middleware) {
+            if ($middleware instanceof CacheAwareInterface) {
+                $middleware->setCache($this->cache);
+            }
+        }
     }
 
     /**

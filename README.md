@@ -117,19 +117,15 @@ require_once 'vendor/autoload.php';
 
 use Recca0120\ReverseProxy\ReverseProxy;
 use Recca0120\ReverseProxy\Routing\FileLoader;
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 // 實作 PSR-16 CacheInterface 或使用現有套件（如 symfony/cache）
+// RateLimiting、CircuitBreaker、Caching 等中介層需要快取
 $cache = new YourCacheImplementation();
-
-// 中介層管理器注入快取（RateLimiting、CircuitBreaker、Caching 需要）
-$middlewareManager = new MiddlewareManager($cache);
 
 // 從目錄載入路由設定檔
 $routes = new RouteCollection(
     [new FileLoader([__DIR__ . '/routes'])],
-    $middlewareManager,
     $cache
 );
 

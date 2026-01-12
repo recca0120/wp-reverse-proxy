@@ -117,19 +117,15 @@ require_once 'vendor/autoload.php';
 
 use Recca0120\ReverseProxy\ReverseProxy;
 use Recca0120\ReverseProxy\Routing\FileLoader;
-use Recca0120\ReverseProxy\Routing\MiddlewareManager;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
 // Implement PSR-16 CacheInterface or use existing packages (e.g., symfony/cache)
+// Required for RateLimiting, CircuitBreaker, Caching middlewares
 $cache = new YourCacheImplementation();
-
-// Middleware manager injects cache (required for RateLimiting, CircuitBreaker, Caching)
-$middlewareManager = new MiddlewareManager($cache);
 
 // Load route config files from directory
 $routes = new RouteCollection(
     [new FileLoader([__DIR__ . '/routes'])],
-    $middlewareManager,
     $cache
 );
 

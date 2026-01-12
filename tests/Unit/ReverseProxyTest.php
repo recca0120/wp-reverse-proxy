@@ -516,7 +516,7 @@ class ReverseProxyTest extends TestCase
     private function createProxy(array $routeArray, ?MiddlewareManager $manager = null): ReverseProxy
     {
         $manager = $manager ?? new MiddlewareManager();
-        $routes = (new RouteCollection([], $manager))->add($routeArray);
+        $routes = (new RouteCollection([], null, $manager))->add($routeArray);
 
         return new ReverseProxy($routes, $this->mockClient);
     }
