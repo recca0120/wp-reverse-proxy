@@ -95,7 +95,6 @@ composer require recca0120/wp-reverse-proxy
 <?php
 
 use Recca0120\ReverseProxy\ReverseProxy;
-use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
@@ -104,14 +103,9 @@ $routes = new RouteCollection();
 $routes->add(new Route('/api/*', 'https://api.example.com/'));
 $routes->add(new Route('GET /users/*', 'https://users.example.com/'));
 
-// 建立 Reverse Proxy
+// 建立 Reverse Proxy 並處理請求
 $proxy = new ReverseProxy($routes);
-
-// 從全域變數建立請求
-$request = ServerRequestFactory::createFromGlobals();
-
-// 處理請求
-$response = $proxy->handle($request);
+$response = $proxy->handle();  // 自動從 $_SERVER 建立請求
 
 if ($response !== null) {
     // 發送回應

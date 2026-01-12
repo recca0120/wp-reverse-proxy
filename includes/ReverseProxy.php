@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
 use Recca0120\ReverseProxy\Http\CurlClient;
+use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 use Recca0120\ReverseProxy\Support\Arr;
@@ -29,8 +30,10 @@ class ReverseProxy
         $this->client = $client ?? new CurlClient(['verify' => false, 'decode_content' => false]);
     }
 
-    public function handle(ServerRequestInterface $request): ?ResponseInterface
+    public function handle(?ServerRequestInterface $request = null): ?ResponseInterface
     {
+        $request = $request ?? ServerRequestFactory::createFromGlobals();
+
         foreach ($this->routes as $route) {
             $targetUrl = $route->matches($request);
             if ($targetUrl !== null) {

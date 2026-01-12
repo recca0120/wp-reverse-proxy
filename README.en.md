@@ -95,7 +95,6 @@ composer require recca0120/wp-reverse-proxy
 <?php
 
 use Recca0120\ReverseProxy\ReverseProxy;
-use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 
@@ -104,14 +103,9 @@ $routes = new RouteCollection();
 $routes->add(new Route('/api/*', 'https://api.example.com/'));
 $routes->add(new Route('GET /users/*', 'https://users.example.com/'));
 
-// Create Reverse Proxy
+// Create Reverse Proxy and handle request
 $proxy = new ReverseProxy($routes);
-
-// Create request from globals
-$request = ServerRequestFactory::createFromGlobals();
-
-// Handle request
-$response = $proxy->handle($request);
+$response = $proxy->handle();  // Auto-creates request from $_SERVER
 
 if ($response !== null) {
     // Send response

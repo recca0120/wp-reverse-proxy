@@ -38,7 +38,7 @@ function reverse_proxy_handle()
     $routes = apply_filters('reverse_proxy_routes', $configRoutes);
 
     $proxy = reverse_proxy_create_proxy($routes);
-    $request = reverse_proxy_create_request();
+    $request = apply_filters('reverse_proxy_request', null);
 
     try {
         $response = $proxy->handle($request);
@@ -114,16 +114,6 @@ function reverse_proxy_create_proxy(Recca0120\ReverseProxy\Routing\RouteCollecti
     $httpClient = apply_filters('reverse_proxy_http_client', null);
 
     return new Recca0120\ReverseProxy\ReverseProxy($routes, $httpClient);
-}
-
-function reverse_proxy_create_request()
-{
-    $request = apply_filters('reverse_proxy_request', null);
-    if ($request !== null) {
-        return $request;
-    }
-
-    return Recca0120\ReverseProxy\Http\ServerRequestFactory::createFromGlobals();
 }
 
 function reverse_proxy_send_response($response)
