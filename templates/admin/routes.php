@@ -53,6 +53,13 @@ if (isset($_GET['error'])) {
     <a href="<?php echo esc_url(admin_url('options-general.php?page=reverse-proxy&action=new')); ?>" class="page-title-action">
         <?php esc_html_e('Add New', 'reverse-proxy'); ?>
     </a>
+    <button type="button" id="reverse-proxy-export" class="page-title-action">
+        <?php esc_html_e('Export', 'reverse-proxy'); ?>
+    </button>
+    <button type="button" id="reverse-proxy-import" class="page-title-action">
+        <?php esc_html_e('Import', 'reverse-proxy'); ?>
+    </button>
+    <input type="file" id="reverse-proxy-import-file" accept=".json" style="display: none;">
     <hr class="wp-header-end">
 
     <?php if (empty($routes)) : ?>

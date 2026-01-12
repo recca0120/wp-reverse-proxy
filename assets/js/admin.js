@@ -77,6 +77,13 @@
             e.preventDefault();
             saveRoute($(this));
         });
+
+        // Import/Export handlers
+        $('#reverse-proxy-export').on('click', exportRoutes);
+        $('#reverse-proxy-import').on('click', function() {
+            $('#reverse-proxy-import-file').click();
+        });
+        $('#reverse-proxy-import-file').on('change', handleImportFile);
     }
 
     function handleRemoveMiddleware() {
@@ -730,6 +737,112 @@
             }
         });
         return obj;
+    }
+
+    function exportRoutes() {
+        var $btn = $('#reverse-proxy-export');
+        $btn.prop('disabled', true).text(__('Exporting...', 'reverse-proxy'));
+
+        $.ajax({
+            url: reverseProxyAdmin.ajaxUrl,
+            method: 'GET',
+            data: {
+                action: 'reverse_proxy_export_routes',
+                nonce: reverseProxyAdmin.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    downloadJson(response.data, 'reverse-proxy-routes.json');
+                } else {
+                    alert(response.data.message || __('Export failed.', 'reverse-proxy'));
+                }
+                $btn.prop('disabled', false).text(__('Export', 'reverse-proxy'));
+            },
+            error: function() {
+                alert(__('Export failed.', 'reverse-proxy'));
+                $btn.prop('disabled', false).text(__('Export', 'reverse-proxy'));
+            }
+        });
+    }
+
+    function downloadJson(data, filename) {
+        var json = JSON.stringify(data, null, 2);
+        var blob = new Blob([json], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function handleImportFile(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                var data = JSON.parse(e.target.result);
+                showImportDialog(data);
+            } catch (err) {
+                alert(__('Invalid JSON file.', 'reverse-proxy'));
+            }
+        };
+        reader.readAsText(file);
+
+        // Reset file input
+        $(e.target).val('');
+    }
+
+    function showImportDialog(data) {
+        var routeCount = data.routes ? data.routes.length : 0;
+        var message = __('Import %d routes?', 'reverse-proxy').replace('%d', routeCount) + '\n\n' +
+            __('Choose import mode:', 'reverse-proxy') + '\n' +
+            '• ' + __('Merge: Add new routes, update existing by ID', 'reverse-proxy') + '\n' +
+            '• ' + __('Replace: Remove all existing routes first', 'reverse-proxy');
+
+        var mode = prompt(message + '\n\n' + __('Enter "merge" or "replace":', 'reverse-proxy'), 'merge');
+
+        if (mode !== 'merge' && mode !== 'replace') {
+            if (mode !== null) {
+                alert(__('Invalid mode. Please enter "merge" or "replace".', 'reverse-proxy'));
+            }
+            return;
+        }
+
+        importRoutes(data, mode);
+    }
+
+    function importRoutes(data, mode) {
+        var $btn = $('#reverse-proxy-import');
+        $btn.prop('disabled', true).text(__('Importing...', 'reverse-proxy'));
+
+        $.ajax({
+            url: reverseProxyAdmin.ajaxUrl,
+            method: 'POST',
+            data: {
+                action: 'reverse_proxy_import_routes',
+                nonce: reverseProxyAdmin.nonce,
+                data: JSON.stringify(data),
+                mode: mode
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert(response.data.message);
+                    location.reload();
+                } else {
+                    alert(response.data.message || __('Import failed.', 'reverse-proxy'));
+                    $btn.prop('disabled', false).text(__('Import', 'reverse-proxy'));
+                }
+            },
+            error: function() {
+                alert(__('Import failed.', 'reverse-proxy'));
+                $btn.prop('disabled', false).text(__('Import', 'reverse-proxy'));
+            }
+        });
     }
 
     $(document).ready(init);
