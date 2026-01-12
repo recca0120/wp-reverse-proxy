@@ -17,36 +17,9 @@ class Arr
      */
     public static function flatMap(array $items, callable $callback): array
     {
-        $result = [];
-
-        foreach ($items as $key => $value) {
-            foreach ($callback($value, $key) as $item) {
-                $result[] = $item;
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Flatten a multi-dimensional array into a single level.
-     *
-     * @template TValue
-     *
-     * @param array<array<TValue>> $arrays
-     * @return array<TValue>
-     */
-    public static function flatten(array $arrays): array
-    {
-        $result = [];
-
-        foreach ($arrays as $array) {
-            foreach ($array as $item) {
-                $result[] = $item;
-            }
-        }
-
-        return $result;
+        return array_reduce(array_keys($items), function ($result, $key) use ($items, $callback) {
+            return self::merge($result, $callback($items[$key], $key));
+        }, []);
     }
 
     /**

@@ -58,42 +58,26 @@ class ArrTest extends TestCase
         $this->assertEquals(['json', 'yaml', 'yml', 'php'], $result);
     }
 
-    public function test_flatten_simple_arrays(): void
+    public function test_merge_flattens_simple_arrays(): void
     {
-        $result = Arr::flatten([
+        $result = Arr::merge(
             [1, 2],
             [3, 4],
-            [5],
-        ]);
+            [5]
+        );
 
         $this->assertEquals([1, 2, 3, 4, 5], $result);
     }
 
-    public function test_flatten_empty_array(): void
+    public function test_merge_with_empty_nested_arrays(): void
     {
-        $result = Arr::flatten([]);
-
-        $this->assertEquals([], $result);
-    }
-
-    public function test_flatten_with_empty_nested_arrays(): void
-    {
-        $result = Arr::flatten([
+        $result = Arr::merge(
             [1, 2],
             [],
-            [3],
-        ]);
+            [3]
+        );
 
         $this->assertEquals([1, 2, 3], $result);
-    }
-
-    public function test_flatten_single_level(): void
-    {
-        $result = Arr::flatten([
-            ['a', 'b'],
-        ]);
-
-        $this->assertEquals(['a', 'b'], $result);
     }
 
     /**

@@ -60,9 +60,9 @@ class ReverseProxy
         );
 
         // Wrap middlewares in reverse order (highest priority = innermost)
-        foreach (array_reverse($middlewares) as $middleware) {
-            $handler = $this->wrapMiddleware($middleware, $handler);
-        }
+        $handler = array_reduce(array_reverse($middlewares), function ($handler, $middleware) {
+            return $this->wrapMiddleware($middleware, $handler);
+        }, $handler);
 
         return $handler($request);
     }
