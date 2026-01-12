@@ -251,4 +251,75 @@ class RouteCollectionTest extends TestCase
         $this->assertSame($collection, $result);
     }
 
+    public function test_array_access_set_with_index(): void
+    {
+        $collection = new RouteCollection();
+        $route1 = new Route('/api/*', 'https://api.example.com');
+        $route2 = new Route('/web/*', 'https://web.example.com');
+
+        $collection[0] = $route1;
+        $collection[5] = $route2;
+
+        $this->assertSame($route1, $collection[0]);
+        $this->assertSame($route2, $collection[5]);
+    }
+
+    public function test_load_reloads_when_cache_is_invalid(): void
+    {
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
+        $loader->shouldReceive('isCacheValid')->with(12345)->andReturn(false);
+        $loader->shouldReceive('getCacheMetadata')->andReturn(99999);
+        $loader->shouldReceive('load')->once()->andReturn([
+            ['path' => '/fresh/*', 'target' => 'https://fresh.example.com'],
+        ]);
+
+        $cache = new ArrayCache();
+        $cache->set('test_loader_key', ['metadata' => 12345, 'data' => [
+            ['path' => '/stale/*', 'target' => 'https://stale.example.com'],
+        ]]);
+
+        $collection = new RouteCollection([$loader], $cache);
+        $collection->load();
+
+        $this->assertCount(1, $collection);
+        $this->assertEquals('fresh.example.com', $collection[0]->getTargetHost());
+    }
+
+    public function test_load_skips_cache_for_loader_without_cache_key(): void
+    {
+        $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getCacheKey')->andReturn(null);
+        $loader->shouldReceive('load')->once()->andReturn([
+            ['path' => '/api/*', 'target' => 'https://api.example.com'],
+        ]);
+
+        $cache = new ArrayCache();
+        $collection = new RouteCollection([$loader], $cache);
+        $collection->load();
+
+        $this->assertCount(1, $collection);
+        // Cache should not have any entries since loader has no cache key
+        $this->assertEmpty($cache->all());
+    }
+
+    public function test_clear_cache_with_multiple_loaders(): void
+    {
+        $loader1 = Mockery::mock(RouteLoaderInterface::class);
+        $loader1->shouldReceive('getCacheKey')->andReturn('loader1_key');
+
+        $loader2 = Mockery::mock(RouteLoaderInterface::class);
+        $loader2->shouldReceive('getCacheKey')->andReturn('loader2_key');
+
+        $cache = new ArrayCache();
+        $cache->set('loader1_key', ['metadata' => 1, 'data' => []]);
+        $cache->set('loader2_key', ['metadata' => 2, 'data' => []]);
+
+        $collection = new RouteCollection([$loader1, $loader2], $cache);
+        $collection->clearCache();
+
+        $this->assertFalse($cache->has('loader1_key'));
+        $this->assertFalse($cache->has('loader2_key'));
+    }
+
 }

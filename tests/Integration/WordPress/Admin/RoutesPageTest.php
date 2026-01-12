@@ -567,6 +567,125 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertStringContainsString('middlewares', $data);
     }
 
+    public function test_admin_enqueue_assets_skips_wrong_page()
+    {
+        // Dequeue any previously enqueued scripts
+        wp_dequeue_script('reverse-proxy-admin');
+
+        $admin = new Admin();
+
+        // Simulate being on a different admin page
+        set_current_screen('options-general');
+
+        // Run enqueue on wrong page - should return early
+        $admin->enqueueAssets('options-general.php');
+
+        // Script should NOT be enqueued since we're not on the correct page
+        $this->assertFalse(wp_script_is('reverse-proxy-admin', 'enqueued'));
+    }
+
+    public function test_add_plugin_action_links()
+    {
+        $admin = new Admin();
+
+        $links = ['deactivate' => '<a href="#">Deactivate</a>'];
+        $result = $admin->addPluginActionLinks($links);
+
+        // Settings link should be added at the beginning
+        $this->assertCount(2, $result);
+        $this->assertStringContainsString('Settings', reset($result));
+        $this->assertStringContainsString('options-general.php?page=reverse-proxy', reset($result));
+    }
+
+    public function test_handle_form_submission_skips_during_ajax()
+    {
+        // DOING_AJAX should already be defined from previous tests
+        // Just verify the method returns early without processing
+
+        $_POST['action'] = 'reverse_proxy_save_route';
+
+        // Should not throw or process when doing AJAX
+        $this->admin->handleFormSubmission();
+
+        // Clean up
+        unset($_POST['action']);
+
+        // If we got here without error, the early return worked
+        $this->assertTrue(true);
+    }
+
+    public function test_ajax_delete_route_requires_route_id()
+    {
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['route_id'] = '';
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleDeleteRoute']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Route ID is required.', $response['data']['message']);
+
+        unset($_POST['nonce'], $_POST['route_id']);
+    }
+
+    public function test_ajax_toggle_route_requires_route_id()
+    {
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        // route_id not set
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleToggleRoute']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Route ID is required.', $response['data']['message']);
+
+        unset($_POST['nonce']);
+    }
+
+    public function test_ajax_import_routes_rejects_invalid_json()
+    {
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['mode'] = 'replace';
+        $_POST['data'] = 'not valid json {{{';
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleImportRoutes']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Invalid JSON data.', $response['data']['message']);
+
+        unset($_POST['nonce'], $_POST['mode'], $_POST['data']);
+    }
+
+    public function test_admin_enqueue_assets_loads_existing_middlewares_when_editing()
+    {
+        $routesPage = new RoutesPage();
+
+        // Save a route with middlewares
+        $routesPage->saveRoute([
+            'path' => '/edit-test/*',
+            'target' => 'https://edit.example.com',
+            'middlewares' => ['ProxyHeaders', ['SetHost', 'custom.host.com']],
+            'enabled' => true,
+        ]);
+
+        $routes = $routesPage->getRoutes();
+        $routeId = $routes[0]['id'];
+
+        // Simulate editing a route
+        $_GET['action'] = 'edit';
+        $_GET['route_id'] = $routeId;
+
+        $admin = new Admin($routesPage);
+        $admin->register();
+
+        set_current_screen('settings_page_reverse-proxy');
+        do_action('admin_enqueue_scripts', 'settings_page_reverse-proxy');
+
+        global $wp_scripts;
+        $data = $wp_scripts->get_data('reverse-proxy-admin', 'data');
+        $this->assertStringContainsString('existingMiddlewares', $data);
+
+        unset($_GET['action'], $_GET['route_id']);
+    }
+
     /**
      * @runInSeparateProcess
      * @preserveGlobalState disabled

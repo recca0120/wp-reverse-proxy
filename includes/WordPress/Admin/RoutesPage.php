@@ -23,11 +23,6 @@ class RoutesPage
         $this->storage = $storage ?? new OptionsStorage();
     }
 
-    public function getStorage(): StorageInterface
-    {
-        return $this->storage;
-    }
-
     /**
      * Get available middlewares from the registry.
      *
