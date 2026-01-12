@@ -130,3 +130,106 @@ echo esc_attr(json_encode($currentMiddlewares));
         <div class="middleware-body empty"></div>
     </div>
 </template>
+
+<template id="field-wrapper-template">
+    <div class="middleware-field-wrapper">
+        <label></label>
+    </div>
+</template>
+
+<template id="field-textarea-template">
+    <div class="middleware-field-wrapper">
+        <label></label>
+        <textarea rows="3" class="large-text"></textarea>
+    </div>
+</template>
+
+<template id="field-checkbox-template">
+    <div class="middleware-field-wrapper middleware-checkbox-wrapper">
+        <label><input type="checkbox" value="1"> <span class="label-text"></span></label>
+    </div>
+</template>
+
+<template id="field-select-template">
+    <div class="middleware-field-wrapper">
+        <label></label>
+        <select></select>
+    </div>
+</template>
+
+<template id="field-checkboxes-template">
+    <div class="middleware-field-wrapper middleware-checkboxes-wrapper">
+        <label></label>
+        <div class="checkbox-group"></div>
+    </div>
+</template>
+
+<template id="field-checkbox-option-template">
+    <label><input type="checkbox"> <span class="option-label"></span></label>
+</template>
+
+<template id="field-repeater-template">
+    <div class="middleware-field-wrapper middleware-repeater-wrapper">
+        <label></label>
+        <div class="dynamic-list-container" data-type="repeater">
+            <div class="dynamic-list-items"></div>
+            <button type="button" class="button button-small dynamic-list-add">
+                <?php esc_html_e('+ Add', 'reverse-proxy'); ?>
+            </button>
+        </div>
+    </div>
+</template>
+
+<template id="field-keyvalue-template">
+    <div class="middleware-field-wrapper middleware-keyvalue-wrapper">
+        <label></label>
+        <div class="dynamic-list-container" data-type="keyvalue">
+            <div class="keyvalue-header">
+                <span class="keyvalue-key-header"></span>
+                <span class="keyvalue-value-header"></span>
+                <span class="keyvalue-action-header"></span>
+            </div>
+            <div class="dynamic-list-items"></div>
+            <button type="button" class="button button-small dynamic-list-add">
+                <?php esc_html_e('+ Add', 'reverse-proxy'); ?>
+            </button>
+        </div>
+    </div>
+</template>
+
+<template id="field-json-template">
+    <div class="middleware-field-wrapper middleware-json-wrapper">
+        <label></label>
+        <textarea rows="6" class="large-text code json-editor"></textarea>
+    </div>
+</template>
+
+<template id="field-input-template">
+    <div class="middleware-field-wrapper">
+        <label></label>
+        <input type="text" class="regular-text">
+    </div>
+</template>
+
+<template id="repeater-item-template">
+    <div class="dynamic-list-item">
+        <input type="text" class="regular-text">
+        <button type="button" class="button button-small button-link-delete dynamic-list-remove">
+            <span class="dashicons dashicons-no-alt"></span>
+        </button>
+    </div>
+</template>
+
+<template id="keyvalue-item-template">
+    <div class="dynamic-list-item keyvalue-item">
+        <input type="text" class="regular-text keyvalue-key">
+        <input type="text" class="regular-text keyvalue-value">
+        <button type="button" class="button button-small button-link-delete dynamic-list-remove">
+            <span class="dashicons dashicons-no-alt"></span>
+        </button>
+    </div>
+</template>
+
+<template id="select-option-template">
+    <option></option>
+</template>

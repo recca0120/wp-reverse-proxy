@@ -1,5 +1,5 @@
 /**
- * Reverse Proxy Admin JavaScript (Vanilla JS)
+ * Reverse Proxy Admin JavaScript (Vanilla JS, Template-based)
  */
 (function(wp) {
     'use strict';
@@ -40,35 +40,9 @@
         return Array.from((context || document).querySelectorAll(selector));
     }
 
-    function createElement(tag, attrs, children) {
-        var el = document.createElement(tag);
-        if (attrs) {
-            Object.keys(attrs).forEach(function(key) {
-                if (key === 'className') {
-                    el.className = attrs[key];
-                } else if (key === 'dataset') {
-                    Object.keys(attrs[key]).forEach(function(dataKey) {
-                        el.dataset[dataKey] = attrs[key][dataKey];
-                    });
-                } else if (key === 'textContent' || key === 'innerHTML') {
-                    el[key] = attrs[key];
-                } else {
-                    el.setAttribute(key, attrs[key]);
-                }
-            });
-        }
-        if (children) {
-            if (Array.isArray(children)) {
-                children.forEach(function(child) {
-                    if (child) el.appendChild(typeof child === 'string' ? document.createTextNode(child) : child);
-                });
-            } else if (typeof children === 'string') {
-                el.textContent = children;
-            } else {
-                el.appendChild(children);
-            }
-        }
-        return el;
+    function cloneTemplate(templateId) {
+        var template = $('#' + templateId);
+        return template ? template.content.cloneNode(true).firstElementChild : null;
     }
 
     function on(element, event, selectorOrHandler, handler) {
@@ -282,10 +256,9 @@
     }
 
     function createMiddlewareItem(index, selectedName) {
-        var template = $('#middleware-item-template');
-        if (!template) return null;
+        var item = cloneTemplate('middleware-item-template');
+        if (!item) return null;
 
-        var item = template.content.cloneNode(true).firstElementChild;
         item.dataset.index = index;
 
         var select = $('.middleware-select', item);
@@ -297,7 +270,9 @@
         });
 
         sortedNames.forEach(function(name) {
-            var opt = createElement('option', { value: name }, middlewares[name].label);
+            var opt = cloneTemplate('select-option-template');
+            opt.value = name;
+            opt.textContent = middlewares[name].label;
             if (name === selectedName) opt.selected = true;
             select.appendChild(opt);
         });
@@ -337,14 +312,18 @@
         var fields = middleware.fields || [];
 
         if (middleware.description) {
-            body.appendChild(createElement('p', { className: 'description', textContent: middleware.description }));
+            var desc = document.createElement('p');
+            desc.className = 'description';
+            desc.textContent = middleware.description;
+            body.appendChild(desc);
             body.classList.remove('empty');
         }
 
         if (fields.length === 0) return;
 
         body.classList.remove('empty');
-        var grid = createElement('div', { className: 'middleware-fields-grid' });
+        var grid = document.createElement('div');
+        grid.className = 'middleware-fields-grid';
 
         fields.forEach(function(field, fieldIndex) {
             var ctx = {
@@ -359,113 +338,153 @@
         body.appendChild(grid);
     }
 
-    // Field Renderers
+    // Field Renderers using templates
     function renderTextarea(ctx) {
-        var wrapper = createFieldWrapper();
-        var textarea = createElement('textarea', {
-            id: ctx.inputId,
-            name: ctx.inputName,
-            rows: '3',
-            placeholder: ctx.field.placeholder || '',
-            className: 'large-text'
-        });
+        var wrapper = cloneTemplate('field-textarea-template');
+        var label = $('label', wrapper);
+        var textarea = $('textarea', wrapper);
+
+        label.setAttribute('for', ctx.inputId);
+        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
+        textarea.id = ctx.inputId;
+        textarea.name = ctx.inputName;
+        textarea.placeholder = ctx.field.placeholder || '';
         if (ctx.value !== undefined) textarea.value = ctx.value;
-        wrapper.appendChild(createLabel(ctx));
-        wrapper.appendChild(textarea);
+
         return wrapper;
     }
 
     function renderCheckbox(ctx) {
-        var wrapper = createElement('div', { className: 'middleware-field-wrapper middleware-checkbox-wrapper' });
-        var input = createElement('input', { type: 'checkbox', id: ctx.inputId, name: ctx.inputName, value: '1' });
+        var wrapper = cloneTemplate('field-checkbox-template');
+        var label = $('label', wrapper);
+        var input = $('input', wrapper);
+        var labelText = $('.label-text', wrapper);
+
+        label.setAttribute('for', ctx.inputId);
+        input.id = ctx.inputId;
+        input.name = ctx.inputName;
         if (isTruthy(ctx.value)) input.checked = true;
-        var label = createElement('label', { for: ctx.inputId });
-        label.appendChild(input);
-        label.appendChild(document.createTextNode(' ' + ctx.field.label));
-        wrapper.appendChild(label);
+        labelText.textContent = ctx.field.label;
+
         return wrapper;
     }
 
     function renderSelect(ctx) {
-        var wrapper = createFieldWrapper();
-        var select = createElement('select', { id: ctx.inputId, name: ctx.inputName });
+        var wrapper = cloneTemplate('field-select-template');
+        var label = $('label', wrapper);
+        var select = $('select', wrapper);
+
+        label.setAttribute('for', ctx.inputId);
+        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
+        select.id = ctx.inputId;
+        select.name = ctx.inputName;
+
         parseOptions(ctx.field.options).forEach(function(opt) {
-            var option = createElement('option', { value: opt.value }, opt.label);
+            var option = cloneTemplate('select-option-template');
+            option.value = opt.value;
+            option.textContent = opt.label;
             if (ctx.value !== undefined && String(ctx.value) === String(opt.value)) option.selected = true;
             select.appendChild(option);
         });
-        wrapper.appendChild(createLabel(ctx));
-        wrapper.appendChild(select);
+
         return wrapper;
     }
 
     function renderCheckboxes(ctx) {
-        var wrapper = createElement('div', { className: 'middleware-field-wrapper middleware-checkboxes-wrapper' });
-        wrapper.appendChild(createLabel(ctx));
-        var group = createElement('div', { className: 'checkbox-group' });
+        var wrapper = cloneTemplate('field-checkboxes-template');
+        var label = $('label', wrapper);
+        var group = $('.checkbox-group', wrapper);
+
+        label.setAttribute('for', ctx.inputId);
+        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
+
         var selectedValues = parseArrayValue(ctx.value);
+
         parseOptions(ctx.field.options).forEach(function(opt) {
             var cbId = ctx.inputId + '-' + opt.value;
-            var cb = createElement('input', { type: 'checkbox', id: cbId, name: ctx.inputName + '[]', value: opt.value });
+            var optionEl = cloneTemplate('field-checkbox-option-template');
+            var cb = $('input', optionEl);
+            var optLabel = $('.option-label', optionEl);
+
+            optionEl.setAttribute('for', cbId);
+            cb.id = cbId;
+            cb.name = ctx.inputName + '[]';
+            cb.value = opt.value;
             if (selectedValues.indexOf(opt.value) !== -1) cb.checked = true;
-            var label = createElement('label', { for: cbId });
-            label.appendChild(cb);
-            label.appendChild(document.createTextNode(' ' + opt.label));
-            group.appendChild(label);
+            optLabel.textContent = opt.label;
+
+            group.appendChild(optionEl);
         });
-        wrapper.appendChild(group);
+
         return wrapper;
     }
 
     function renderRepeater(ctx) {
-        var wrapper = createElement('div', { className: 'middleware-field-wrapper middleware-repeater-wrapper' });
-        wrapper.appendChild(createLabel(ctx));
-        var container = createElement('div', { className: 'dynamic-list-container', dataset: { type: 'repeater', name: ctx.inputName } });
-        var items = createElement('div', { className: 'dynamic-list-items' });
+        var wrapper = cloneTemplate('field-repeater-template');
+        var label = $('label', wrapper);
+        var container = $('.dynamic-list-container', wrapper);
+        var items = $('.dynamic-list-items', wrapper);
+
+        label.setAttribute('for', ctx.inputId);
+        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
+        container.dataset.name = ctx.inputName;
+
         var inputType = ctx.field.inputType || 'text';
         var placeholder = ctx.field.placeholder || '';
         var values = parseArrayValue(ctx.value);
         if (values.length === 0) values = [''];
-        values.forEach(function(val) { items.appendChild(createRepeaterItem(ctx.inputName, inputType, placeholder, val)); });
-        container.appendChild(items);
-        container.appendChild(createAddButton());
-        wrapper.appendChild(container);
+
+        values.forEach(function(val) {
+            items.appendChild(createRepeaterItem(ctx.inputName, inputType, placeholder, val));
+        });
+
         return wrapper;
     }
 
     function renderKeyValue(ctx) {
-        var wrapper = createElement('div', { className: 'middleware-field-wrapper middleware-keyvalue-wrapper' });
-        wrapper.appendChild(createLabel(ctx));
-        var container = createElement('div', { className: 'dynamic-list-container', dataset: { type: 'keyvalue', name: ctx.inputName } });
-        var header = createElement('div', { className: 'keyvalue-header' });
-        header.appendChild(createElement('span', { className: 'keyvalue-key-header' }, ctx.field.keyLabel || 'Key'));
-        header.appendChild(createElement('span', { className: 'keyvalue-value-header' }, ctx.field.valueLabel || 'Value'));
-        header.appendChild(createElement('span', { className: 'keyvalue-action-header' }));
-        container.appendChild(header);
-        var items = createElement('div', { className: 'dynamic-list-items' });
+        var wrapper = cloneTemplate('field-keyvalue-template');
+        var label = $('label', wrapper);
+        var container = $('.dynamic-list-container', wrapper);
+        var items = $('.dynamic-list-items', wrapper);
+        var keyHeader = $('.keyvalue-key-header', wrapper);
+        var valueHeader = $('.keyvalue-value-header', wrapper);
+
+        label.setAttribute('for', ctx.inputId);
+        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
+        container.dataset.name = ctx.inputName;
+        keyHeader.textContent = ctx.field.keyLabel || 'Key';
+        valueHeader.textContent = ctx.field.valueLabel || 'Value';
+
         var entries = ctx.value && typeof ctx.value === 'object' ? Object.keys(ctx.value) : [];
         if (entries.length === 0) {
             items.appendChild(createKeyValueItem(ctx.inputName, '', ''));
         } else {
-            entries.forEach(function(key) { items.appendChild(createKeyValueItem(ctx.inputName, key, ctx.value[key])); });
+            entries.forEach(function(key) {
+                items.appendChild(createKeyValueItem(ctx.inputName, key, ctx.value[key]));
+            });
         }
-        container.appendChild(items);
-        container.appendChild(createAddButton());
-        wrapper.appendChild(container);
+
         return wrapper;
     }
 
     function renderJson(ctx) {
-        var wrapper = createElement('div', { className: 'middleware-field-wrapper middleware-json-wrapper' });
-        wrapper.appendChild(createLabel(ctx));
-        var textarea = createElement('textarea', { id: ctx.inputId, name: ctx.inputName, rows: '6', className: 'large-text code json-editor' });
+        var wrapper = cloneTemplate('field-json-template');
+        var label = $('label', wrapper);
+        var textarea = $('textarea', wrapper);
+
+        label.setAttribute('for', ctx.inputId);
+        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
+        textarea.id = ctx.inputId;
+        textarea.name = ctx.inputName;
+
         if (ctx.value !== undefined && ctx.value !== null) {
             try {
                 textarea.value = typeof ctx.value === 'string' ? ctx.value : JSON.stringify(ctx.value, null, 2);
             } catch (e) { textarea.value = ''; }
         }
-        wrapper.appendChild(textarea);
+
         setTimeout(function() { initCodeMirror(textarea); }, 0);
+
         return wrapper;
     }
 
@@ -482,64 +501,47 @@
     }
 
     function renderDefaultInput(ctx) {
-        var wrapper = createFieldWrapper();
-        var inputClass = ctx.field.type === 'number' ? 'small-text' : 'regular-text';
-        var input = createElement('input', {
-            type: ctx.field.type || 'text',
-            id: ctx.inputId,
-            name: ctx.inputName,
-            placeholder: ctx.field.placeholder || '',
-            className: inputClass
-        });
+        var wrapper = cloneTemplate('field-input-template');
+        var label = $('label', wrapper);
+        var input = $('input', wrapper);
+
+        label.setAttribute('for', ctx.inputId);
+        label.textContent = ctx.field.label + (ctx.field.required ? ' *' : '');
+        input.type = ctx.field.type || 'text';
+        input.id = ctx.inputId;
+        input.name = ctx.inputName;
+        input.placeholder = ctx.field.placeholder || '';
+        input.className = ctx.field.type === 'number' ? 'small-text' : 'regular-text';
         if (ctx.field.required) input.required = true;
         if (ctx.value !== undefined) input.value = ctx.value;
-        wrapper.appendChild(createLabel(ctx));
-        wrapper.appendChild(input);
+
         return wrapper;
     }
 
     // Helper functions
-    function createFieldWrapper() {
-        return createElement('div', { className: 'middleware-field-wrapper' });
-    }
-
-    function createLabel(ctx) {
-        return createElement('label', { for: ctx.inputId, textContent: ctx.field.label + (ctx.field.required ? ' *' : '') });
-    }
-
-    function createAddButton() {
-        return createElement('button', { type: 'button', className: 'button button-small dynamic-list-add' }, __('+ Add', 'reverse-proxy'));
-    }
-
-    function createRemoveButton() {
-        var btn = createElement('button', { type: 'button', className: 'button button-small button-link-delete dynamic-list-remove' });
-        btn.innerHTML = '<span class="dashicons dashicons-no-alt"></span>';
-        return btn;
-    }
-
     function createRepeaterItem(baseName, inputType, placeholder, value) {
-        var row = createElement('div', { className: 'dynamic-list-item' });
-        var input = createElement('input', {
-            type: inputType,
-            name: baseName + '[]',
-            placeholder: placeholder,
-            className: inputType === 'number' ? 'small-text' : 'regular-text'
-        });
+        var row = cloneTemplate('repeater-item-template');
+        var input = $('input', row);
+
+        input.type = inputType;
+        input.name = baseName + '[]';
+        input.placeholder = placeholder || '';
+        input.className = inputType === 'number' ? 'small-text' : 'regular-text';
         input.value = value || '';
-        row.appendChild(input);
-        row.appendChild(createRemoveButton());
+
         return row;
     }
 
     function createKeyValueItem(baseName, key, value) {
-        var row = createElement('div', { className: 'dynamic-list-item keyvalue-item' });
-        var keyInput = createElement('input', { type: 'text', name: baseName + '[keys][]', className: 'regular-text keyvalue-key' });
+        var row = cloneTemplate('keyvalue-item-template');
+        var keyInput = $('.keyvalue-key', row);
+        var valueInput = $('.keyvalue-value', row);
+
+        keyInput.name = baseName + '[keys][]';
         keyInput.value = key || '';
-        var valueInput = createElement('input', { type: 'text', name: baseName + '[values][]', className: 'regular-text keyvalue-value' });
+        valueInput.name = baseName + '[values][]';
         valueInput.value = value || '';
-        row.appendChild(keyInput);
-        row.appendChild(valueInput);
-        row.appendChild(createRemoveButton());
+
         return row;
     }
 
