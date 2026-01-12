@@ -2,6 +2,7 @@
 
 namespace Recca0120\ReverseProxy\Http;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use Nyholm\Psr7\Uri;
 use Psr\Http\Message\ServerRequestInterface;
@@ -14,14 +15,14 @@ class ServerRequestFactory
     /** @var StreamFactoryInterface */
     private $streamFactory;
 
-    public function __construct(StreamFactoryInterface $streamFactory)
+    public function __construct(?StreamFactoryInterface $streamFactory = null)
     {
-        $this->streamFactory = $streamFactory;
+        $this->streamFactory = $streamFactory ?? new Psr17Factory();
     }
 
-    public function createFromGlobals(): ServerRequestInterface
+    public static function createFromGlobals(?StreamFactoryInterface $streamFactory = null): ServerRequestInterface
     {
-        return $this->create(
+        return (new self($streamFactory))->create(
             $_SERVER,
             function () {
                 return file_get_contents('php://input') ?: '';

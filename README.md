@@ -79,6 +79,130 @@ composer require recca0120/wp-reverse-proxy
 
 詳細用法請參考 [中介層參考](docs/zh/middlewares.md)。
 
+## 獨立使用（不依賴 WordPress）
+
+這個套件的核心元件可以獨立於 WordPress 使用，適用於任何 PHP 專案。
+
+### 安裝
+
+```bash
+composer require recca0120/wp-reverse-proxy
+```
+
+### 基本用法
+
+**1. 建立路由設定檔 `routes/proxy.json`：**
+
+```json
+{
+    "routes": [
+        {
+            "path": "/api/*",
+            "target": "https://api.example.com/",
+            "middlewares": [
+                "Cors",
+                ["RateLimiting", 100, 60]
+            ]
+        }
+    ]
+}
+```
+
+**2. 建立入口檔案：**
+
+```php
+<?php
+
+require_once 'vendor/autoload.php';
+
+use Recca0120\ReverseProxy\ReverseProxy;
+use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+
+// 實作 PSR-16 CacheInterface 或使用現有套件（如 symfony/cache）
+$cache = new YourCacheImplementation();
+
+// 中介層管理器注入快取（RateLimiting、CircuitBreaker、Caching 需要）
+$middlewareManager = new MiddlewareManager($cache);
+
+// 從目錄載入路由設定檔
+$routes = new RouteCollection(
+    [new FileLoader([__DIR__ . '/routes'])],
+    $middlewareManager,
+    $cache
+);
+
+// 處理請求
+$proxy = new ReverseProxy($routes);
+$response = $proxy->handle();
+
+if ($response !== null) {
+    http_response_code($response->getStatusCode());
+    foreach ($response->getHeaders() as $name => $values) {
+        foreach ($values as $value) {
+            header("{$name}: {$value}", false);
+        }
+    }
+    echo $response->getBody();
+}
+```
+
+### 路由設定檔格式
+
+支援 JSON 和 PHP 格式：
+
+**routes.json：**
+```json
+{
+    "routes": [
+        {
+            "path": "/api/*",
+            "target": "https://api.example.com/",
+            "methods": ["GET", "POST"],
+            "middlewares": [
+                "Cors",
+                "ProxyHeaders",
+                ["RateLimiting", 100, 60]
+            ]
+        }
+    ]
+}
+```
+
+**routes.php：**
+```php
+<?php
+return [
+    'routes' => [
+        [
+            'path' => '/api/*',
+            'target' => 'https://api.example.com/',
+            'middlewares' => [
+                'Cors',
+                ['RateLimiting', 100, 60],
+            ],
+        ],
+    ],
+];
+```
+
+### 自訂 HTTP Client
+
+預設使用 `CurlClient`，參數為 `['verify' => false, 'decode_content' => false]`。
+
+```php
+use Recca0120\ReverseProxy\Http\CurlClient;
+
+$httpClient = new CurlClient([
+    'verify' => true,           // 啟用 SSL 驗證（預設 false）
+    'timeout' => 30,            // 超時秒數
+    'decode_content' => true,   // 自動解碼 gzip/deflate（預設 false）
+]);
+
+$proxy = new ReverseProxy($routes, $httpClient);
+```
+
 ## 授權
 
 MIT License - 詳見 [LICENSE](LICENSE)。

@@ -4,12 +4,12 @@ namespace Recca0120\ReverseProxy;
 
 use Nyholm\Psr7\Uri;
 use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\StreamFactoryInterface;
 use Recca0120\ReverseProxy\Contracts\MiddlewareInterface;
+use Recca0120\ReverseProxy\Http\CurlClient;
+use Recca0120\ReverseProxy\Http\ServerRequestFactory;
 use Recca0120\ReverseProxy\Routing\Route;
 use Recca0120\ReverseProxy\Routing\RouteCollection;
 use Recca0120\ReverseProxy\Support\Arr;
@@ -22,26 +22,18 @@ class ReverseProxy
     /** @var ClientInterface */
     private $client;
 
-    /** @var RequestFactoryInterface */
-    private $requestFactory;
-
-    /** @var StreamFactoryInterface */
-    private $streamFactory;
-
     public function __construct(
         RouteCollection $routes,
-        ClientInterface $client,
-        RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory
+        ?ClientInterface $client = null
     ) {
         $this->routes = $routes;
-        $this->client = $client;
-        $this->requestFactory = $requestFactory;
-        $this->streamFactory = $streamFactory;
+        $this->client = $client ?? new CurlClient(['verify' => false, 'decode_content' => false]);
     }
 
-    public function handle(ServerRequestInterface $request): ?ResponseInterface
+    public function handle(?ServerRequestInterface $request = null): ?ResponseInterface
     {
+        $request = $request ?? ServerRequestFactory::createFromGlobals();
+
         foreach ($this->routes as $route) {
             $targetUrl = $route->matches($request);
             if ($targetUrl !== null) {

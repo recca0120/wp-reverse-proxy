@@ -79,6 +79,130 @@ Advanced users can use config files or PHP Filter Hook, see [Configuration Refer
 
 See [Middleware Reference](docs/en/middlewares.md) for detailed usage.
 
+## Standalone Usage (Without WordPress)
+
+The core components of this package can be used independently from WordPress, suitable for any PHP project.
+
+### Installation
+
+```bash
+composer require recca0120/wp-reverse-proxy
+```
+
+### Basic Usage
+
+**1. Create route config file `routes/proxy.json`:**
+
+```json
+{
+    "routes": [
+        {
+            "path": "/api/*",
+            "target": "https://api.example.com/",
+            "middlewares": [
+                "Cors",
+                ["RateLimiting", 100, 60]
+            ]
+        }
+    ]
+}
+```
+
+**2. Create entry file:**
+
+```php
+<?php
+
+require_once 'vendor/autoload.php';
+
+use Recca0120\ReverseProxy\ReverseProxy;
+use Recca0120\ReverseProxy\Routing\FileLoader;
+use Recca0120\ReverseProxy\Routing\MiddlewareManager;
+use Recca0120\ReverseProxy\Routing\RouteCollection;
+
+// Implement PSR-16 CacheInterface or use existing packages (e.g., symfony/cache)
+$cache = new YourCacheImplementation();
+
+// Middleware manager injects cache (required for RateLimiting, CircuitBreaker, Caching)
+$middlewareManager = new MiddlewareManager($cache);
+
+// Load route config files from directory
+$routes = new RouteCollection(
+    [new FileLoader([__DIR__ . '/routes'])],
+    $middlewareManager,
+    $cache
+);
+
+// Handle request
+$proxy = new ReverseProxy($routes);
+$response = $proxy->handle();
+
+if ($response !== null) {
+    http_response_code($response->getStatusCode());
+    foreach ($response->getHeaders() as $name => $values) {
+        foreach ($values as $value) {
+            header("{$name}: {$value}", false);
+        }
+    }
+    echo $response->getBody();
+}
+```
+
+### Route Config File Formats
+
+Supports JSON and PHP formats:
+
+**routes.json:**
+```json
+{
+    "routes": [
+        {
+            "path": "/api/*",
+            "target": "https://api.example.com/",
+            "methods": ["GET", "POST"],
+            "middlewares": [
+                "Cors",
+                "ProxyHeaders",
+                ["RateLimiting", 100, 60]
+            ]
+        }
+    ]
+}
+```
+
+**routes.php:**
+```php
+<?php
+return [
+    'routes' => [
+        [
+            'path' => '/api/*',
+            'target' => 'https://api.example.com/',
+            'middlewares' => [
+                'Cors',
+                ['RateLimiting', 100, 60],
+            ],
+        ],
+    ],
+];
+```
+
+### Custom HTTP Client
+
+Default uses `CurlClient` with `['verify' => false, 'decode_content' => false]`.
+
+```php
+use Recca0120\ReverseProxy\Http\CurlClient;
+
+$httpClient = new CurlClient([
+    'verify' => true,           // Enable SSL verification (default: false)
+    'timeout' => 30,            // Timeout in seconds
+    'decode_content' => true,   // Auto decode gzip/deflate (default: false)
+]);
+
+$proxy = new ReverseProxy($routes, $httpClient);
+```
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.

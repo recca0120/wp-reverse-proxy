@@ -65,12 +65,12 @@ class CurlClient implements ClientInterface
 
         if ($response === false) {
             $error = curl_error($ch);
-            curl_close($ch);
+            $this->closeCurl($ch);
             throw new NetworkException($error, $request);
         }
 
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        curl_close($ch);
+        $this->closeCurl($ch);
 
         $body = substr($response, $headerSize);
         $headerLines = explode("\r\n", trim(substr($response, 0, $headerSize)));
@@ -78,5 +78,19 @@ class CurlClient implements ClientInterface
         [$body, $headers] = $this->decodeBody($body, $headers, $this->options['decode_content'] ?? true);
 
         return new Response($statusCode, $headers, $body, $protocolVersion, $reasonPhrase);
+    }
+
+    /**
+     * Close curl handle (only needed for PHP < 8.0).
+     *
+     * @param \CurlHandle|resource $ch
+     */
+    private function closeCurl($ch): void
+    {
+        // PHP 8.0+ uses CurlHandle objects that are auto-closed
+        // PHP 8.5+ deprecated curl_close() as it has no effect
+        if (PHP_VERSION_ID < 80000) {
+            curl_close($ch);
+        }
     }
 }
