@@ -220,3 +220,11 @@ echo esc_attr(json_encode($currentMiddlewares));
 <template id="select-option-template">
     <option></option>
 </template>
+
+<template id="description-template">
+    <p class="description"></p>
+</template>
+
+<template id="fields-grid-template">
+    <div class="middleware-fields-grid"></div>
+</template>

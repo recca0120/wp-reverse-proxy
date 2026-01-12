@@ -81,12 +81,10 @@ class Admin
         wp_enqueue_script(
             'reverse-proxy-admin',
             REVERSE_PROXY_PLUGIN_URL . 'assets/js/admin.js',
-            ['sortablejs', 'wp-i18n'],
+            ['sortablejs'],
             REVERSE_PROXY_VERSION,
             true
         );
-
-        wp_set_script_translations('reverse-proxy-admin', 'reverse-proxy', REVERSE_PROXY_PLUGIN_DIR . 'languages');
 
         // Get existing middlewares if editing a route
         $existingMiddlewares = [];
@@ -105,6 +103,28 @@ class Admin
             'middlewares' => $this->routesPage->getAvailableMiddlewares(),
             'existingMiddlewares' => $existingMiddlewares,
             'codeEditor' => $codeEditorSettings,
+            'i18n' => [
+                'confirmDelete' => __('Are you sure you want to delete this route?', 'reverse-proxy'),
+                'error' => __('An error occurred.', 'reverse-proxy'),
+                'toggleFailed' => __('Failed to toggle route status.', 'reverse-proxy'),
+                'deleteFailed' => __('Failed to delete route.', 'reverse-proxy'),
+                'saving' => __('Saving...', 'reverse-proxy'),
+                'saveFailed' => __('Failed to save route.', 'reverse-proxy'),
+                'saveError' => __('An error occurred while saving.', 'reverse-proxy'),
+                'exporting' => __('Exporting...', 'reverse-proxy'),
+                'export' => __('Export', 'reverse-proxy'),
+                'exportFailed' => __('Export failed.', 'reverse-proxy'),
+                'importing' => __('Importing...', 'reverse-proxy'),
+                'import' => __('Import', 'reverse-proxy'),
+                'importFailed' => __('Import failed.', 'reverse-proxy'),
+                'invalidJson' => __('Invalid JSON file.', 'reverse-proxy'),
+                'importRoutes' => __('Import %d routes?', 'reverse-proxy'),
+                'chooseMode' => __('Choose import mode:', 'reverse-proxy'),
+                'mergeMode' => __('Merge: Add new routes, update existing by ID', 'reverse-proxy'),
+                'replaceMode' => __('Replace: Remove all existing routes first', 'reverse-proxy'),
+                'enterMode' => __('Enter "merge" or "replace":', 'reverse-proxy'),
+                'invalidMode' => __('Invalid mode. Please enter "merge" or "replace".', 'reverse-proxy'),
+            ],
         ]);
     }
 

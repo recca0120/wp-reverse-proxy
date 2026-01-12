@@ -1,13 +1,14 @@
 /**
  * Reverse Proxy Admin JavaScript (Vanilla JS, Template-based)
  */
-(function(wp) {
+(function() {
     'use strict';
 
-    var __ = wp.i18n.__;
+    var config = window.reverseProxyAdmin || {};
+    var i18n = config.i18n || {};
+    var middlewares = config.middlewares || {};
+    var existingMiddlewares = config.existingMiddlewares || [];
     var middlewareIndex = 0;
-    var middlewares = window.reverseProxyAdmin ? window.reverseProxyAdmin.middlewares : {};
-    var existingMiddlewares = window.reverseProxyAdmin ? window.reverseProxyAdmin.existingMiddlewares : [];
 
     // Field renderers registry
     var fieldRenderers = {
@@ -65,6 +66,13 @@
         return { wrapper: wrapper, label: label, input: input };
     }
 
+    function setupDynamicList(templateId, ctx) {
+        var field = setupField(templateId, ctx);
+        var container = $('.dynamic-list-container', field.wrapper);
+        container.dataset.name = ctx.inputName;
+        return { wrapper: field.wrapper, container: container, items: $('.dynamic-list-items', field.wrapper) };
+    }
+
     function getFieldInput(item, fieldName) {
         return $('[name*="[' + fieldName + ']"]', item);
     }
@@ -89,6 +97,19 @@
             element.removeEventListener('transitionend', handler);
             if (callback) callback();
         });
+    }
+
+    function withButtonLoading(btn, loadingText, action) {
+        var originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = loadingText;
+        return function(success) {
+            if (!success) {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+            if (action) action(success);
+        };
     }
 
     // AJAX helper using fetch
@@ -128,7 +149,7 @@
         if (existingMiddlewares && existingMiddlewares.length > 0) {
             loadExistingMiddlewares();
         } else if (middlewareList) {
-            addMiddlewareWithValues('ProxyHeaders', []);
+            addMiddleware('ProxyHeaders');
         }
 
         bindEvents();
@@ -137,7 +158,7 @@
     function bindEvents() {
         var addMiddlewareBtn = $('#add-middleware');
         if (addMiddlewareBtn) {
-            on(addMiddlewareBtn, 'click', addMiddleware);
+            on(addMiddlewareBtn, 'click', function() { addMiddleware(); });
         }
 
         on(document, 'click', '.remove-middleware', handleRemoveMiddleware);
@@ -165,7 +186,7 @@
         $$('.reverse-proxy-delete').forEach(function(btn) {
             on(btn, 'click', function(e) {
                 e.preventDefault();
-                if (confirm(__('Are you sure you want to delete this route?', 'reverse-proxy'))) {
+                if (confirm(i18n.confirmDelete)) {
                     deleteRoute(btn.dataset.routeId, btn.closest('tr'));
                 }
             });
@@ -252,29 +273,23 @@
 
         existingMiddlewares.forEach(function(mw) {
             var parsed = parseMiddleware(mw);
-            if (parsed) addMiddlewareWithValues(parsed.name, parsed.args);
+            if (parsed) addMiddleware(parsed.name, parsed.args);
         });
     }
 
-    function addMiddleware() {
-        var middlewareList = $('#middleware-list');
-        if (middlewareList) {
-            middlewareList.appendChild(createMiddlewareItem(middlewareIndex));
-            middlewareIndex++;
-        }
-    }
-
-    function addMiddlewareWithValues(name, args) {
+    function addMiddleware(name, args) {
         var middlewareList = $('#middleware-list');
         if (!middlewareList) return;
 
         var item = createMiddlewareItem(middlewareIndex, name);
         middlewareList.appendChild(item);
 
-        var select = $('.middleware-select', item);
-        if (select) {
-            select.value = name;
-            updateMiddlewareFields(select, args);
+        if (name) {
+            var select = $('.middleware-select', item);
+            if (select) {
+                select.value = name;
+                updateMiddlewareFields(select, args);
+            }
         }
         middlewareIndex++;
     }
@@ -289,11 +304,9 @@
         select.name = 'route[middlewares][' + index + '][name]';
 
         // Add middleware options sorted by label
-        var sortedNames = Object.keys(middlewares).sort(function(a, b) {
+        Object.keys(middlewares).sort(function(a, b) {
             return middlewares[a].label.localeCompare(middlewares[b].label);
-        });
-
-        sortedNames.forEach(function(name) {
+        }).forEach(function(name) {
             var opt = cloneTemplate('select-option-template');
             opt.value = name;
             opt.textContent = middlewares[name].label;
@@ -336,8 +349,7 @@
         var fields = middleware.fields || [];
 
         if (middleware.description) {
-            var desc = document.createElement('p');
-            desc.className = 'description';
+            var desc = cloneTemplate('description-template');
             desc.textContent = middleware.description;
             body.appendChild(desc);
             body.classList.remove('empty');
@@ -346,8 +358,7 @@
         if (fields.length === 0) return;
 
         body.classList.remove('empty');
-        var grid = document.createElement('div');
-        grid.className = 'middleware-fields-grid';
+        var grid = cloneTemplate('fields-grid-template');
 
         fields.forEach(function(field, fieldIndex) {
             var ctx = {
@@ -412,40 +423,32 @@
     }
 
     function renderRepeater(ctx) {
-        var field = setupField('field-repeater-template', ctx);
-        var container = $('.dynamic-list-container', field.wrapper);
-        var items = $('.dynamic-list-items', field.wrapper);
-
-        container.dataset.name = ctx.inputName;
+        var list = setupDynamicList('field-repeater-template', ctx);
         var inputType = ctx.field.inputType || 'text';
         var placeholder = ctx.field.placeholder || '';
         var values = parseArrayValue(ctx.value);
         if (values.length === 0) values = [''];
 
         values.forEach(function(val) {
-            items.appendChild(createRepeaterItem(ctx.inputName, inputType, placeholder, val));
+            list.items.appendChild(createRepeaterItem(ctx.inputName, inputType, placeholder, val));
         });
-        return field.wrapper;
+        return list.wrapper;
     }
 
     function renderKeyValue(ctx) {
-        var field = setupField('field-keyvalue-template', ctx);
-        var container = $('.dynamic-list-container', field.wrapper);
-        var items = $('.dynamic-list-items', field.wrapper);
-
-        container.dataset.name = ctx.inputName;
-        $('.keyvalue-key-header', field.wrapper).textContent = ctx.field.keyLabel || 'Key';
-        $('.keyvalue-value-header', field.wrapper).textContent = ctx.field.valueLabel || 'Value';
+        var list = setupDynamicList('field-keyvalue-template', ctx);
+        $('.keyvalue-key-header', list.wrapper).textContent = ctx.field.keyLabel || 'Key';
+        $('.keyvalue-value-header', list.wrapper).textContent = ctx.field.valueLabel || 'Value';
 
         var entries = ctx.value && typeof ctx.value === 'object' ? Object.keys(ctx.value) : [];
         if (entries.length === 0) {
-            items.appendChild(createKeyValueItem(ctx.inputName, '', ''));
+            list.items.appendChild(createKeyValueItem(ctx.inputName, '', ''));
         } else {
             entries.forEach(function(key) {
-                items.appendChild(createKeyValueItem(ctx.inputName, key, ctx.value[key]));
+                list.items.appendChild(createKeyValueItem(ctx.inputName, key, ctx.value[key]));
             });
         }
-        return field.wrapper;
+        return list.wrapper;
     }
 
     function renderJson(ctx) {
@@ -465,10 +468,9 @@
     }
 
     function initCodeMirror(textarea) {
-        if (!window.reverseProxyAdmin || !window.reverseProxyAdmin.codeEditor || !window.wp || !window.wp.codeEditor) return;
-        var baseSettings = window.reverseProxyAdmin.codeEditor;
-        var settings = Object.assign({}, baseSettings, {
-            codemirror: Object.assign({}, baseSettings.codemirror, {
+        if (!config.codeEditor || !window.wp || !window.wp.codeEditor) return;
+        var settings = Object.assign({}, config.codeEditor, {
+            codemirror: Object.assign({}, config.codeEditor.codemirror, {
                 lineNumbers: true, lineWrapping: true, matchBrackets: true, autoCloseBrackets: true, mode: 'application/json'
             })
         });
@@ -539,13 +541,13 @@
         var settings = Object.assign({
             onSuccess: function() { location.reload(); },
             onError: function() {},
-            errorMessage: __('An error occurred.', 'reverse-proxy')
+            errorMessage: i18n.error
         }, options);
 
         ajax({
-            url: reverseProxyAdmin.ajaxUrl,
+            url: config.ajaxUrl,
             method: 'POST',
-            data: { action: action, nonce: reverseProxyAdmin.nonce, route_id: routeId },
+            data: { action: action, nonce: config.nonce, route_id: routeId },
             success: function(response) {
                 if (response.success) {
                     settings.onSuccess(response);
@@ -564,14 +566,14 @@
     function toggleRoute(routeId, button) {
         button.disabled = true;
         makeRouteAjaxRequest('reverse_proxy_toggle_route', routeId, {
-            errorMessage: __('Failed to toggle route status.', 'reverse-proxy'),
+            errorMessage: i18n.toggleFailed,
             onError: function() { button.disabled = false; }
         });
     }
 
     function deleteRoute(routeId, row) {
         makeRouteAjaxRequest('reverse_proxy_delete_route', routeId, {
-            errorMessage: __('Failed to delete route.', 'reverse-proxy'),
+            errorMessage: i18n.deleteFailed,
             onSuccess: function() {
                 fadeOut(row, function() {
                     row.remove();
@@ -585,26 +587,26 @@
         var submitBtn = $('#submit', form);
         var originalText = submitBtn.value;
         submitBtn.disabled = true;
-        submitBtn.value = __('Saving...', 'reverse-proxy');
+        submitBtn.value = i18n.saving;
 
         var formData = new FormData(form);
         formData.set('middlewares_json', JSON.stringify(collectMiddlewares()));
 
         ajax({
-            url: reverseProxyAdmin.ajaxUrl,
+            url: config.ajaxUrl,
             method: 'POST',
             data: formDataToObject(formData),
             success: function(response) {
                 if (response.success) {
-                    window.location.href = response.data.redirect || (reverseProxyAdmin.adminUrl + '?page=reverse-proxy');
+                    window.location.href = response.data.redirect || (config.adminUrl + '?page=reverse-proxy');
                 } else {
-                    alert(response.data.message || __('Failed to save route.', 'reverse-proxy'));
+                    alert(response.data.message || i18n.saveFailed);
                     submitBtn.disabled = false;
                     submitBtn.value = originalText;
                 }
             },
             error: function() {
-                alert(__('An error occurred while saving.', 'reverse-proxy'));
+                alert(i18n.saveError);
                 submitBtn.disabled = false;
                 submitBtn.value = originalText;
             }
@@ -712,33 +714,31 @@
 
     function exportRoutes() {
         var btn = $('#reverse-proxy-export');
-        btn.disabled = true;
-        btn.textContent = __('Exporting...', 'reverse-proxy');
+        var done = withButtonLoading(btn, i18n.exporting);
 
         ajax({
-            url: reverseProxyAdmin.ajaxUrl,
+            url: config.ajaxUrl,
             method: 'GET',
-            data: { action: 'reverse_proxy_export_routes', nonce: reverseProxyAdmin.nonce },
+            data: { action: 'reverse_proxy_export_routes', nonce: config.nonce },
             success: function(response) {
                 if (response.success) {
                     downloadJson(response.data, 'reverse-proxy-routes.json');
                 } else {
-                    alert(response.data.message || __('Export failed.', 'reverse-proxy'));
+                    alert(response.data.message || i18n.exportFailed);
                 }
-                btn.disabled = false;
-                btn.textContent = __('Export', 'reverse-proxy');
+                done(false);
+                btn.textContent = i18n.export;
             },
             error: function() {
-                alert(__('Export failed.', 'reverse-proxy'));
-                btn.disabled = false;
-                btn.textContent = __('Export', 'reverse-proxy');
+                alert(i18n.exportFailed);
+                done(false);
+                btn.textContent = i18n.export;
             }
         });
     }
 
     function downloadJson(data, filename) {
-        var json = JSON.stringify(data, null, 2);
-        var blob = new Blob([json], { type: 'application/json' });
+        var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
@@ -758,7 +758,7 @@
             try {
                 showImportDialog(JSON.parse(e.target.result));
             } catch (err) {
-                alert(__('Invalid JSON file.', 'reverse-proxy'));
+                alert(i18n.invalidJson);
             }
         };
         reader.readAsText(file);
@@ -767,15 +767,15 @@
 
     function showImportDialog(data) {
         var routeCount = data.routes ? data.routes.length : 0;
-        var message = __('Import %d routes?', 'reverse-proxy').replace('%d', routeCount) + '\n\n' +
-            __('Choose import mode:', 'reverse-proxy') + '\n' +
-            '• ' + __('Merge: Add new routes, update existing by ID', 'reverse-proxy') + '\n' +
-            '• ' + __('Replace: Remove all existing routes first', 'reverse-proxy');
+        var message = i18n.importRoutes.replace('%d', routeCount) + '\n\n' +
+            i18n.chooseMode + '\n' +
+            '• ' + i18n.mergeMode + '\n' +
+            '• ' + i18n.replaceMode;
 
-        var mode = prompt(message + '\n\n' + __('Enter "merge" or "replace":', 'reverse-proxy'), 'merge');
+        var mode = prompt(message + '\n\n' + i18n.enterMode, 'merge');
 
         if (mode !== 'merge' && mode !== 'replace') {
-            if (mode !== null) alert(__('Invalid mode. Please enter "merge" or "replace".', 'reverse-proxy'));
+            if (mode !== null) alert(i18n.invalidMode);
             return;
         }
 
@@ -784,27 +784,26 @@
 
     function importRoutes(data, mode) {
         var btn = $('#reverse-proxy-import');
-        btn.disabled = true;
-        btn.textContent = __('Importing...', 'reverse-proxy');
+        var done = withButtonLoading(btn, i18n.importing);
 
         ajax({
-            url: reverseProxyAdmin.ajaxUrl,
+            url: config.ajaxUrl,
             method: 'POST',
-            data: { action: 'reverse_proxy_import_routes', nonce: reverseProxyAdmin.nonce, data: JSON.stringify(data), mode: mode },
+            data: { action: 'reverse_proxy_import_routes', nonce: config.nonce, data: JSON.stringify(data), mode: mode },
             success: function(response) {
                 if (response.success) {
                     alert(response.data.message);
                     location.reload();
                 } else {
-                    alert(response.data.message || __('Import failed.', 'reverse-proxy'));
-                    btn.disabled = false;
-                    btn.textContent = __('Import', 'reverse-proxy');
+                    alert(response.data.message || i18n.importFailed);
+                    done(false);
+                    btn.textContent = i18n.import;
                 }
             },
             error: function() {
-                alert(__('Import failed.', 'reverse-proxy'));
-                btn.disabled = false;
-                btn.textContent = __('Import', 'reverse-proxy');
+                alert(i18n.importFailed);
+                done(false);
+                btn.textContent = i18n.import;
             }
         });
     }
@@ -816,4 +815,4 @@
         init();
     }
 
-})(wp);
+})();
