@@ -114,6 +114,72 @@ class RoutesPage
         return $this->storage->getVersion();
     }
 
+    /**
+     * Export all routes as array.
+     *
+     * @return array{version: string, exported_at: string, routes: array}
+     */
+    public function exportRoutes(): array
+    {
+        return [
+            'version' => '1.0',
+            'exported_at' => gmdate('c'),
+            'routes' => $this->storage->all(),
+        ];
+    }
+
+    /**
+     * Import routes from array.
+     *
+     * @param array $data Import data with 'routes' key
+     * @param string $mode 'merge' or 'replace'
+     * @return array{success: bool, imported?: int, skipped?: int, error?: string}
+     */
+    public function importRoutes(array $data, string $mode = 'merge'): array
+    {
+        if (!isset($data['routes']) || !is_array($data['routes'])) {
+            return ['success' => false, 'error' => 'Invalid import data: missing routes array'];
+        }
+
+        if ($mode === 'replace') {
+            // Clear all existing routes
+            $this->storage->save([]);
+        }
+
+        $imported = 0;
+        $skipped = 0;
+
+        foreach ($data['routes'] as $route) {
+            if (!is_array($route)) {
+                $skipped++;
+                continue;
+            }
+
+            $sanitized = $this->sanitizeRoute($route);
+
+            if (empty($sanitized['path']) || empty($sanitized['target'])) {
+                $skipped++;
+                continue;
+            }
+
+            if (empty($sanitized['id'])) {
+                $sanitized['id'] = 'route_' . wp_generate_uuid4();
+            }
+
+            if ($this->storage->update($sanitized['id'], $sanitized)) {
+                $imported++;
+            } else {
+                $skipped++;
+            }
+        }
+
+        return [
+            'success' => true,
+            'imported' => $imported,
+            'skipped' => $skipped,
+        ];
+    }
+
     public function sanitizeRoute(array $input): array
     {
         return [

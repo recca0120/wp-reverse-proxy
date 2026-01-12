@@ -677,6 +677,308 @@ class RoutesPageTest extends WP_UnitTestCase
         unset($_GET['page'], $_GET['action'], $_GET['route_id'], $_GET['_wpnonce']);
     }
 
+    public function test_export_routes_returns_json_with_all_admin_routes()
+    {
+        $routesPage = new RoutesPage();
+
+        // Save some routes
+        $routesPage->saveRoute([
+            'path' => '/api/v1/*',
+            'target' => 'https://api-v1.example.com',
+            'methods' => ['GET', 'POST'],
+            'middlewares' => ['ProxyHeaders'],
+            'enabled' => true,
+        ]);
+
+        $routesPage->saveRoute([
+            'path' => '/api/v2/*',
+            'target' => 'https://api-v2.example.com',
+            'methods' => ['GET'],
+            'middlewares' => [],
+            'enabled' => false,
+        ]);
+
+        $exported = $routesPage->exportRoutes();
+
+        $this->assertIsArray($exported);
+        $this->assertArrayHasKey('version', $exported);
+        $this->assertArrayHasKey('exported_at', $exported);
+        $this->assertArrayHasKey('routes', $exported);
+        $this->assertEquals('1.0', $exported['version']);
+        $this->assertCount(2, $exported['routes']);
+
+        // Verify route data
+        $paths = array_column($exported['routes'], 'path');
+        $this->assertContains('/api/v1/*', $paths);
+        $this->assertContains('/api/v2/*', $paths);
+    }
+
+    public function test_export_routes_returns_empty_routes_when_no_routes()
+    {
+        $routesPage = new RoutesPage();
+
+        $exported = $routesPage->exportRoutes();
+
+        $this->assertArrayHasKey('routes', $exported);
+        $this->assertEmpty($exported['routes']);
+    }
+
+    public function test_ajax_export_routes_returns_json_response()
+    {
+        $routesPage = new RoutesPage();
+
+        $routesPage->saveRoute([
+            'path' => '/export-test/*',
+            'target' => 'https://export.example.com',
+            'enabled' => true,
+        ]);
+
+        $_GET['nonce'] = wp_create_nonce('reverse_proxy_admin');
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleExportRoutes']);
+
+        $this->assertTrue($response['success']);
+        $this->assertArrayHasKey('data', $response);
+        $this->assertArrayHasKey('version', $response['data']);
+        $this->assertArrayHasKey('routes', $response['data']);
+
+        unset($_GET['nonce']);
+    }
+
+    public function test_ajax_export_routes_requires_valid_nonce()
+    {
+        $_GET['nonce'] = 'invalid_nonce';
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleExportRoutes']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Security check failed.', $response['data']['message']);
+
+        unset($_GET['nonce']);
+    }
+
+    public function test_ajax_export_routes_requires_permission()
+    {
+        $subscriber_id = $this->factory->user->create(['role' => 'subscriber']);
+        wp_set_current_user($subscriber_id);
+
+        $_GET['nonce'] = wp_create_nonce('reverse_proxy_admin');
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleExportRoutes']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Permission denied.', $response['data']['message']);
+
+        unset($_GET['nonce']);
+    }
+
+    public function test_import_routes_with_merge_mode()
+    {
+        $routesPage = new RoutesPage();
+
+        // Save existing route
+        $routesPage->saveRoute([
+            'path' => '/existing/*',
+            'target' => 'https://existing.example.com',
+            'enabled' => true,
+        ]);
+
+        $existingRoutes = $routesPage->getRoutes();
+        $existingId = $existingRoutes[0]['id'];
+
+        // Import with merge mode
+        $importData = [
+            'version' => '1.0',
+            'routes' => [
+                [
+                    'id' => $existingId,
+                    'path' => '/existing-updated/*',
+                    'target' => 'https://existing-updated.example.com',
+                    'methods' => ['GET'],
+                    'middlewares' => [],
+                    'enabled' => true,
+                ],
+                [
+                    'path' => '/new-route/*',
+                    'target' => 'https://new.example.com',
+                    'methods' => ['POST'],
+                    'middlewares' => [],
+                    'enabled' => true,
+                ],
+            ],
+        ];
+
+        $result = $routesPage->importRoutes($importData, 'merge');
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals(2, $result['imported']);
+
+        $routes = $routesPage->getRoutes();
+        $this->assertCount(2, $routes);
+
+        $paths = array_column($routes, 'path');
+        $this->assertContains('/existing-updated/*', $paths);
+        $this->assertContains('/new-route/*', $paths);
+    }
+
+    public function test_import_routes_with_replace_mode()
+    {
+        $routesPage = new RoutesPage();
+
+        // Save existing routes
+        $routesPage->saveRoute([
+            'path' => '/old-route-1/*',
+            'target' => 'https://old1.example.com',
+            'enabled' => true,
+        ]);
+
+        $routesPage->saveRoute([
+            'path' => '/old-route-2/*',
+            'target' => 'https://old2.example.com',
+            'enabled' => true,
+        ]);
+
+        $this->assertCount(2, $routesPage->getRoutes());
+
+        // Import with replace mode
+        $importData = [
+            'version' => '1.0',
+            'routes' => [
+                [
+                    'path' => '/new-only/*',
+                    'target' => 'https://new-only.example.com',
+                    'methods' => ['GET'],
+                    'middlewares' => [],
+                    'enabled' => true,
+                ],
+            ],
+        ];
+
+        $result = $routesPage->importRoutes($importData, 'replace');
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals(1, $result['imported']);
+
+        $routes = $routesPage->getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertEquals('/new-only/*', $routes[0]['path']);
+    }
+
+    public function test_import_routes_validates_route_data()
+    {
+        $routesPage = new RoutesPage();
+
+        $importData = [
+            'version' => '1.0',
+            'routes' => [
+                [
+                    'path' => '/valid/*',
+                    'target' => 'https://valid.example.com',
+                    'enabled' => true,
+                ],
+                [
+                    'path' => '',  // Invalid: empty path
+                    'target' => 'https://invalid.example.com',
+                    'enabled' => true,
+                ],
+                [
+                    'path' => '/invalid-target/*',
+                    'target' => 'not-a-url',  // Invalid: bad URL
+                    'enabled' => true,
+                ],
+            ],
+        ];
+
+        $result = $routesPage->importRoutes($importData, 'replace');
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals(1, $result['imported']);
+        $this->assertEquals(2, $result['skipped']);
+
+        $routes = $routesPage->getRoutes();
+        $this->assertCount(1, $routes);
+        $this->assertEquals('/valid/*', $routes[0]['path']);
+    }
+
+    public function test_import_routes_rejects_invalid_json_structure()
+    {
+        $routesPage = new RoutesPage();
+
+        $importData = [
+            'invalid' => 'structure',
+        ];
+
+        $result = $routesPage->importRoutes($importData, 'replace');
+
+        $this->assertFalse($result['success']);
+        $this->assertArrayHasKey('error', $result);
+    }
+
+    public function test_ajax_import_routes_with_merge_mode()
+    {
+        $routesPage = new RoutesPage();
+
+        $routesPage->saveRoute([
+            'path' => '/existing/*',
+            'target' => 'https://existing.example.com',
+            'enabled' => true,
+        ]);
+
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['mode'] = 'merge';
+        $_POST['data'] = json_encode([
+            'version' => '1.0',
+            'routes' => [
+                [
+                    'path' => '/imported/*',
+                    'target' => 'https://imported.example.com',
+                    'enabled' => true,
+                ],
+            ],
+        ]);
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleImportRoutes']);
+
+        $this->assertTrue($response['success']);
+        $this->assertEquals(1, $response['data']['imported']);
+
+        $routes = $routesPage->getRoutes();
+        $this->assertCount(2, $routes);
+
+        unset($_POST['nonce'], $_POST['mode'], $_POST['data']);
+    }
+
+    public function test_ajax_import_routes_requires_valid_nonce()
+    {
+        $_POST['nonce'] = 'invalid_nonce';
+        $_POST['mode'] = 'replace';
+        $_POST['data'] = json_encode(['version' => '1.0', 'routes' => []]);
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleImportRoutes']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Security check failed.', $response['data']['message']);
+
+        unset($_POST['nonce'], $_POST['mode'], $_POST['data']);
+    }
+
+    public function test_ajax_import_routes_requires_permission()
+    {
+        $subscriber_id = $this->factory->user->create(['role' => 'subscriber']);
+        wp_set_current_user($subscriber_id);
+
+        $_POST['nonce'] = wp_create_nonce('reverse_proxy_admin');
+        $_POST['mode'] = 'replace';
+        $_POST['data'] = json_encode(['version' => '1.0', 'routes' => []]);
+
+        $response = $this->captureAjaxResponse([$this->admin, 'handleImportRoutes']);
+
+        $this->assertFalse($response['success']);
+        $this->assertEquals('Permission denied.', $response['data']['message']);
+
+        unset($_POST['nonce'], $_POST['mode'], $_POST['data']);
+    }
+
     /**
      * Helper method to capture form redirect
      *

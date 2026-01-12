@@ -25,6 +25,8 @@ class Admin
         add_action('wp_ajax_reverse_proxy_save_route', [$this, 'handleSaveRoute']);
         add_action('wp_ajax_reverse_proxy_delete_route', [$this, 'handleDeleteRoute']);
         add_action('wp_ajax_reverse_proxy_toggle_route', [$this, 'handleToggleRoute']);
+        add_action('wp_ajax_reverse_proxy_export_routes', [$this, 'handleExportRoutes']);
+        add_action('wp_ajax_reverse_proxy_import_routes', [$this, 'handleImportRoutes']);
     }
 
     public function addMenuPage(): void
@@ -133,6 +135,43 @@ class Admin
         );
     }
 
+    public function handleExportRoutes(): void
+    {
+        $this->verifyAjaxRequest('GET');
+
+        wp_send_json_success($this->routesPage->exportRoutes());
+    }
+
+    public function handleImportRoutes(): void
+    {
+        $this->verifyAjaxRequest();
+
+        $jsonData = isset($_POST['data']) ? stripslashes($_POST['data']) : '';
+        $mode = isset($_POST['mode']) ? sanitize_text_field($_POST['mode']) : 'merge';
+
+        $data = json_decode($jsonData, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            wp_send_json_error(['message' => __('Invalid JSON data.', 'reverse-proxy')]);
+        }
+
+        $result = $this->routesPage->importRoutes($data, $mode);
+
+        if ($result['success']) {
+            wp_send_json_success([
+                'message' => sprintf(
+                    __('Import completed. %d routes imported, %d skipped.', 'reverse-proxy'),
+                    $result['imported'],
+                    $result['skipped']
+                ),
+                'imported' => $result['imported'],
+                'skipped' => $result['skipped'],
+            ]);
+        } else {
+            wp_send_json_error(['message' => $result['error'] ?? __('Import failed.', 'reverse-proxy')]);
+        }
+    }
+
     public function handleFormSubmission(): void
     {
         if (wp_doing_ajax()) {
@@ -235,21 +274,24 @@ class Admin
         exit;
     }
 
-    private function verifyAjaxRequest(): void
+    private function verifyAjaxRequest(string $method = 'POST'): void
     {
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Permission denied.', 'reverse-proxy')], 403);
         }
 
-        if (!$this->verifyNonce('nonce', 'reverse_proxy_admin') &&
-            !$this->verifyNonce('reverse_proxy_nonce', 'reverse_proxy_save_route')) {
+        $source = $method === 'GET' ? $_GET : $_POST;
+
+        if (!$this->verifyNonce('nonce', 'reverse_proxy_admin', $source) &&
+            !$this->verifyNonce('reverse_proxy_nonce', 'reverse_proxy_save_route', $source)) {
             wp_send_json_error(['message' => __('Security check failed.', 'reverse-proxy')], 403);
         }
     }
 
-    private function verifyNonce(string $field, string $action): bool
+    private function verifyNonce(string $field, string $action, ?array $source = null): bool
     {
-        $nonce = isset($_POST[$field]) ? $_POST[$field] : '';
+        $source = $source ?? $_POST;
+        $nonce = $source[$field] ?? '';
 
         return wp_verify_nonce($nonce, $action) !== false;
     }
