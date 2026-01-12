@@ -8,8 +8,8 @@ use Countable;
 use InvalidArgumentException;
 use IteratorAggregate;
 use Psr\SimpleCache\CacheInterface;
-use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Contracts\CacheAwareInterface;
+use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Support\Arr;
 use Traversable;
 
@@ -63,7 +63,7 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
         foreach ($this->loaders as $loader) {
             foreach ($this->loadFromLoader($loader) as $config) {
                 try {
-                    $this->routes[] = $this->createRoute($config);
+                    $this->addRoute($this->createRoute($config));
                 } catch (InvalidArgumentException $e) {
                     // Skip invalid routes
                     continue;
@@ -83,12 +83,10 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function add($routes): self
     {
-        if (is_array($routes)) {
-            foreach ($routes as $route) {
-                $this->routes[] = $route;
-            }
-        } else {
-            $this->routes[] = $routes;
+        $routes = is_array($routes) ? $routes : [$routes];
+
+        foreach ($routes as $route) {
+            $this->addRoute($route);
         }
 
         return $this;
@@ -160,11 +158,7 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function offsetSet($offset, $value): void
     {
-        if ($offset === null) {
-            $this->routes[] = $value;
-        } else {
-            $this->routes[$offset] = $value;
-        }
+        $this->addRoute($value, $offset);
     }
 
     /**
@@ -182,10 +176,12 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
      */
     public function clearCache(): void
     {
-        foreach ($this->loaders as $loader) {
-            $cacheKey = $loader->getCacheKey();
-            if ($cacheKey !== null && $this->cache !== null) {
-                $this->cache->delete($cacheKey);
+        if ($this->cache !== null) {
+            foreach ($this->loaders as $loader) {
+                $cacheKey = $loader->getCacheKey();
+                if ($cacheKey !== null) {
+                    $this->cache->delete($cacheKey);
+                }
             }
         }
 
@@ -240,29 +236,32 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     {
         $this->validateRoute($config);
 
-        $path = $this->buildPath($config);
-        $target = $config['target'];
-        $middlewares = $this->middlewareManager->createMany($config['middlewares'] ?? []);
-        $this->injectCache($middlewares);
-
-        return new Route($path, $target, $middlewares);
+        return new Route(
+            $this->buildPath($config),
+            $config['target'],
+            $this->middlewareManager->createMany($config['middlewares'] ?? [])
+        );
     }
 
     /**
-     * Inject cache into middlewares that implement CacheAwareInterface.
+     * Add a single route to the collection with cache injection.
      *
-     * @param array<\Recca0120\ReverseProxy\Contracts\MiddlewareInterface> $middlewares
+     * @param mixed $offset
      */
-    private function injectCache(array $middlewares): void
+    private function addRoute(Route $route, $offset = null): void
     {
-        if ($this->cache === null) {
-            return;
+        if ($this->cache !== null) {
+            foreach ($route->getMiddlewares() as $middleware) {
+                if ($middleware instanceof CacheAwareInterface) {
+                    $middleware->setCache($this->cache);
+                }
+            }
         }
 
-        foreach ($middlewares as $middleware) {
-            if ($middleware instanceof CacheAwareInterface) {
-                $middleware->setCache($this->cache);
-            }
+        if ($offset === null) {
+            $this->routes[] = $route;
+        } else {
+            $this->routes[$offset] = $route;
         }
     }
 
