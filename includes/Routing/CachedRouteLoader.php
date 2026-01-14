@@ -7,6 +7,8 @@ use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 
 class CachedRouteLoader implements RouteLoaderInterface
 {
+    private const CACHE_KEY_PREFIX = 'route_loader_';
+
     /** @var RouteLoaderInterface */
     private $loader;
 
@@ -26,21 +28,22 @@ class CachedRouteLoader implements RouteLoaderInterface
      */
     public function load(): array
     {
-        $cacheKey = $this->loader->getCacheKey();
+        $cacheKey = $this->getCacheKey();
 
         if ($cacheKey === null) {
             return $this->loader->load();
         }
 
+        $fingerprint = $this->loader->getFingerprint();
         $cached = $this->cache->get($cacheKey);
 
-        if ($cached !== null && $this->loader->isCacheValid($cached['metadata'])) {
+        if ($cached !== null && $cached['fingerprint'] === $fingerprint) {
             return $cached['data'];
         }
 
         $data = $this->loader->load();
         $this->cache->set($cacheKey, [
-            'metadata' => $this->loader->getCacheMetadata(),
+            'fingerprint' => $fingerprint,
             'data' => $data,
         ]);
 
@@ -48,30 +51,24 @@ class CachedRouteLoader implements RouteLoaderInterface
     }
 
     /**
-     * Get the cache key from the inner loader.
+     * Get the fingerprint from the inner loader.
+     */
+    public function getFingerprint(): ?string
+    {
+        return $this->loader->getFingerprint();
+    }
+
+    /**
+     * Get the cache key for this loader.
+     *
+     * Returns null if the inner loader doesn't support caching.
      */
     public function getCacheKey(): ?string
     {
-        return $this->loader->getCacheKey();
-    }
+        $fingerprint = $this->loader->getFingerprint();
 
-    /**
-     * Get cache metadata from the inner loader.
-     *
-     * @return mixed
-     */
-    public function getCacheMetadata()
-    {
-        return $this->loader->getCacheMetadata();
-    }
-
-    /**
-     * Check if cached data is still valid via the inner loader.
-     *
-     * @param mixed $metadata
-     */
-    public function isCacheValid($metadata): bool
-    {
-        return $this->loader->isCacheValid($metadata);
+        return $fingerprint !== null
+            ? self::CACHE_KEY_PREFIX . md5($fingerprint)
+            : null;
     }
 }

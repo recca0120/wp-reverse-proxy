@@ -272,15 +272,15 @@ class FileLoaderTest extends TestCase
         ]));
 
         $loader = new FileLoader([$filePath]);
-        $cacheKey = $loader->getCacheKey();
-        $mtime = filemtime($filePath);
+        $fingerprint = $loader->getFingerprint();
+        $cacheKey = 'route_loader_' . md5($fingerprint);
 
         $cachedConfigs = [
             ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
         ];
 
         $cache = new ArrayCache();
-        $cache->set($cacheKey, ['metadata' => $mtime, 'data' => $cachedConfigs]);
+        $cache->set($cacheKey, ['fingerprint' => $fingerprint, 'data' => $cachedConfigs]);
 
         $collection = new RouteCollection([$loader], $cache);
         $collection->load();
@@ -299,7 +299,8 @@ class FileLoaderTest extends TestCase
         ]));
 
         $loader = new FileLoader([$filePath]);
-        $cacheKey = $loader->getCacheKey();
+        $fingerprint = $loader->getFingerprint();
+        $cacheKey = 'route_loader_' . md5($fingerprint);
 
         $cache = new ArrayCache();
 
@@ -310,7 +311,7 @@ class FileLoaderTest extends TestCase
 
         $cachedData = $cache->get($cacheKey);
         $this->assertNotNull($cachedData);
-        $this->assertArrayHasKey('metadata', $cachedData);
+        $this->assertArrayHasKey('fingerprint', $cachedData);
         $this->assertArrayHasKey('data', $cachedData);
     }
 
@@ -388,14 +389,14 @@ class FileLoaderTest extends TestCase
         $this->assertEmpty($routes);
     }
 
-    public function test_get_cache_key_returns_null_for_empty_paths(): void
+    public function test_get_fingerprint_returns_null_for_empty_paths(): void
     {
         $loader = new FileLoader([]);
 
-        $this->assertNull($loader->getCacheKey());
+        $this->assertNull($loader->getFingerprint());
     }
 
-    public function test_get_cache_key_returns_consistent_key_for_same_paths(): void
+    public function test_get_fingerprint_returns_consistent_value_for_same_files(): void
     {
         $filePath = $this->fixturesPath . '/routes.json';
         file_put_contents($filePath, json_encode(['routes' => []]));
@@ -403,11 +404,11 @@ class FileLoaderTest extends TestCase
         $loader1 = new FileLoader([$filePath]);
         $loader2 = new FileLoader([$filePath]);
 
-        $this->assertNotNull($loader1->getCacheKey());
-        $this->assertEquals($loader1->getCacheKey(), $loader2->getCacheKey());
+        $this->assertNotNull($loader1->getFingerprint());
+        $this->assertEquals($loader1->getFingerprint(), $loader2->getFingerprint());
     }
 
-    public function test_cache_invalidation_when_file_modified(): void
+    public function test_fingerprint_changes_when_file_modified(): void
     {
         $filePath = $this->fixturesPath . '/routes.json';
         file_put_contents($filePath, json_encode([
@@ -417,18 +418,15 @@ class FileLoaderTest extends TestCase
         ]));
 
         $loader = new FileLoader([$filePath]);
-        $originalMtime = $loader->getCacheMetadata();
-
-        // Simulate cache with old mtime
-        $this->assertTrue($loader->isCacheValid($originalMtime));
+        $originalFingerprint = $loader->getFingerprint();
 
         // Modify file (touch to update mtime)
         sleep(1);
         touch($filePath);
         clearstatcache();
 
-        // Cache should now be invalid
-        $this->assertFalse($loader->isCacheValid($originalMtime));
+        // Fingerprint should now be different
+        $this->assertNotEquals($originalFingerprint, $loader->getFingerprint());
     }
 
     public function test_reloads_from_loader_when_cache_is_stale(): void
@@ -441,14 +439,15 @@ class FileLoaderTest extends TestCase
         ]));
 
         $loader = new FileLoader([$filePath]);
-        $cacheKey = $loader->getCacheKey();
+        $fingerprint = $loader->getFingerprint();
+        $cacheKey = 'route_loader_' . md5($fingerprint);
 
-        // Simulate stale cache with old mtime
-        $staleMtime = 12345;
+        // Simulate stale cache with old fingerprint
+        $staleFingerprint = 'stale_fingerprint_12345';
 
         $cache = new ArrayCache();
         $cache->set($cacheKey, [
-            'metadata' => $staleMtime,
+            'fingerprint' => $staleFingerprint,
             'data' => [['path' => '/cached/*', 'target' => 'https://cached.example.com']],
         ]);
 
@@ -459,10 +458,10 @@ class FileLoaderTest extends TestCase
         $this->assertCount(1, $collection);
         $this->assertEquals('api.example.com', $collection[0]->getTargetHost());
 
-        // Verify cache was updated with new data
+        // Verify cache was updated with new fingerprint
         $cachedData = $cache->get($cacheKey);
         $this->assertNotNull($cachedData);
-        $this->assertNotEquals($staleMtime, $cachedData['metadata']);
+        $this->assertEquals($fingerprint, $cachedData['fingerprint']);
     }
 
     public function test_skips_disabled_routes(): void

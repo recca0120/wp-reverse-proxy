@@ -123,37 +123,21 @@ class WordPressLoaderTest extends WP_UnitTestCase
         $this->assertEquals(['SetHost', 'api.example.com'], $routes[0]['middlewares'][1]);
     }
 
-    public function test_get_cache_key_returns_consistent_key(): void
+    public function test_get_fingerprint_returns_consistent_value(): void
     {
         $loader1 = new WordPressLoader();
         $loader2 = new WordPressLoader();
 
-        $this->assertNotNull($loader1->getCacheKey());
-        $this->assertEquals($loader1->getCacheKey(), $loader2->getCacheKey());
+        $this->assertNotNull($loader1->getFingerprint());
+        $this->assertEquals($loader1->getFingerprint(), $loader2->getFingerprint());
     }
 
-    public function test_get_cache_metadata_returns_version(): void
-    {
-        $loader = new WordPressLoader();
-
-        // Initial version is 0
-        $this->assertEquals(0, $loader->getCacheMetadata());
-
-        // After saving a route, version increments
-        $routesPage = new RoutesPage();
-        $routesPage->saveRoute([
-            'path' => '/api/*',
-            'target' => 'https://api.example.com',
-            'enabled' => true,
-        ]);
-
-        $this->assertEquals(1, $loader->getCacheMetadata());
-    }
-
-    public function test_cache_metadata_changes_when_route_saved(): void
+    public function test_fingerprint_changes_when_route_saved(): void
     {
         $routesPage = new RoutesPage();
         $loader = new WordPressLoader();
+
+        $fingerprint1 = $loader->getFingerprint();
 
         // Save first route
         $routesPage->saveRoute([
@@ -161,7 +145,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
             'target' => 'https://api.example.com',
             'enabled' => true,
         ]);
-        $metadata1 = $loader->getCacheMetadata();
+        $fingerprint2 = $loader->getFingerprint();
 
         // Save second route
         $routesPage->saveRoute([
@@ -169,51 +153,13 @@ class WordPressLoaderTest extends WP_UnitTestCase
             'target' => 'https://web.example.com',
             'enabled' => true,
         ]);
-        $metadata2 = $loader->getCacheMetadata();
+        $fingerprint3 = $loader->getFingerprint();
 
-        $this->assertNotEquals($metadata1, $metadata2);
-        $this->assertEquals(1, $metadata1);
-        $this->assertEquals(2, $metadata2);
+        $this->assertNotEquals($fingerprint1, $fingerprint2);
+        $this->assertNotEquals($fingerprint2, $fingerprint3);
     }
 
-    public function test_is_cache_valid_returns_true_for_same_metadata(): void
-    {
-        $routesPage = new RoutesPage();
-        $routesPage->saveRoute([
-            'path' => '/api/*',
-            'target' => 'https://api.example.com',
-            'enabled' => true,
-        ]);
-
-        $loader = new WordPressLoader();
-        $metadata = $loader->getCacheMetadata();
-
-        $this->assertTrue($loader->isCacheValid($metadata));
-    }
-
-    public function test_is_cache_valid_returns_false_when_route_changed(): void
-    {
-        $routesPage = new RoutesPage();
-        $routesPage->saveRoute([
-            'path' => '/api/*',
-            'target' => 'https://api.example.com',
-            'enabled' => true,
-        ]);
-
-        $loader = new WordPressLoader();
-        $oldMetadata = $loader->getCacheMetadata();
-
-        // Save another route (increments version)
-        $routesPage->saveRoute([
-            'path' => '/web/*',
-            'target' => 'https://web.example.com',
-            'enabled' => true,
-        ]);
-
-        $this->assertFalse($loader->isCacheValid($oldMetadata));
-    }
-
-    public function test_version_increments_on_delete(): void
+    public function test_fingerprint_changes_when_route_deleted(): void
     {
         $routesPage = new RoutesPage();
         $routesPage->saveRoute([
@@ -224,15 +170,15 @@ class WordPressLoaderTest extends WP_UnitTestCase
         ]);
 
         $loader = new WordPressLoader();
-        $versionAfterSave = $loader->getCacheMetadata();
+        $fingerprintAfterSave = $loader->getFingerprint();
 
         $routesPage->deleteRoute('route_1');
-        $versionAfterDelete = $loader->getCacheMetadata();
+        $fingerprintAfterDelete = $loader->getFingerprint();
 
-        $this->assertEquals($versionAfterSave + 1, $versionAfterDelete);
+        $this->assertNotEquals($fingerprintAfterSave, $fingerprintAfterDelete);
     }
 
-    public function test_version_increments_on_toggle(): void
+    public function test_fingerprint_changes_when_route_toggled(): void
     {
         $routesPage = new RoutesPage();
         $routesPage->saveRoute([
@@ -243,12 +189,12 @@ class WordPressLoaderTest extends WP_UnitTestCase
         ]);
 
         $loader = new WordPressLoader();
-        $versionAfterSave = $loader->getCacheMetadata();
+        $fingerprintAfterSave = $loader->getFingerprint();
 
         $routesPage->toggleRoute('route_1');
-        $versionAfterToggle = $loader->getCacheMetadata();
+        $fingerprintAfterToggle = $loader->getFingerprint();
 
-        $this->assertEquals($versionAfterSave + 1, $versionAfterToggle);
+        $this->assertNotEquals($fingerprintAfterSave, $fingerprintAfterToggle);
     }
 
     public function test_works_with_route_collection(): void

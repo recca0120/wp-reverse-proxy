@@ -178,9 +178,11 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     {
         if ($this->cache !== null) {
             foreach ($this->loaders as $loader) {
-                $cacheKey = $loader->getCacheKey();
-                if ($cacheKey !== null) {
-                    $this->cache->delete($cacheKey);
+                if ($loader instanceof CachedRouteLoader) {
+                    $cacheKey = $loader->getCacheKey();
+                    if ($cacheKey !== null) {
+                        $this->cache->delete($cacheKey);
+                    }
                 }
             }
         }

@@ -44,48 +44,25 @@ class FileLoader implements RouteLoaderInterface
     }
 
     /**
-     * Get the cache key for this loader.
-     */
-    public function getCacheKey(): ?string
-    {
-        if (empty($this->paths)) {
-            return null;
-        }
-
-        $paths = $this->paths;
-        sort($paths);
-
-        return 'file_loader_' . md5(implode('|', $paths));
-    }
-
-    /**
-     * Get metadata for cache validation (max mtime of all files).
+     * Get a fingerprint for cache identification and validation.
      *
-     * @return int
+     * Returns null if no paths configured, otherwise returns a string
+     * combining file paths and their modification times.
      */
-    public function getCacheMetadata()
-    {
-        return $this->getMaxMtime();
-    }
-
-    /**
-     * Check if cached data is still valid by comparing mtime.
-     *
-     * @param mixed $metadata The mtime stored with cached data
-     */
-    public function isCacheValid($metadata): bool
-    {
-        return $metadata === $this->getMaxMtime();
-    }
-
-    /**
-     * Get the maximum modification time of all files.
-     */
-    private function getMaxMtime(): int
+    public function getFingerprint(): ?string
     {
         $files = $this->getAllFiles();
 
-        return empty($files) ? 0 : (int) max(array_map('filemtime', $files));
+        if (empty($files)) {
+            return null;
+        }
+
+        sort($files);
+        $parts = array_map(static function ($file) {
+            return $file . ':' . filemtime($file);
+        }, $files);
+
+        return implode('|', $parts);
     }
 
     /**

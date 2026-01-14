@@ -25,12 +25,12 @@ class CachedRouteLoaderTest extends TestCase
         $this->assertInstanceOf(RouteLoaderInterface::class, $loader);
     }
 
-    public function test_it_delegates_to_inner_loader_when_cache_key_is_null(): void
+    public function test_it_delegates_to_inner_loader_when_fingerprint_is_null(): void
     {
         $expectedData = [['path' => '/api/*', 'target' => 'https://api.example.com']];
 
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getCacheKey')->once()->andReturn(null);
+        $innerLoader->shouldReceive('getFingerprint')->once()->andReturn(null);
         $innerLoader->shouldReceive('load')->once()->andReturn($expectedData);
 
         $cache = Mockery::mock(CacheInterface::class);
@@ -42,21 +42,21 @@ class CachedRouteLoaderTest extends TestCase
         $this->assertEquals($expectedData, $loader->load());
     }
 
-    public function test_it_returns_cached_data_when_cache_is_valid(): void
+    public function test_it_returns_cached_data_when_fingerprint_matches(): void
     {
+        $fingerprint = 'test_fingerprint_12345';
+        $cacheKey = 'route_loader_' . md5($fingerprint);
         $cachedData = [['path' => '/cached/*', 'target' => 'https://cached.example.com']];
-        $metadata = ['mtime' => 12345];
 
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getCacheKey')->andReturn('test_cache_key');
-        $innerLoader->shouldReceive('isCacheValid')->with($metadata)->once()->andReturn(true);
+        $innerLoader->shouldReceive('getFingerprint')->andReturn($fingerprint);
         $innerLoader->shouldNotReceive('load');
 
         $cache = Mockery::mock(CacheInterface::class);
         $cache->shouldReceive('get')
-            ->with('test_cache_key')
+            ->with($cacheKey)
             ->once()
-            ->andReturn(['metadata' => $metadata, 'data' => $cachedData]);
+            ->andReturn(['fingerprint' => $fingerprint, 'data' => $cachedData]);
         $cache->shouldNotReceive('set');
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
@@ -66,18 +66,18 @@ class CachedRouteLoaderTest extends TestCase
 
     public function test_it_loads_from_inner_loader_when_cache_is_empty(): void
     {
+        $fingerprint = 'test_fingerprint_12345';
+        $cacheKey = 'route_loader_' . md5($fingerprint);
         $expectedData = [['path' => '/api/*', 'target' => 'https://api.example.com']];
-        $metadata = ['mtime' => 12345];
 
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getCacheKey')->andReturn('test_cache_key');
+        $innerLoader->shouldReceive('getFingerprint')->andReturn($fingerprint);
         $innerLoader->shouldReceive('load')->once()->andReturn($expectedData);
-        $innerLoader->shouldReceive('getCacheMetadata')->once()->andReturn($metadata);
 
         $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->with('test_cache_key')->once()->andReturn(null);
+        $cache->shouldReceive('get')->with($cacheKey)->once()->andReturn(null);
         $cache->shouldReceive('set')
-            ->with('test_cache_key', ['metadata' => $metadata, 'data' => $expectedData])
+            ->with($cacheKey, ['fingerprint' => $fingerprint, 'data' => $expectedData])
             ->once();
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
@@ -85,26 +85,25 @@ class CachedRouteLoaderTest extends TestCase
         $this->assertEquals($expectedData, $loader->load());
     }
 
-    public function test_it_reloads_from_inner_loader_when_cache_is_stale(): void
+    public function test_it_reloads_from_inner_loader_when_fingerprint_changed(): void
     {
+        $oldFingerprint = 'old_fingerprint_12345';
+        $newFingerprint = 'new_fingerprint_67890';
+        $cacheKey = 'route_loader_' . md5($newFingerprint);
         $staleData = [['path' => '/stale/*', 'target' => 'https://stale.example.com']];
         $freshData = [['path' => '/fresh/*', 'target' => 'https://fresh.example.com']];
-        $staleMetadata = ['mtime' => 12345];
-        $freshMetadata = ['mtime' => 67890];
 
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getCacheKey')->andReturn('test_cache_key');
-        $innerLoader->shouldReceive('isCacheValid')->with($staleMetadata)->once()->andReturn(false);
+        $innerLoader->shouldReceive('getFingerprint')->andReturn($newFingerprint);
         $innerLoader->shouldReceive('load')->once()->andReturn($freshData);
-        $innerLoader->shouldReceive('getCacheMetadata')->once()->andReturn($freshMetadata);
 
         $cache = Mockery::mock(CacheInterface::class);
         $cache->shouldReceive('get')
-            ->with('test_cache_key')
+            ->with($cacheKey)
             ->once()
-            ->andReturn(['metadata' => $staleMetadata, 'data' => $staleData]);
+            ->andReturn(['fingerprint' => $oldFingerprint, 'data' => $staleData]);
         $cache->shouldReceive('set')
-            ->with('test_cache_key', ['metadata' => $freshMetadata, 'data' => $freshData])
+            ->with($cacheKey, ['fingerprint' => $newFingerprint, 'data' => $freshData])
             ->once();
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
@@ -112,43 +111,44 @@ class CachedRouteLoaderTest extends TestCase
         $this->assertEquals($freshData, $loader->load());
     }
 
-    public function test_it_delegates_get_cache_key_to_inner_loader(): void
+    public function test_it_delegates_get_fingerprint_to_inner_loader(): void
     {
+        $fingerprint = 'inner_fingerprint_12345';
+
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getCacheKey')->once()->andReturn('inner_cache_key');
+        $innerLoader->shouldReceive('getFingerprint')->once()->andReturn($fingerprint);
 
         $cache = Mockery::mock(CacheInterface::class);
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
 
-        $this->assertEquals('inner_cache_key', $loader->getCacheKey());
+        $this->assertEquals($fingerprint, $loader->getFingerprint());
     }
 
-    public function test_it_delegates_get_cache_metadata_to_inner_loader(): void
+    public function test_get_cache_key_returns_null_when_fingerprint_is_null(): void
     {
-        $metadata = ['mtime' => 12345, 'version' => '1.0'];
-
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getCacheMetadata')->once()->andReturn($metadata);
+        $innerLoader->shouldReceive('getFingerprint')->once()->andReturn(null);
 
         $cache = Mockery::mock(CacheInterface::class);
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
 
-        $this->assertEquals($metadata, $loader->getCacheMetadata());
+        $this->assertNull($loader->getCacheKey());
     }
 
-    public function test_it_delegates_is_cache_valid_to_inner_loader(): void
+    public function test_get_cache_key_returns_hashed_key_from_fingerprint(): void
     {
-        $metadata = ['mtime' => 12345];
+        $fingerprint = 'test_fingerprint_12345';
+        $expectedKey = 'route_loader_' . md5($fingerprint);
 
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('isCacheValid')->with($metadata)->once()->andReturn(true);
+        $innerLoader->shouldReceive('getFingerprint')->once()->andReturn($fingerprint);
 
         $cache = Mockery::mock(CacheInterface::class);
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
 
-        $this->assertTrue($loader->isCacheValid($metadata));
+        $this->assertEquals($expectedKey, $loader->getCacheKey());
     }
 }

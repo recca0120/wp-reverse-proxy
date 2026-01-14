@@ -122,7 +122,7 @@ class RouteCollectionTest extends TestCase
     public function test_load_from_single_loader(): void
     {
         $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldReceive('getCacheKey')->andReturnNull();
+        $loader->shouldReceive('getFingerprint')->andReturnNull();
         $loader->shouldReceive('load')->once()->andReturn([
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
@@ -137,13 +137,13 @@ class RouteCollectionTest extends TestCase
     public function test_load_from_multiple_loaders(): void
     {
         $loader1 = Mockery::mock(RouteLoaderInterface::class);
-        $loader1->shouldReceive('getCacheKey')->andReturnNull();
+        $loader1->shouldReceive('getFingerprint')->andReturnNull();
         $loader1->shouldReceive('load')->once()->andReturn([
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
 
         $loader2 = Mockery::mock(RouteLoaderInterface::class);
-        $loader2->shouldReceive('getCacheKey')->andReturnNull();
+        $loader2->shouldReceive('getFingerprint')->andReturnNull();
         $loader2->shouldReceive('load')->once()->andReturn([
             ['path' => '/web/*', 'target' => 'https://web.example.com'],
         ]);
@@ -157,7 +157,7 @@ class RouteCollectionTest extends TestCase
     public function test_load_skips_invalid_routes(): void
     {
         $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldReceive('getCacheKey')->andReturnNull();
+        $loader->shouldReceive('getFingerprint')->andReturnNull();
         $loader->shouldReceive('load')->once()->andReturn([
             ['target' => 'https://api.example.com'], // missing path
             ['path' => '/valid/*', 'target' => 'https://valid.example.com'],
@@ -172,17 +172,18 @@ class RouteCollectionTest extends TestCase
 
     public function test_load_uses_cache_when_available(): void
     {
+        $fingerprint = 'test_fingerprint_12345';
+        $cacheKey = 'route_loader_' . md5($fingerprint);
         $cachedConfigs = [
             ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
         ];
 
         $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
-        $loader->shouldReceive('isCacheValid')->with(12345)->andReturn(true);
+        $loader->shouldReceive('getFingerprint')->andReturn($fingerprint);
         $loader->shouldNotReceive('load');
 
         $cache = new ArrayCache();
-        $cache->set('test_loader_key', ['metadata' => 12345, 'data' => $cachedConfigs]);
+        $cache->set($cacheKey, ['fingerprint' => $fingerprint, 'data' => $cachedConfigs]);
 
         $collection = new RouteCollection([$loader], $cache);
         $collection->load();
@@ -193,9 +194,11 @@ class RouteCollectionTest extends TestCase
 
     public function test_load_stores_cache_when_not_cached(): void
     {
+        $fingerprint = 'test_fingerprint_12345';
+        $cacheKey = 'route_loader_' . md5($fingerprint);
+
         $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
-        $loader->shouldReceive('getCacheMetadata')->andReturn(12345);
+        $loader->shouldReceive('getFingerprint')->andReturn($fingerprint);
         $loader->shouldReceive('load')->once()->andReturn([
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
@@ -207,24 +210,27 @@ class RouteCollectionTest extends TestCase
 
         $this->assertCount(1, $collection);
 
-        $cachedData = $cache->get('test_loader_key');
+        $cachedData = $cache->get($cacheKey);
         $this->assertNotNull($cachedData);
-        $this->assertArrayHasKey('metadata', $cachedData);
+        $this->assertArrayHasKey('fingerprint', $cachedData);
         $this->assertArrayHasKey('data', $cachedData);
     }
 
     public function test_clear_cache(): void
     {
+        $fingerprint = 'test_fingerprint_12345';
+        $cacheKey = 'route_loader_' . md5($fingerprint);
+
         $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
+        $loader->shouldReceive('getFingerprint')->andReturn($fingerprint);
 
         $cache = new ArrayCache();
-        $cache->set('test_loader_key', ['metadata' => 12345, 'data' => []]);
+        $cache->set($cacheKey, ['fingerprint' => $fingerprint, 'data' => []]);
 
         $collection = new RouteCollection([$loader], $cache);
         $collection->clearCache();
 
-        $this->assertFalse($cache->has('test_loader_key'));
+        $this->assertFalse($cache->has($cacheKey));
     }
 
     public function test_clear_cache_without_cache_does_nothing(): void
@@ -266,16 +272,19 @@ class RouteCollectionTest extends TestCase
 
     public function test_load_reloads_when_cache_is_invalid(): void
     {
+        $oldFingerprint = 'old_fingerprint_12345';
+        $newFingerprint = 'new_fingerprint_99999';
+        $cacheKey = 'route_loader_' . md5($newFingerprint);
+
         $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldReceive('getCacheKey')->andReturn('test_loader_key');
-        $loader->shouldReceive('isCacheValid')->with(12345)->andReturn(false);
-        $loader->shouldReceive('getCacheMetadata')->andReturn(99999);
+        $loader->shouldReceive('getFingerprint')->andReturn($newFingerprint);
         $loader->shouldReceive('load')->once()->andReturn([
             ['path' => '/fresh/*', 'target' => 'https://fresh.example.com'],
         ]);
 
         $cache = new ArrayCache();
-        $cache->set('test_loader_key', ['metadata' => 12345, 'data' => [
+        // Cache has old fingerprint, so it should be invalidated
+        $cache->set($cacheKey, ['fingerprint' => $oldFingerprint, 'data' => [
             ['path' => '/stale/*', 'target' => 'https://stale.example.com'],
         ]]);
 
@@ -286,10 +295,10 @@ class RouteCollectionTest extends TestCase
         $this->assertEquals('fresh.example.com', $collection[0]->getTargetHost());
     }
 
-    public function test_load_skips_cache_for_loader_without_cache_key(): void
+    public function test_load_skips_cache_for_loader_without_fingerprint(): void
     {
         $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldReceive('getCacheKey')->andReturn(null);
+        $loader->shouldReceive('getFingerprint')->andReturn(null);
         $loader->shouldReceive('load')->once()->andReturn([
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
         ]);
@@ -299,27 +308,32 @@ class RouteCollectionTest extends TestCase
         $collection->load();
 
         $this->assertCount(1, $collection);
-        // Cache should not have any entries since loader has no cache key
+        // Cache should not have any entries since loader has no fingerprint
         $this->assertEmpty($cache->all());
     }
 
     public function test_clear_cache_with_multiple_loaders(): void
     {
+        $fingerprint1 = 'fingerprint_loader1';
+        $fingerprint2 = 'fingerprint_loader2';
+        $cacheKey1 = 'route_loader_' . md5($fingerprint1);
+        $cacheKey2 = 'route_loader_' . md5($fingerprint2);
+
         $loader1 = Mockery::mock(RouteLoaderInterface::class);
-        $loader1->shouldReceive('getCacheKey')->andReturn('loader1_key');
+        $loader1->shouldReceive('getFingerprint')->andReturn($fingerprint1);
 
         $loader2 = Mockery::mock(RouteLoaderInterface::class);
-        $loader2->shouldReceive('getCacheKey')->andReturn('loader2_key');
+        $loader2->shouldReceive('getFingerprint')->andReturn($fingerprint2);
 
         $cache = new ArrayCache();
-        $cache->set('loader1_key', ['metadata' => 1, 'data' => []]);
-        $cache->set('loader2_key', ['metadata' => 2, 'data' => []]);
+        $cache->set($cacheKey1, ['fingerprint' => $fingerprint1, 'data' => []]);
+        $cache->set($cacheKey2, ['fingerprint' => $fingerprint2, 'data' => []]);
 
         $collection = new RouteCollection([$loader1, $loader2], $cache);
         $collection->clearCache();
 
-        $this->assertFalse($cache->has('loader1_key'));
-        $this->assertFalse($cache->has('loader2_key'));
+        $this->assertFalse($cache->has($cacheKey1));
+        $this->assertFalse($cache->has($cacheKey2));
     }
 
 }

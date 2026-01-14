@@ -43,31 +43,13 @@ class WordPressLoader implements RouteLoaderInterface
     }
 
     /**
-     * Get the cache key for this loader.
-     */
-    public function getCacheKey(): ?string
-    {
-        return 'wordpress_loader_' . md5(get_class($this->storage));
-    }
-
-    /**
-     * Get metadata for cache validation (version number).
+     * Get a fingerprint for cache identification and validation.
      *
-     * @return int
+     * Returns a string combining the storage class and version number.
      */
-    public function getCacheMetadata()
+    public function getFingerprint(): ?string
     {
-        return $this->storage->getVersion();
-    }
-
-    /**
-     * Check if cached data is still valid by comparing version.
-     *
-     * @param mixed $metadata The version stored with cached data
-     */
-    public function isCacheValid($metadata): bool
-    {
-        return (int) $metadata === $this->getCacheMetadata();
+        return get_class($this->storage) . ':' . $this->storage->getVersion();
     }
 
     /**
