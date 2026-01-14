@@ -58,3 +58,6 @@ debug.log
 *.sql
 *.tar.gz
 *.zip
+
+# Claude Code
+.claude/

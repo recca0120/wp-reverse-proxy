@@ -2,7 +2,6 @@
 
 namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
-use Mockery;
 use PHPUnit\Framework\TestCase;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
@@ -26,8 +25,6 @@ class FileLoaderTest extends TestCase
 
     protected function tearDown(): void
     {
-        Mockery::close();
-
         $files = glob($this->fixturesPath . '/*');
         foreach ($files as $file) {
             if (is_file($file)) {
@@ -36,7 +33,7 @@ class FileLoaderTest extends TestCase
         }
     }
 
-    public function test_it_implements_route_loader_interface(): void
+    public function test_implements_route_loader_interface(): void
     {
         $loader = new FileLoader([]);
 

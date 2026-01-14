@@ -11,7 +11,7 @@ use Recca0120\ReverseProxy\Routing\Route;
 
 class RouteTest extends TestCase
 {
-    public function test_it_matches_exact_path()
+    public function test_matches_exact_path()
     {
         $route = new Route('/api/users', 'https://backend.example.com');
         $request = new ServerRequest('GET', '/api/users');
@@ -21,7 +21,7 @@ class RouteTest extends TestCase
         $this->assertEquals('https://backend.example.com/api/users', $result);
     }
 
-    public function test_it_returns_null_when_path_does_not_match()
+    public function test_returns_null_when_path_does_not_match()
     {
         $route = new Route('/api/users', 'https://backend.example.com');
         $request = new ServerRequest('GET', '/about');
@@ -31,7 +31,7 @@ class RouteTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function test_it_matches_wildcard_pattern()
+    public function test_matches_wildcard_pattern()
     {
         $route = new Route('/api/*', 'https://backend.example.com');
         $request = new ServerRequest('GET', '/api/users/123');
@@ -41,7 +41,7 @@ class RouteTest extends TestCase
         $this->assertEquals('https://backend.example.com/api/users/123', $result);
     }
 
-    public function test_it_preserves_query_string()
+    public function test_preserves_query_string()
     {
         $route = new Route('/api/*', 'https://backend.example.com');
         $request = new ServerRequest('GET', '/api/users?page=2&limit=10');
@@ -51,21 +51,21 @@ class RouteTest extends TestCase
         $this->assertEquals('https://backend.example.com/api/users?page=2&limit=10', $result);
     }
 
-    public function test_it_returns_target_host()
+    public function test_returns_target_host()
     {
         $route = new Route('/api/*', 'https://backend.example.com');
 
         $this->assertEquals('backend.example.com', $route->getTargetHost());
     }
 
-    public function test_it_has_no_middlewares_by_default()
+    public function test_has_no_middlewares_by_default()
     {
         $route = new Route('/api/*', 'https://backend.example.com');
 
         $this->assertEmpty($route->getMiddlewares());
     }
 
-    public function test_it_accepts_middlewares_in_constructor()
+    public function test_accepts_middlewares_in_constructor()
     {
         $middleware1 = function ($request, $next) {
             return $next($request);
@@ -79,7 +79,7 @@ class RouteTest extends TestCase
         $this->assertCount(2, $route->getMiddlewares());
     }
 
-    public function test_it_can_add_middleware_via_method()
+    public function test_can_add_middleware_via_method()
     {
         $middleware = function ($request, $next) {
             return $next($request);
@@ -91,7 +91,7 @@ class RouteTest extends TestCase
         $this->assertCount(1, $route->getMiddlewares());
     }
 
-    public function test_it_can_chain_multiple_middlewares()
+    public function test_can_chain_multiple_middlewares()
     {
         $middleware1 = function ($request, $next) {
             return $next($request);
@@ -107,7 +107,7 @@ class RouteTest extends TestCase
         $this->assertCount(2, $route->getMiddlewares());
     }
 
-    public function test_it_combines_constructor_and_method_middlewares()
+    public function test_combines_constructor_and_method_middlewares()
     {
         $middleware1 = function ($request, $next) {
             return $next($request);
@@ -122,7 +122,7 @@ class RouteTest extends TestCase
         $this->assertCount(2, $route->getMiddlewares());
     }
 
-    public function test_it_can_add_middleware_interface()
+    public function test_can_add_middleware_interface()
     {
         $middleware = new class () implements MiddlewareInterface {
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -137,7 +137,7 @@ class RouteTest extends TestCase
         $this->assertCount(1, $route->getMiddlewares());
     }
 
-    public function test_it_accepts_middleware_interface_in_constructor()
+    public function test_accepts_middleware_interface_in_constructor()
     {
         $middleware = new class () implements MiddlewareInterface {
             public function process(ServerRequestInterface $request, callable $next): ResponseInterface
@@ -151,7 +151,7 @@ class RouteTest extends TestCase
         $this->assertCount(1, $route->getMiddlewares());
     }
 
-    public function test_it_matches_specific_http_method()
+    public function test_matches_specific_http_method()
     {
         $route = new Route('POST /api/users', 'https://backend.example.com');
         $request = new ServerRequest('POST', '/api/users');
@@ -161,7 +161,7 @@ class RouteTest extends TestCase
         $this->assertEquals('https://backend.example.com/api/users', $result);
     }
 
-    public function test_it_returns_null_when_method_does_not_match()
+    public function test_returns_null_when_method_does_not_match()
     {
         $route = new Route('POST /api/users', 'https://backend.example.com');
         $request = new ServerRequest('GET', '/api/users');
@@ -171,7 +171,7 @@ class RouteTest extends TestCase
         $this->assertNull($result);
     }
 
-    public function test_it_matches_get_method_with_wildcard_path()
+    public function test_matches_get_method_with_wildcard_path()
     {
         $route = new Route('GET /api/*', 'https://backend.example.com');
         $request = new ServerRequest('GET', '/api/users/123');
@@ -181,7 +181,7 @@ class RouteTest extends TestCase
         $this->assertEquals('https://backend.example.com/api/users/123', $result);
     }
 
-    public function test_it_handles_case_insensitive_method()
+    public function test_handles_case_insensitive_method()
     {
         $route = new Route('post /api/users', 'https://backend.example.com');
         $request = new ServerRequest('POST', '/api/users');
@@ -204,7 +204,7 @@ class RouteTest extends TestCase
         $this->assertNotNull($route->matches($deleteRequest));
     }
 
-    public function test_it_matches_delete_method()
+    public function test_matches_delete_method()
     {
         $route = new Route('DELETE /api/users/*', 'https://backend.example.com');
         $request = new ServerRequest('DELETE', '/api/users/123');
@@ -214,7 +214,7 @@ class RouteTest extends TestCase
         $this->assertEquals('https://backend.example.com/api/users/123', $result);
     }
 
-    public function test_it_matches_multiple_methods_with_pipe()
+    public function test_matches_multiple_methods_with_pipe()
     {
         $route = new Route('GET|POST /api/users', 'https://backend.example.com');
 
@@ -227,7 +227,7 @@ class RouteTest extends TestCase
         $this->assertNull($route->matches($deleteRequest));
     }
 
-    public function test_it_matches_multiple_methods_with_wildcard_path()
+    public function test_matches_multiple_methods_with_wildcard_path()
     {
         $route = new Route('GET|POST|PUT /api/*', 'https://backend.example.com');
         $request = new ServerRequest('PUT', '/api/users/123');
@@ -237,7 +237,7 @@ class RouteTest extends TestCase
         $this->assertEquals('https://backend.example.com/api/users/123', $result);
     }
 
-    public function test_it_sorts_middlewares_by_priority()
+    public function test_sorts_middlewares_by_priority()
     {
         $lowPriority = new class () implements MiddlewareInterface {
             public $priority = 10;
@@ -266,7 +266,7 @@ class RouteTest extends TestCase
         $this->assertSame($lowPriority, $middlewares[1]);
     }
 
-    public function test_it_uses_zero_priority_for_middlewares_without_priority()
+    public function test_uses_zero_priority_for_middlewares_without_priority()
     {
         $withPriority = new class () implements MiddlewareInterface {
             public $priority = -50;
@@ -293,7 +293,7 @@ class RouteTest extends TestCase
         $this->assertSame($withoutPriority, $middlewares[1]);
     }
 
-    public function test_it_uses_zero_priority_for_closure_middlewares()
+    public function test_uses_zero_priority_for_closure_middlewares()
     {
         $highPriority = new class () implements MiddlewareInterface {
             public $priority = -100;
@@ -317,7 +317,7 @@ class RouteTest extends TestCase
         $this->assertSame($closure, $middlewares[1]);
     }
 
-    public function test_it_maintains_order_for_same_priority()
+    public function test_maintains_order_for_same_priority()
     {
         $first = new class () implements MiddlewareInterface {
             public $priority = 0;
