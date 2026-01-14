@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Routing\CachedRouteLoader;
+use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
 
 class CachedRouteLoaderTest extends TestCase
 {
@@ -128,33 +129,32 @@ class CachedRouteLoaderTest extends TestCase
     public function test_clear_cache_does_nothing_when_fingerprint_is_null(): void
     {
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getFingerprint')->once()->andReturn(null);
+        $innerLoader->shouldReceive('getFingerprint')->andReturn(null);
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldNotReceive('delete');
+        $cache = new ArrayCache();
+        $cache->set('some_key', 'some_value');
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
         $loader->clearCache();
 
-        // Mockery expectations serve as assertions
-        $this->assertTrue(true);
+        // Cache should remain unchanged since fingerprint is null
+        $this->assertTrue($cache->has('some_key'));
     }
 
     public function test_clear_cache_deletes_cache_entry(): void
     {
         $fingerprint = 'test_fingerprint_12345';
-        $expectedKey = 'route_loader_' . md5($fingerprint);
+        $cacheKey = 'route_loader_' . md5($fingerprint);
 
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getFingerprint')->once()->andReturn($fingerprint);
+        $innerLoader->shouldReceive('getFingerprint')->andReturn($fingerprint);
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('delete')->with($expectedKey)->once();
+        $cache = new ArrayCache();
+        $cache->set($cacheKey, ['fingerprint' => $fingerprint, 'data' => []]);
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
         $loader->clearCache();
 
-        // Mockery expectations serve as assertions
-        $this->assertTrue(true);
+        $this->assertFalse($cache->has($cacheKey));
     }
 }
