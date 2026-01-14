@@ -3,7 +3,6 @@
 namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use Mockery;
-use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
@@ -11,7 +10,10 @@ use Recca0120\ReverseProxy\Routing\CachedRouteLoader;
 
 class CachedRouteLoaderTest extends TestCase
 {
-    use MockeryPHPUnitIntegration;
+    protected function tearDown(): void
+    {
+        Mockery::close();
+    }
 
     public function test_it_implements_route_loader_interface(): void
     {
