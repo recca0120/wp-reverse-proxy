@@ -38,7 +38,7 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
         ?CacheInterface $cache = null,
         ?MiddlewareManager $middlewareManager = null
     ) {
-        $this->loaders = $loaders;
+        $this->loaders = $this->wrapLoadersWithCache($loaders, $cache);
         $this->cache = $cache;
         $this->middlewareManager = $middlewareManager ?? new MiddlewareManager();
     }
@@ -61,7 +61,7 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
         }
 
         foreach ($this->loaders as $loader) {
-            foreach ($this->loadFromLoader($loader) as $config) {
+            foreach ($loader->load() as $config) {
                 try {
                     $this->addRoute($this->createRoute($config));
                 } catch (InvalidArgumentException $e) {
@@ -200,31 +200,23 @@ class RouteCollection implements IteratorAggregate, Countable, ArrayAccess
     }
 
     /**
-     * Load configs from a single loader with caching support.
+     * Wrap loaders with cache decorator if cache is provided.
      *
-     * @return array<array<string, mixed>>
+     * @param array<RouteLoaderInterface> $loaders
+     * @return array<RouteLoaderInterface>
      */
-    private function loadFromLoader(RouteLoaderInterface $loader): array
+    private function wrapLoadersWithCache(array $loaders, ?CacheInterface $cache): array
     {
-        $cacheKey = $loader->getCacheKey();
-
-        if ($cacheKey === null || $this->cache === null) {
-            return $loader->load();
+        if ($cache === null) {
+            return $loaders;
         }
 
-        $cached = $this->cache->get($cacheKey);
-
-        if ($cached !== null && $loader->isCacheValid($cached['metadata'])) {
-            return $cached['data'];
-        }
-
-        $data = $loader->load();
-        $this->cache->set($cacheKey, [
-            'metadata' => $loader->getCacheMetadata(),
-            'data' => $data,
-        ]);
-
-        return $data;
+        return array_map(
+            static function (RouteLoaderInterface $loader) use ($cache) {
+                return new CachedRouteLoader($loader, $cache);
+            },
+            $loaders
+        );
     }
 
     /**
