@@ -59,11 +59,21 @@ class CachedRouteLoader implements RouteLoaderInterface
     }
 
     /**
-     * Get the cache key for this loader.
-     *
-     * Returns null if the inner loader doesn't support caching.
+     * Clear the cache for this loader.
      */
-    public function getCacheKey(): ?string
+    public function clearCache(): void
+    {
+        $cacheKey = $this->getCacheKey();
+
+        if ($cacheKey !== null) {
+            $this->cache->delete($cacheKey);
+        }
+    }
+
+    /**
+     * Get the cache key for this loader.
+     */
+    private function getCacheKey(): ?string
     {
         $fingerprint = $this->loader->getFingerprint();
 

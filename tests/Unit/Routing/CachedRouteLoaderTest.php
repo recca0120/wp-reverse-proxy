@@ -125,19 +125,22 @@ class CachedRouteLoaderTest extends TestCase
         $this->assertEquals($fingerprint, $loader->getFingerprint());
     }
 
-    public function test_get_cache_key_returns_null_when_fingerprint_is_null(): void
+    public function test_clear_cache_does_nothing_when_fingerprint_is_null(): void
     {
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
         $innerLoader->shouldReceive('getFingerprint')->once()->andReturn(null);
 
         $cache = Mockery::mock(CacheInterface::class);
+        $cache->shouldNotReceive('delete');
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
+        $loader->clearCache();
 
-        $this->assertNull($loader->getCacheKey());
+        // Mockery expectations serve as assertions
+        $this->assertTrue(true);
     }
 
-    public function test_get_cache_key_returns_hashed_key_from_fingerprint(): void
+    public function test_clear_cache_deletes_cache_entry(): void
     {
         $fingerprint = 'test_fingerprint_12345';
         $expectedKey = 'route_loader_' . md5($fingerprint);
@@ -146,9 +149,12 @@ class CachedRouteLoaderTest extends TestCase
         $innerLoader->shouldReceive('getFingerprint')->once()->andReturn($fingerprint);
 
         $cache = Mockery::mock(CacheInterface::class);
+        $cache->shouldReceive('delete')->with($expectedKey)->once();
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
+        $loader->clearCache();
 
-        $this->assertEquals($expectedKey, $loader->getCacheKey());
+        // Mockery expectations serve as assertions
+        $this->assertTrue(true);
     }
 }
