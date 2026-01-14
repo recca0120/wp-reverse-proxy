@@ -37,7 +37,7 @@ class RewritePathTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_rewrites_path_with_single_wildcard()
+    public function test_rewrites_path_with_single_wildcard()
     {
         $this->givenRoutes([
             new Route('/api/v1/*', 'https://backend.example.com', [
@@ -52,7 +52,7 @@ class RewritePathTest extends WP_UnitTestCase
         $this->assertEquals('/v1/users', $lastRequest->getUri()->getPath());
     }
 
-    public function test_it_rewrites_path_with_multiple_wildcards()
+    public function test_rewrites_path_with_multiple_wildcards()
     {
         $this->givenRoutes([
             new Route('/api/*/posts/*', 'https://backend.example.com', [
@@ -67,7 +67,7 @@ class RewritePathTest extends WP_UnitTestCase
         $this->assertEquals('/v2/users/items/123', $lastRequest->getUri()->getPath());
     }
 
-    public function test_it_handles_empty_replacement()
+    public function test_handles_empty_replacement()
     {
         $this->givenRoutes([
             new Route('/legacy/*', 'https://backend.example.com', [

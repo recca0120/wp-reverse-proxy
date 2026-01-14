@@ -24,7 +24,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_implements_route_loader_interface(): void
+    public function test_implements_route_loader_interface(): void
     {
         $loader = new WordPressLoader();
 
@@ -197,7 +197,7 @@ class WordPressLoaderTest extends WP_UnitTestCase
         $this->assertNotEquals($fingerprintAfterSave, $fingerprintAfterToggle);
     }
 
-    public function test_works_with_route_collection(): void
+    public function test_loads_routes_from_collection(): void
     {
         update_option(OptionsStorage::OPTION_NAME, [
             [

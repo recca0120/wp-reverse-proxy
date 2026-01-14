@@ -49,7 +49,7 @@ class LoggingTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_logs_request_info()
+    public function test_logs_request_info()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com'),
@@ -65,7 +65,7 @@ class LoggingTest extends WP_UnitTestCase
         $this->assertNotEmpty($requestLog);
     }
 
-    public function test_it_logs_response_info()
+    public function test_logs_response_info()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com'),
@@ -81,7 +81,7 @@ class LoggingTest extends WP_UnitTestCase
         $this->assertNotEmpty($responseLog);
     }
 
-    public function test_it_logs_status_code()
+    public function test_logs_status_code()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com'),

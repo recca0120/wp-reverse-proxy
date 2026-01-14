@@ -37,7 +37,7 @@ class SetHostTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_sets_custom_host_header()
+    public function test_sets_custom_host_header()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://127.0.0.1:8080', [
@@ -52,7 +52,7 @@ class SetHostTest extends WP_UnitTestCase
         $this->assertEquals('api.example.com', $lastRequest->getHeaderLine('Host'));
     }
 
-    public function test_it_overwrites_existing_host_header()
+    public function test_overwrites_existing_host_header()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [

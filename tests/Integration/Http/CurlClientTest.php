@@ -8,7 +8,7 @@ use Recca0120\ReverseProxy\Http\CurlClient;
 
 class CurlClientTest extends HttpClientTestCase
 {
-    public function test_it_sends_get_request()
+    public function test_sends_get_request()
     {
         $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/api/test'));
@@ -23,7 +23,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertEquals('/api/test', $body['uri']);
     }
 
-    public function test_it_sends_post_request_with_body()
+    public function test_sends_post_request_with_body()
     {
         $client = new CurlClient();
         $request = new Request('POST', $this->getServerUrl('/api/test'), [
@@ -39,7 +39,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertEquals('{"data":"test"}', $body['body']);
     }
 
-    public function test_it_throws_exception_on_connection_error()
+    public function test_throws_exception_on_connection_error()
     {
         $this->expectException(NetworkException::class);
 
@@ -49,7 +49,7 @@ class CurlClientTest extends HttpClientTestCase
         $client->sendRequest($request);
     }
 
-    public function test_it_does_not_follow_redirects()
+    public function test_does_not_follow_redirects()
     {
         $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/redirect'));
@@ -60,7 +60,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertStringContainsString('/redirected', $response->getHeaderLine('Location'));
     }
 
-    public function test_it_handles_error_status_codes()
+    public function test_handles_error_status_codes()
     {
         $client = new CurlClient();
 
@@ -71,7 +71,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertEquals(500, $response500->getStatusCode());
     }
 
-    public function test_it_sends_request_headers()
+    public function test_sends_request_headers()
     {
         $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/'), [
@@ -86,7 +86,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertEquals('custom-value', $body['headers']['X-CUSTOM-HEADER']);
     }
 
-    public function test_it_receives_response_headers()
+    public function test_receives_response_headers()
     {
         $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/headers'));
@@ -96,7 +96,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertEquals('test-value', $response->getHeaderLine('X-Custom-Header'));
     }
 
-    public function test_it_handles_multiple_headers_with_same_name()
+    public function test_handles_multiple_headers_with_same_name()
     {
         $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/headers'));
@@ -109,7 +109,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertContains('b=2', $cookies);
     }
 
-    public function test_it_respects_timeout_option()
+    public function test_respects_timeout_option()
     {
         $client = new CurlClient(['timeout' => 1]);
         $request = new Request('GET', $this->getServerUrl('/delay'));
@@ -119,7 +119,7 @@ class CurlClientTest extends HttpClientTestCase
         $client->sendRequest($request);
     }
 
-    public function test_it_auto_decodes_gzip_response_by_default()
+    public function test_auto_decodes_gzip_response_by_default()
     {
         $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/gzip'), [
@@ -136,7 +136,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertStringContainsString('gzip', $body['accept_encoding']);
     }
 
-    public function test_it_preserves_gzip_response_when_decode_content_is_false()
+    public function test_preserves_gzip_response_when_decode_content_is_false()
     {
         $client = new CurlClient(['decode_content' => false]);
         $request = new Request('GET', $this->getServerUrl('/gzip'), [
@@ -153,7 +153,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertStringStartsWith("\x1f\x8b", $body);
     }
 
-    public function test_it_auto_decodes_deflate_response_by_default()
+    public function test_auto_decodes_deflate_response_by_default()
     {
         $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/deflate'), [
@@ -170,7 +170,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertStringContainsString('deflate', $body['accept_encoding']);
     }
 
-    public function test_it_preserves_deflate_response_when_decode_content_is_false()
+    public function test_preserves_deflate_response_when_decode_content_is_false()
     {
         $client = new CurlClient(['decode_content' => false]);
         $request = new Request('GET', $this->getServerUrl('/deflate'), [
@@ -188,7 +188,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertStringContainsString('deflate', $decompressed['accept_encoding']);
     }
 
-    public function test_it_handles_lowercase_content_encoding_header()
+    public function test_handles_lowercase_content_encoding_header()
     {
         $client = new CurlClient();
         $request = new Request('GET', $this->getServerUrl('/gzip-lowercase'), [
@@ -206,7 +206,7 @@ class CurlClientTest extends HttpClientTestCase
         $this->assertStringContainsString('gzip', $body['accept_encoding']);
     }
 
-    public function test_it_respects_connect_timeout_option()
+    public function test_respects_connect_timeout_option()
     {
         // Use a non-routable IP to test connection timeout
         $client = new CurlClient(['connect_timeout' => 1, 'timeout' => 30]);
@@ -224,7 +224,7 @@ class CurlClientTest extends HttpClientTestCase
         }
     }
 
-    public function test_it_respects_proxy_option()
+    public function test_respects_proxy_option()
     {
         // Test that proxy option is accepted (will fail to connect but shouldn't error on option)
         $client = new CurlClient(['proxy' => 'http://127.0.0.1:9999', 'timeout' => 1]);

@@ -21,7 +21,7 @@ class CircuitBreakerTest extends TestCase
         $this->cache = new ArrayCache();
     }
 
-    public function test_it_allows_request_when_circuit_is_closed()
+    public function test_allows_request_when_circuit_is_closed()
     {
         $middleware = new CircuitBreaker('test-service', 3, 60, [500, 503]);
         $middleware->setCache($this->cache);
@@ -38,7 +38,7 @@ class CircuitBreakerTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_returns_503_when_circuit_is_open()
+    public function test_returns_503_when_circuit_is_open()
     {
         $cacheKey = 'rp_cb_' . md5('test-service');
         $this->cache->set($cacheKey, [
@@ -62,7 +62,7 @@ class CircuitBreakerTest extends TestCase
         $this->assertEquals(503, $response->getStatusCode());
     }
 
-    public function test_it_opens_circuit_after_threshold_failures()
+    public function test_opens_circuit_after_threshold_failures()
     {
         $cacheKey = 'rp_cb_' . md5('test-service');
         $this->cache->set($cacheKey, [
@@ -83,7 +83,7 @@ class CircuitBreakerTest extends TestCase
         $this->assertEquals(CircuitBreaker::STATE_OPEN, $cachedState['status']);
     }
 
-    public function test_it_resets_failure_count_on_success()
+    public function test_resets_failure_count_on_success()
     {
         $cacheKey = 'rp_cb_' . md5('test-service');
         $this->cache->set($cacheKey, [
@@ -105,7 +105,7 @@ class CircuitBreakerTest extends TestCase
         $this->assertEquals(0, $cachedState['failures']);
     }
 
-    public function test_it_transitions_to_half_open_after_timeout()
+    public function test_transitions_to_half_open_after_timeout()
     {
         $cacheKey = 'rp_cb_' . md5('test-service');
         $this->cache->set($cacheKey, [
@@ -128,7 +128,7 @@ class CircuitBreakerTest extends TestCase
         $this->assertTrue($called);
     }
 
-    public function test_it_counts_network_errors_as_failures()
+    public function test_counts_network_errors_as_failures()
     {
         $cacheKey = 'rp_cb_' . md5('test-service');
         $this->cache->set($cacheKey, [
@@ -153,7 +153,7 @@ class CircuitBreakerTest extends TestCase
         $this->assertEquals(1, $cachedState['failures']);
     }
 
-    public function test_it_uses_custom_failure_status_codes()
+    public function test_uses_custom_failure_status_codes()
     {
         $middleware = new CircuitBreaker('test-service', 3, 60, [429]);
         $middleware->setCache($this->cache);

@@ -11,7 +11,7 @@ use Recca0120\ReverseProxy\Middleware\Timeout;
 
 class TimeoutTest extends TestCase
 {
-    public function test_it_passes_through_successful_requests()
+    public function test_passes_through_successful_requests()
     {
         $middleware = new Timeout(30);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -26,7 +26,7 @@ class TimeoutTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_adds_timeout_header_to_request()
+    public function test_adds_timeout_header_to_request()
     {
         $middleware = new Timeout(15);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -41,7 +41,7 @@ class TimeoutTest extends TestCase
         $this->assertEquals('15', $capturedRequest->getHeaderLine('X-Timeout'));
     }
 
-    public function test_it_uses_default_timeout()
+    public function test_uses_default_timeout()
     {
         $middleware = new Timeout();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -56,7 +56,7 @@ class TimeoutTest extends TestCase
         $this->assertEquals('30', $capturedRequest->getHeaderLine('X-Timeout'));
     }
 
-    public function test_it_returns_504_on_timeout_exception()
+    public function test_returns_504_on_timeout_exception()
     {
         $middleware = new Timeout(5);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -68,7 +68,7 @@ class TimeoutTest extends TestCase
         $this->assertEquals(504, $response->getStatusCode());
     }
 
-    public function test_it_includes_timeout_info_in_504_response()
+    public function test_includes_timeout_info_in_504_response()
     {
         $middleware = new Timeout(5);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -83,7 +83,7 @@ class TimeoutTest extends TestCase
         $this->assertEquals(5, $body['timeout']);
     }
 
-    public function test_it_rethrows_non_timeout_exceptions()
+    public function test_rethrows_non_timeout_exceptions()
     {
         $middleware = new Timeout(30);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -95,7 +95,7 @@ class TimeoutTest extends TestCase
         });
     }
 
-    public function test_it_recognizes_timed_out_message()
+    public function test_recognizes_timed_out_message()
     {
         $middleware = new Timeout(5);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -107,7 +107,7 @@ class TimeoutTest extends TestCase
         $this->assertEquals(504, $response->getStatusCode());
     }
 
-    public function test_it_has_correct_priority()
+    public function test_has_correct_priority()
     {
         $middleware = new Timeout();
 

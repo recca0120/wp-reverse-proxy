@@ -19,7 +19,7 @@ class CachingTest extends TestCase
         $this->cache = new ArrayCache();
     }
 
-    public function test_it_returns_cached_response_on_hit()
+    public function test_returns_cached_response_on_hit()
     {
         $uri = 'https://example.com/api/users';
         $cacheKey = 'rp_cache_' . md5($uri);
@@ -47,7 +47,7 @@ class CachingTest extends TestCase
         $this->assertEquals('{"cached":true}', (string) $response->getBody());
     }
 
-    public function test_it_calls_next_on_cache_miss()
+    public function test_calls_next_on_cache_miss()
     {
         $middleware = new Caching(300);
         $middleware->setCache($this->cache);
@@ -64,7 +64,7 @@ class CachingTest extends TestCase
         $this->assertEquals('MISS', $response->getHeaderLine('X-Cache'));
     }
 
-    public function test_it_caches_200_responses()
+    public function test_caches_200_responses()
     {
         $middleware = new Caching(300);
         $middleware->setCache($this->cache);
@@ -77,7 +77,7 @@ class CachingTest extends TestCase
         $this->assertNotEmpty($this->cache->all());
     }
 
-    public function test_it_does_not_cache_non_200_responses()
+    public function test_does_not_cache_non_200_responses()
     {
         $middleware = new Caching(300);
         $middleware->setCache($this->cache);
@@ -90,7 +90,7 @@ class CachingTest extends TestCase
         $this->assertEmpty($this->cache->all());
     }
 
-    public function test_it_does_not_cache_post_requests()
+    public function test_does_not_cache_post_requests()
     {
         $middleware = new Caching(300);
         $middleware->setCache($this->cache);
@@ -108,7 +108,7 @@ class CachingTest extends TestCase
         $this->assertEmpty($this->cache->all());
     }
 
-    public function test_it_does_not_cache_responses_with_no_cache_header()
+    public function test_does_not_cache_responses_with_no_cache_header()
     {
         $middleware = new Caching(300);
         $middleware->setCache($this->cache);
@@ -121,7 +121,7 @@ class CachingTest extends TestCase
         $this->assertEmpty($this->cache->all());
     }
 
-    public function test_it_does_not_cache_responses_with_no_store_header()
+    public function test_does_not_cache_responses_with_no_store_header()
     {
         $middleware = new Caching(300);
         $middleware->setCache($this->cache);
@@ -134,7 +134,7 @@ class CachingTest extends TestCase
         $this->assertEmpty($this->cache->all());
     }
 
-    public function test_it_does_not_cache_private_responses()
+    public function test_does_not_cache_private_responses()
     {
         $middleware = new Caching(300);
         $middleware->setCache($this->cache);
@@ -147,7 +147,7 @@ class CachingTest extends TestCase
         $this->assertEmpty($this->cache->all());
     }
 
-    public function test_it_caches_head_requests()
+    public function test_caches_head_requests()
     {
         $middleware = new Caching(300);
         $middleware->setCache($this->cache);
@@ -160,7 +160,7 @@ class CachingTest extends TestCase
         $this->assertNotEmpty($this->cache->all());
     }
 
-    public function test_it_uses_custom_ttl()
+    public function test_uses_custom_ttl()
     {
         $middleware = new Caching(600);
         $middleware->setCache($this->cache);

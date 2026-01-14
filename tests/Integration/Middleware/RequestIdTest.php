@@ -37,7 +37,7 @@ class RequestIdTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_generates_request_id_and_forwards_to_backend()
+    public function test_generates_request_id_and_forwards_to_backend()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -55,7 +55,7 @@ class RequestIdTest extends WP_UnitTestCase
         $this->assertMatchesRegularExpression('/^[a-f0-9-]{36}$/', $requestId);
     }
 
-    public function test_it_adds_request_id_to_response()
+    public function test_adds_request_id_to_response()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -82,7 +82,7 @@ class RequestIdTest extends WP_UnitTestCase
         $this->assertEquals($lastRequest->getHeaderLine('X-Request-ID'), $responseId);
     }
 
-    public function test_it_preserves_existing_request_id_from_client()
+    public function test_preserves_existing_request_id_from_client()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -100,7 +100,7 @@ class RequestIdTest extends WP_UnitTestCase
         $this->assertEquals('existing-request-id-123', $lastRequest->getHeaderLine('X-Request-ID'));
     }
 
-    public function test_it_uses_custom_header_name()
+    public function test_uses_custom_header_name()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [

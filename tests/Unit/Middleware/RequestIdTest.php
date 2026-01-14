@@ -12,7 +12,7 @@ class RequestIdTest extends TestCase
 {
     use AssertionRenames;
 
-    public function test_it_generates_request_id_when_not_present()
+    public function test_generates_request_id_when_not_present()
     {
         $middleware = new RequestId();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -32,7 +32,7 @@ class RequestIdTest extends TestCase
         );
     }
 
-    public function test_it_preserves_existing_request_id()
+    public function test_preserves_existing_request_id()
     {
         $middleware = new RequestId();
         $existingId = 'existing-request-id-123';
@@ -50,7 +50,7 @@ class RequestIdTest extends TestCase
         $this->assertEquals($existingId, $response->getHeaderLine('X-Request-ID'));
     }
 
-    public function test_it_uses_custom_header_name()
+    public function test_uses_custom_header_name()
     {
         $middleware = new RequestId('X-Correlation-ID');
         $request = new ServerRequest('GET', 'https://example.com/api/users');

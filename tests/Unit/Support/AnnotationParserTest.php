@@ -192,7 +192,7 @@ class AnnotationParserTest extends TestCase
         $this->assertTrue($result['callback']['skip']);
     }
 
-    public function test_parse_constructor_params_handles_param_without_description()
+    public function test_parse_params_handles_missing_description()
     {
         $constructor = (new ReflectionClass(ParamWithoutDescriptionFixture::class))->getConstructor();
 
@@ -206,7 +206,7 @@ class AnnotationParserTest extends TestCase
         $this->assertCount(2, $result);
     }
 
-    public function test_parse_constructor_params_returns_empty_for_no_constructor()
+    public function test_parse_params_returns_empty_without_constructor()
     {
         $class = new ReflectionClass(NoDocBlockFixture::class);
 
@@ -218,7 +218,7 @@ class AnnotationParserTest extends TestCase
         $this->assertNull($constructor);
     }
 
-    public function test_parse_constructor_params_returns_empty_for_empty_docblock()
+    public function test_parse_params_returns_empty_for_empty_docblock()
     {
         $constructor = (new ReflectionClass(EmptyDocBlockConstructorFixture::class))->getConstructor();
 

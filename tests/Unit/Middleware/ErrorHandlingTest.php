@@ -13,7 +13,7 @@ use Recca0120\ReverseProxy\Middleware\ErrorHandling;
 
 class ErrorHandlingTest extends TestCase
 {
-    public function test_it_returns_response_when_no_exception()
+    public function test_returns_response_when_no_exception()
     {
         $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -26,7 +26,7 @@ class ErrorHandlingTest extends TestCase
         $this->assertEquals('{"success":true}', (string) $response->getBody());
     }
 
-    public function test_it_returns_502_when_network_exception_occurs()
+    public function test_returns_502_when_network_exception_occurs()
     {
         $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -51,7 +51,7 @@ class ErrorHandlingTest extends TestCase
         $this->assertEquals(502, $response->getStatusCode());
     }
 
-    public function test_it_returns_502_when_client_exception_occurs()
+    public function test_returns_502_when_client_exception_occurs()
     {
         $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -63,7 +63,7 @@ class ErrorHandlingTest extends TestCase
         $this->assertEquals(502, $response->getStatusCode());
     }
 
-    public function test_it_returns_json_error_body()
+    public function test_returns_json_error_body()
     {
         $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -78,7 +78,7 @@ class ErrorHandlingTest extends TestCase
         $this->assertStringContainsString('Connection refused', $body['error']);
     }
 
-    public function test_it_sets_json_content_type_header()
+    public function test_sets_json_content_type_header()
     {
         $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -90,7 +90,7 @@ class ErrorHandlingTest extends TestCase
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
     }
 
-    public function test_it_rethrows_non_client_exceptions()
+    public function test_rethrows_non_client_exceptions()
     {
         $middleware = new ErrorHandling();
         $request = new ServerRequest('GET', 'https://example.com/api/users');

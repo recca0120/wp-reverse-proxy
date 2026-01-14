@@ -44,7 +44,7 @@ class CachingTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_caches_get_response()
+    public function test_caches_get_response()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -67,7 +67,7 @@ class CachingTest extends WP_UnitTestCase
         $this->assertCount(1, $requests);
     }
 
-    public function test_it_does_not_cache_post_requests()
+    public function test_does_not_cache_post_requests()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -92,7 +92,7 @@ class CachingTest extends WP_UnitTestCase
         $this->assertCount(2, $requests);
     }
 
-    public function test_it_does_not_cache_non_200_responses()
+    public function test_does_not_cache_non_200_responses()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -111,7 +111,7 @@ class CachingTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"found"}', $output2);
     }
 
-    public function test_it_adds_cache_headers_to_response()
+    public function test_adds_cache_headers_to_response()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -145,7 +145,7 @@ class CachingTest extends WP_UnitTestCase
         $this->assertEquals('HIT', $capturedResponse->getHeaderLine('X-Cache'));
     }
 
-    public function test_it_respects_cache_control_no_cache()
+    public function test_respects_cache_control_no_cache()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -164,7 +164,7 @@ class CachingTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"v2"}', $output);
     }
 
-    public function test_it_caches_by_uri_including_query_string()
+    public function test_caches_by_uri_including_query_string()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [

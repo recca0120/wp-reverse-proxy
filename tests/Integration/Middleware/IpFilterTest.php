@@ -37,7 +37,7 @@ class IpFilterTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_allows_ip_in_whitelist()
+    public function test_allows_ip_in_whitelist()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
 
@@ -55,7 +55,7 @@ class IpFilterTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"test"}', $output);
     }
 
-    public function test_it_blocks_ip_not_in_whitelist()
+    public function test_blocks_ip_not_in_whitelist()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.200';
 
@@ -81,7 +81,7 @@ class IpFilterTest extends WP_UnitTestCase
         $this->assertEquals(403, $capturedResponse->getStatusCode());
     }
 
-    public function test_it_blocks_ip_in_blacklist()
+    public function test_blocks_ip_in_blacklist()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
 
@@ -107,7 +107,7 @@ class IpFilterTest extends WP_UnitTestCase
         $this->assertEquals(403, $capturedResponse->getStatusCode());
     }
 
-    public function test_it_allows_ip_not_in_blacklist()
+    public function test_allows_ip_not_in_blacklist()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.200';
 
@@ -125,7 +125,7 @@ class IpFilterTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"test"}', $output);
     }
 
-    public function test_it_supports_cidr_notation_in_whitelist()
+    public function test_supports_cidr_notation_in_whitelist()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.50';
 
@@ -143,7 +143,7 @@ class IpFilterTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"test"}', $output);
     }
 
-    public function test_it_blocks_ip_outside_cidr_range()
+    public function test_blocks_ip_outside_cidr_range()
     {
         $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
 

@@ -37,7 +37,7 @@ class AllowMethodsTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_allows_get_request()
+    public function test_allows_get_request()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -51,7 +51,7 @@ class AllowMethodsTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"success"}', $output);
     }
 
-    public function test_it_allows_post_request()
+    public function test_allows_post_request()
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
 
@@ -75,7 +75,7 @@ class AllowMethodsTest extends WP_UnitTestCase
         $this->assertEquals(201, $capturedResponse->getStatusCode());
     }
 
-    public function test_it_returns_405_for_disallowed_method()
+    public function test_returns_405_for_disallowed_method()
     {
         $_SERVER['REQUEST_METHOD'] = 'DELETE';
 
@@ -99,7 +99,7 @@ class AllowMethodsTest extends WP_UnitTestCase
         $this->assertEquals('GET, POST', $capturedResponse->getHeaderLine('Allow'));
     }
 
-    public function test_it_allows_options_for_cors_preflight()
+    public function test_allows_options_for_cors_preflight()
     {
         $_SERVER['REQUEST_METHOD'] = 'OPTIONS';
 

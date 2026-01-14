@@ -9,7 +9,7 @@ use Recca0120\ReverseProxy\Middleware\SanitizeHeaders;
 
 class SanitizeHeadersTest extends TestCase
 {
-    public function test_it_passes_request_to_next_middleware()
+    public function test_passes_request_to_next_middleware()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
@@ -22,7 +22,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertEquals('response body', (string) $response->getBody());
     }
 
-    public function test_it_removes_br_from_accept_encoding()
+    public function test_removes_br_from_accept_encoding()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
@@ -39,7 +39,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertEquals('gzip, deflate', $capturedRequest->getHeaderLine('Accept-Encoding'));
     }
 
-    public function test_it_removes_br_when_only_encoding()
+    public function test_removes_br_when_only_encoding()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
@@ -56,7 +56,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertFalse($capturedRequest->hasHeader('Accept-Encoding'));
     }
 
-    public function test_it_removes_br_at_beginning()
+    public function test_removes_br_at_beginning()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
@@ -73,7 +73,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertEquals('gzip, deflate', $capturedRequest->getHeaderLine('Accept-Encoding'));
     }
 
-    public function test_it_removes_br_in_middle()
+    public function test_removes_br_in_middle()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
@@ -90,7 +90,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertEquals('gzip, deflate', $capturedRequest->getHeaderLine('Accept-Encoding'));
     }
 
-    public function test_it_preserves_other_encodings()
+    public function test_preserves_other_encodings()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com', [
@@ -107,7 +107,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertEquals('gzip, deflate', $capturedRequest->getHeaderLine('Accept-Encoding'));
     }
 
-    public function test_it_handles_missing_accept_encoding()
+    public function test_handles_missing_accept_encoding()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
@@ -122,7 +122,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertFalse($capturedRequest->hasHeader('Accept-Encoding'));
     }
 
-    public function test_it_removes_hop_by_hop_headers_from_response()
+    public function test_removes_hop_by_hop_headers_from_response()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
@@ -142,7 +142,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertFalse($response->hasHeader('Keep-Alive'));
     }
 
-    public function test_it_removes_all_hop_by_hop_headers()
+    public function test_removes_all_hop_by_hop_headers()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
@@ -163,7 +163,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertEmpty($response->getHeaders());
     }
 
-    public function test_it_preserves_content_headers()
+    public function test_preserves_content_headers()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
@@ -183,7 +183,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertEquals('custom-value', $response->getHeaderLine('X-Custom-Header'));
     }
 
-    public function test_it_removes_hop_by_hop_headers_case_insensitively()
+    public function test_removes_hop_by_hop_headers_case_insensitively()
     {
         $middleware = new SanitizeHeaders();
         $request = new ServerRequest('GET', 'http://example.com');
@@ -199,7 +199,7 @@ class SanitizeHeadersTest extends TestCase
         $this->assertEmpty($response->getHeaders());
     }
 
-    public function test_it_has_high_priority()
+    public function test_has_high_priority()
     {
         $middleware = new SanitizeHeaders();
 

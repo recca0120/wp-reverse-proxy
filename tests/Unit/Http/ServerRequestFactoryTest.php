@@ -16,7 +16,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->factory = new ServerRequestFactory(new Psr17Factory());
     }
 
-    public function test_it_does_not_duplicate_content_type_header()
+    public function test_does_not_duplicate_content_type_header()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'POST',
@@ -33,7 +33,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertEquals('application/json', $contentType[0]);
     }
 
-    public function test_it_does_not_duplicate_content_length_header()
+    public function test_does_not_duplicate_content_length_header()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'POST',
@@ -50,7 +50,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertEquals('100', $contentLength[0]);
     }
 
-    public function test_it_skips_empty_headers()
+    public function test_skips_empty_headers()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'GET',
@@ -66,7 +66,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertFalse($request->hasHeader('Referer'));
     }
 
-    public function test_it_preserves_valid_headers()
+    public function test_preserves_valid_headers()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'GET',
@@ -85,7 +85,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertEquals('custom-value', $request->getHeaderLine('X-Custom-Header'));
     }
 
-    public function test_it_creates_correct_uri()
+    public function test_creates_correct_uri()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'GET',
@@ -99,7 +99,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertEquals('https://example.com/api/users?page=1&limit=10', (string) $request->getUri());
     }
 
-    public function test_it_accepts_body_as_string()
+    public function test_accepts_body_as_string()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'POST',
@@ -112,7 +112,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertEquals('{"name":"test"}', (string) $request->getBody());
     }
 
-    public function test_it_accepts_body_as_callable()
+    public function test_accepts_body_as_callable()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'POST',
@@ -127,7 +127,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertEquals('{"name":"test"}', (string) $request->getBody());
     }
 
-    public function test_it_does_not_call_body_callable_for_get_request()
+    public function test_does_not_call_body_callable_for_get_request()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'GET',
@@ -146,7 +146,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertEquals('', (string) $request->getBody());
     }
 
-    public function test_it_calls_body_callable_for_post_request()
+    public function test_calls_body_callable_for_post_request()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'POST',
@@ -165,7 +165,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertEquals('body content', (string) $request->getBody());
     }
 
-    public function test_it_calls_body_callable_for_put_request()
+    public function test_calls_body_callable_for_put_request()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'PUT',
@@ -183,7 +183,7 @@ class ServerRequestFactoryTest extends TestCase
         $this->assertTrue($called);
     }
 
-    public function test_it_calls_body_callable_for_patch_request()
+    public function test_calls_body_callable_for_patch_request()
     {
         $serverParams = [
             'REQUEST_METHOD' => 'PATCH',

@@ -20,14 +20,14 @@ class MiddlewareReflectorTest extends TestCase
         $this->reflector = new MiddlewareReflector();
     }
 
-    public function test_it_extracts_class_description_from_phpdoc()
+    public function test_extracts_class_description_from_phpdoc()
     {
         $info = $this->reflector->reflect(Timeout::class);
 
         $this->assertArrayHasKey('description', $info);
     }
 
-    public function test_it_extracts_constructor_parameters()
+    public function test_extracts_constructor_parameters()
     {
         $info = $this->reflector->reflect(Timeout::class);
 
@@ -35,7 +35,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertNotEmpty($info['fields']);
     }
 
-    public function test_it_extracts_parameter_name()
+    public function test_extracts_parameter_name()
     {
         $info = $this->reflector->reflect(SetHost::class);
 
@@ -43,7 +43,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('host', $info['fields'][0]['name']);
     }
 
-    public function test_it_extracts_parameter_type()
+    public function test_extracts_parameter_type()
     {
         $info = $this->reflector->reflect(Timeout::class);
 
@@ -51,7 +51,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('number', $field['type']);
     }
 
-    public function test_it_extracts_default_value()
+    public function test_extracts_default_value()
     {
         $info = $this->reflector->reflect(Timeout::class);
 
@@ -59,7 +59,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals(30, $field['default']);
     }
 
-    public function test_it_marks_required_when_no_default()
+    public function test_marks_required_when_no_default()
     {
         $info = $this->reflector->reflect(SetHost::class);
 
@@ -67,7 +67,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertTrue($field['required']);
     }
 
-    public function test_it_generates_label_from_parameter_name()
+    public function test_generates_label_from_parameter_name()
     {
         $info = $this->reflector->reflect(SetHost::class);
 
@@ -75,7 +75,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('Target host name', $field['label']);
     }
 
-    public function test_it_generates_label_from_camel_case()
+    public function test_generates_label_from_camel_case()
     {
         // Use test fixture to test auto-reflection from parameters
         $info = $this->reflector->reflect(AutoReflectMiddlewareFixture::class);
@@ -84,7 +84,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('Allowed Origins', $allowedOriginsField['label']);
     }
 
-    public function test_it_maps_string_type_to_text()
+    public function test_maps_string_type_to_text()
     {
         $info = $this->reflector->reflect(SetHost::class);
 
@@ -92,7 +92,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('text', $field['type']);
     }
 
-    public function test_it_maps_int_type_to_number()
+    public function test_maps_int_type_to_number()
     {
         $info = $this->reflector->reflect(Timeout::class);
 
@@ -100,7 +100,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('number', $field['type']);
     }
 
-    public function test_it_maps_bool_type_to_checkbox()
+    public function test_maps_bool_type_to_checkbox()
     {
         // Use test fixture to test auto-reflection from parameters
         $info = $this->reflector->reflect(AutoReflectMiddlewareFixture::class);
@@ -109,7 +109,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('checkbox', $allowCredentialsField['type']);
     }
 
-    public function test_it_maps_array_type_without_phpdoc_to_json()
+    public function test_maps_array_type_without_phpdoc_to_json()
     {
         // Use test fixture to test auto-reflection from parameters
         // array without PHPDoc type hint should be json (allows any structure)
@@ -119,7 +119,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('json', $allowedOriginsField['type']);
     }
 
-    public function test_it_extracts_param_description_as_label()
+    public function test_extracts_param_description_as_label()
     {
         // Use test fixture to test auto-reflection with @param description
         $info = $this->reflector->reflect(ParamDescriptionMiddlewareFixture::class);
@@ -128,14 +128,14 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('Timeout in seconds', $field['label']);
     }
 
-    public function test_it_generates_class_label_from_class_name()
+    public function test_generates_class_label_from_class_name()
     {
         $info = $this->reflector->reflect(SetHost::class);
 
         $this->assertEquals('Set Host', $info['label']);
     }
 
-    public function test_it_handles_class_with_optional_array_parameter()
+    public function test_handles_class_with_optional_array_parameter()
     {
         // Use test fixture to test auto-reflection with optional array parameter
         // array without PHPDoc type hint should be json
@@ -146,7 +146,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('json', $info['fields'][0]['type']);
     }
 
-    public function test_it_handles_class_without_phpdoc()
+    public function test_handles_class_without_phpdoc()
     {
         // Create anonymous class without PHPDoc
         $class = new class ('test') {
@@ -167,7 +167,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertTrue($info['fields'][0]['required']);
     }
 
-    public function test_it_handles_class_without_constructor()
+    public function test_handles_class_without_constructor()
     {
         $class = new class () {
             public function process()
@@ -181,7 +181,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEmpty($info['fields']);
     }
 
-    public function test_it_handles_parameter_without_type_hint()
+    public function test_handles_parameter_without_type_hint()
     {
         $class = new class ('test') {
             private $value;
@@ -198,7 +198,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('text', $info['fields'][0]['type']);
     }
 
-    public function test_it_parses_param_with_options_as_select()
+    public function test_parses_param_with_options_as_select()
     {
         $info = $this->reflector->reflect(ParamWithOptionsTestMiddleware::class);
 
@@ -209,7 +209,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('allow:Allow|deny:Deny', $info['fields'][0]['options']);
     }
 
-    public function test_it_parses_array_with_options_as_checkboxes()
+    public function test_parses_array_with_options_as_checkboxes()
     {
         $info = $this->reflector->reflect(ArrayWithOptionsTestMiddleware::class);
 
@@ -220,7 +220,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('GET|POST|PUT|DELETE', $info['fields'][0]['options']);
     }
 
-    public function test_it_parses_keyvalue_type()
+    public function test_parses_keyvalue_type()
     {
         $info = $this->reflector->reflect(KeyValueTestMiddleware::class);
 
@@ -232,7 +232,7 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('Replacement', $info['fields'][0]['valueLabel']);
     }
 
-    public function test_it_generates_label_with_acronyms()
+    public function test_generates_label_with_acronyms()
     {
         $info = $this->reflector->reflect(Cors::class);
         $this->assertEquals('CORS', $info['label']);
@@ -244,14 +244,14 @@ class MiddlewareReflectorTest extends TestCase
         $this->assertEquals('IP Filter', $info['label']);
     }
 
-    public function test_it_parses_phpdoc_description()
+    public function test_parses_phpdoc_description()
     {
         $info = $this->reflector->reflect(PHPDocDescriptionTestMiddleware::class);
 
         $this->assertEquals('Add CORS headers to the response.', $info['description']);
     }
 
-    public function test_it_falls_back_to_parameters_when_no_ui_field()
+    public function test_falls_back_to_parameters_when_no_ui_field()
     {
         // Use test fixture that has no @UIField, should use parameter reflection
         $info = $this->reflector->reflect(NoUIFieldMiddlewareFixture::class);

@@ -100,7 +100,7 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertStringContainsString('POST', $output);
     }
 
-    public function test_it_can_save_route()
+    public function test_can_save_route()
     {
         $routesPage = new RoutesPage();
 
@@ -121,7 +121,7 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertEquals('https://api.example.com', $routes[0]['target']);
     }
 
-    public function test_it_can_update_existing_route()
+    public function test_can_update_existing_route()
     {
         $routesPage = new RoutesPage();
 
@@ -152,7 +152,7 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertEquals('https://api-v2.example.com', $routes[0]['target']);
     }
 
-    public function test_it_can_delete_route()
+    public function test_can_delete_route()
     {
         $routesPage = new RoutesPage();
 
@@ -173,7 +173,7 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertCount(0, $routesPage->getRoutes());
     }
 
-    public function test_it_can_toggle_route_status()
+    public function test_can_toggle_route_status()
     {
         $routesPage = new RoutesPage();
 
@@ -354,7 +354,7 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertStringContainsString('_wpnonce=', $url);
     }
 
-    public function test_get_available_middlewares_returns_middlewares_from_registry()
+    public function test_get_available_middlewares_from_registry()
     {
         $middlewareManager = reverse_proxy_create_middleware_manager();
         $registry = new \Recca0120\ReverseProxy\Routing\MiddlewareRegistry($middlewareManager);
@@ -378,7 +378,7 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertArrayHasKey('fields', $setHost);
     }
 
-    public function test_get_available_middlewares_returns_empty_without_registry()
+    public function test_get_available_middlewares_empty_without_registry()
     {
         $routesPage = new RoutesPage(null);
 
@@ -444,7 +444,7 @@ class RoutesPageTest extends WP_UnitTestCase
         $this->assertStringContainsString('options-general.php?page=reverse-proxy', reset($result));
     }
 
-    public function test_admin_enqueue_assets_loads_existing_middlewares_when_editing()
+    public function test_enqueue_assets_loads_middlewares_when_editing()
     {
         $routesPage = new RoutesPage();
 

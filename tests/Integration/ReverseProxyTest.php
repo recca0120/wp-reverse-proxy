@@ -44,7 +44,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_proxies_request_matching_route_to_target_server()
+    public function test_proxies_request_matching_route_to_target_server()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(200, ['Content-Type' => 'application/json'], '{"message":"hello"}'));
@@ -58,7 +58,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertEquals('{"message":"hello"}', $output);
     }
 
-    public function test_it_does_not_proxy_request_not_matching_any_route()
+    public function test_does_not_proxy_request_not_matching_any_route()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
 
@@ -84,7 +84,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertFalse($lastRequest);
     }
 
-    public function test_it_forwards_post_request_with_body()
+    public function test_forwards_post_request_with_body()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(201, ['Content-Type' => 'application/json'], '{"id":1}'));
@@ -112,7 +112,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertEquals('{"id":1}', $output);
     }
 
-    public function test_it_forwards_request_headers()
+    public function test_forwards_request_headers()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(200, ['Content-Type' => 'application/json'], '{"authenticated":true}'));
@@ -131,7 +131,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertEquals('application/json', $lastRequest->getHeaderLine('Content-Type'));
     }
 
-    public function test_it_preserves_query_string()
+    public function test_preserves_query_string()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(200, ['Content-Type' => 'application/json'], '{"users":[]}'));
@@ -146,7 +146,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         );
     }
 
-    public function test_it_forwards_backend_error_status_code()
+    public function test_forwards_backend_error_status_code()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(404, ['Content-Type' => 'application/json'], '{"error":"Not Found"}'));
@@ -165,7 +165,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertEquals('{"error":"Not Found"}', $output);
     }
 
-    public function test_it_forwards_backend_500_error()
+    public function test_forwards_backend_500_error()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(500, ['Content-Type' => 'application/json'], '{"error":"Internal Server Error"}'));
@@ -184,7 +184,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertEquals('{"error":"Internal Server Error"}', $output);
     }
 
-    public function test_it_handles_connection_error()
+    public function test_handles_connection_error()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->mockClient->addException(
@@ -197,7 +197,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertStringContainsString('Bad Gateway', $output);
     }
 
-    public function test_it_forwards_response_headers()
+    public function test_forwards_response_headers()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(200, [
@@ -224,7 +224,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"test"}', $output);
     }
 
-    public function test_it_matches_first_matching_route()
+    public function test_matches_first_matching_route()
     {
         $this->givenRoutes([
             new Route('/api/v2/*', 'https://api-v2.example.com'),
@@ -242,7 +242,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         );
     }
 
-    public function test_it_falls_through_to_next_route()
+    public function test_falls_through_to_next_route()
     {
         $this->givenRoutes([
             new Route('/api/v2/*', 'https://api-v2.example.com'),
@@ -260,7 +260,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         );
     }
 
-    public function test_it_sets_host_header_to_target_by_default()
+    public function test_sets_host_header_to_target_by_default()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -272,7 +272,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertEquals('backend.example.com', $lastRequest->getHeaderLine('Host'));
     }
 
-    public function test_it_logs_proxy_request()
+    public function test_logs_proxy_request()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->givenResponse(new Response(200, [], '{}'));
@@ -291,7 +291,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertNotEmpty($requestLog);
     }
 
-    public function test_it_logs_proxy_error()
+    public function test_logs_proxy_error()
     {
         $this->givenRoutes([new Route('/api/*', 'https://backend.example.com')]);
         $this->mockClient->addException(
@@ -461,7 +461,7 @@ class ReverseProxyTest extends WP_UnitTestCase
         $this->assertEquals('{"success":true}', $output);
     }
 
-    public function test_allow_methods_middleware_returns_405_for_disallowed_methods()
+    public function test_allow_methods_returns_405_for_disallowed()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [

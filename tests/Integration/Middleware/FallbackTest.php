@@ -37,7 +37,7 @@ class FallbackTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_passes_through_non_matching_status_codes()
+    public function test_passes_through_non_matching_status_codes()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -51,7 +51,7 @@ class FallbackTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"success"}', $output);
     }
 
-    public function test_it_returns_null_response_on_404()
+    public function test_returns_null_response_on_404()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -72,7 +72,7 @@ class FallbackTest extends WP_UnitTestCase
         $this->assertNull($capturedResponse);
     }
 
-    public function test_it_supports_multiple_fallback_status_codes()
+    public function test_supports_multiple_fallback_status_codes()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -93,7 +93,7 @@ class FallbackTest extends WP_UnitTestCase
         $this->assertNull($capturedResponse);
     }
 
-    public function test_it_does_not_fallback_on_non_matching_status()
+    public function test_does_not_fallback_on_non_matching_status()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -115,7 +115,7 @@ class FallbackTest extends WP_UnitTestCase
         $this->assertEquals(500, $capturedResponse->getStatusCode());
     }
 
-    public function test_it_defaults_to_404_only()
+    public function test_defaults_to_404_only()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [

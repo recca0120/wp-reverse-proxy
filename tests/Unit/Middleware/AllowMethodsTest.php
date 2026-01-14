@@ -9,7 +9,7 @@ use Recca0120\ReverseProxy\Middleware\AllowMethods;
 
 class AllowMethodsTest extends TestCase
 {
-    public function test_it_allows_request_when_method_is_in_allowed_list()
+    public function test_allows_request_when_method_is_in_allowed_list()
     {
         $middleware = new AllowMethods('GET', 'POST');
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -25,7 +25,7 @@ class AllowMethodsTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_allows_post_request()
+    public function test_allows_post_request()
     {
         $middleware = new AllowMethods('GET', 'POST');
         $request = new ServerRequest('POST', 'https://example.com/api/users');
@@ -41,7 +41,7 @@ class AllowMethodsTest extends TestCase
         $this->assertEquals(201, $response->getStatusCode());
     }
 
-    public function test_it_returns_405_when_method_not_allowed()
+    public function test_returns_405_when_method_not_allowed()
     {
         $middleware = new AllowMethods('GET');
         $request = new ServerRequest('POST', 'https://example.com/api/users');
@@ -57,7 +57,7 @@ class AllowMethodsTest extends TestCase
         $this->assertEquals(405, $response->getStatusCode());
     }
 
-    public function test_it_includes_allow_header_in_405_response()
+    public function test_includes_allow_header_in_405_response()
     {
         $middleware = new AllowMethods('GET', 'POST', 'PUT');
         $request = new ServerRequest('DELETE', 'https://example.com/api/users');
@@ -70,7 +70,7 @@ class AllowMethodsTest extends TestCase
         $this->assertEquals('GET, POST, PUT', $response->getHeaderLine('Allow'));
     }
 
-    public function test_it_handles_case_insensitive_methods()
+    public function test_handles_case_insensitive_methods()
     {
         $middleware = new AllowMethods('get', 'post');
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -85,7 +85,7 @@ class AllowMethodsTest extends TestCase
         $this->assertTrue($called);
     }
 
-    public function test_it_allows_options_request_for_cors_preflight()
+    public function test_allows_options_request_for_cors_preflight()
     {
         $middleware = new AllowMethods('GET', 'POST');
         $request = new ServerRequest('OPTIONS', 'https://example.com/api/users');
@@ -98,7 +98,7 @@ class AllowMethodsTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_returns_json_error_body()
+    public function test_returns_json_error_body()
     {
         $middleware = new AllowMethods('GET');
         $request = new ServerRequest('POST', 'https://example.com/api/users');

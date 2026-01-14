@@ -9,7 +9,7 @@ use Recca0120\ReverseProxy\Middleware\SetHost;
 
 class SetHostTest extends TestCase
 {
-    public function test_it_sets_host_header()
+    public function test_sets_host_header()
     {
         $middleware = new SetHost('api.example.com');
         $request = new ServerRequest('GET', 'https://localhost/api/users');
@@ -23,7 +23,7 @@ class SetHostTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_overrides_existing_host_header()
+    public function test_overrides_existing_host_header()
     {
         $middleware = new SetHost('new-host.com');
         $request = (new ServerRequest('GET', 'https://localhost/api/users'))

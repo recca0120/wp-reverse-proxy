@@ -9,7 +9,7 @@ use Recca0120\ReverseProxy\Middleware\ProxyHeaders;
 
 class ProxyHeadersTest extends TestCase
 {
-    public function test_it_preserves_existing_x_real_ip_header(): void
+    public function test_preserves_existing_x_real_ip_header(): void
     {
         $middleware = new ProxyHeaders();
         $request = (new ServerRequest('GET', 'https://target.example.com/api/users'))
@@ -23,7 +23,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_does_not_set_x_real_ip_header_when_not_present(): void
+    public function test_does_not_set_x_real_ip_header_when_not_present(): void
     {
         $middleware = new ProxyHeaders(['clientIp' => '192.168.1.100']);
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
@@ -36,7 +36,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_for_header(): void
+    public function test_sets_x_forwarded_for_header(): void
     {
         $middleware = new ProxyHeaders(['clientIp' => '192.168.1.100']);
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
@@ -48,7 +48,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_appends_to_existing_x_forwarded_for_header(): void
+    public function test_appends_to_existing_x_forwarded_for_header(): void
     {
         $middleware = new ProxyHeaders(['clientIp' => '192.168.1.100']);
         $request = (new ServerRequest('GET', 'https://target.example.com/api/users'))
@@ -61,7 +61,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_host(): void
+    public function test_sets_x_forwarded_host(): void
     {
         $middleware = new ProxyHeaders(['host' => 'my-wordpress.com']);
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
@@ -73,7 +73,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_proto_https(): void
+    public function test_sets_x_forwarded_proto_https(): void
     {
         $middleware = new ProxyHeaders(['scheme' => 'https']);
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
@@ -85,7 +85,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_proto_http(): void
+    public function test_sets_x_forwarded_proto_http(): void
     {
         $middleware = new ProxyHeaders(['scheme' => 'http']);
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
@@ -97,7 +97,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_x_forwarded_port(): void
+    public function test_sets_x_forwarded_port(): void
     {
         $middleware = new ProxyHeaders(['port' => '8443']);
         $request = new ServerRequest('GET', 'https://target.example.com/api/users');
@@ -109,7 +109,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_forwarded_header(): void
+    public function test_sets_forwarded_header(): void
     {
         $middleware = new ProxyHeaders([
             'clientIp' => '192.168.1.100',
@@ -128,7 +128,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_quotes_ipv6_addresses_in_forwarded_header(): void
+    public function test_quotes_ipv6_addresses_in_forwarded_header(): void
     {
         $middleware = new ProxyHeaders([
             'clientIp' => '2001:db8::1',
@@ -147,7 +147,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_appends_to_existing_forwarded_header(): void
+    public function test_appends_to_existing_forwarded_header(): void
     {
         $middleware = new ProxyHeaders([
             'clientIp' => '192.168.1.100',
@@ -167,7 +167,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_sets_all_proxy_headers(): void
+    public function test_sets_all_proxy_headers(): void
     {
         $middleware = new ProxyHeaders([
             'clientIp' => '192.168.1.100',
@@ -191,7 +191,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_uses_server_params_when_no_options_provided(): void
+    public function test_uses_server_params_when_no_options_provided(): void
     {
         $middleware = new ProxyHeaders();
         $request = new ServerRequest(
@@ -218,7 +218,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_only_includes_specified_headers(): void
+    public function test_only_includes_specified_headers(): void
     {
         $middleware = new ProxyHeaders([
             'clientIp' => '192.168.1.100',
@@ -238,7 +238,7 @@ class ProxyHeadersTest extends TestCase
         });
     }
 
-    public function test_it_excludes_specified_headers(): void
+    public function test_excludes_specified_headers(): void
     {
         $middleware = new ProxyHeaders([
             'clientIp' => '192.168.1.100',

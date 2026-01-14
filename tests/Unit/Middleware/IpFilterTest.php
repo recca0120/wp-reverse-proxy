@@ -73,7 +73,7 @@ class IpFilterTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_supports_cidr_notation()
+    public function test_supports_cidr_notation()
     {
         $middleware = IpFilter::allow('192.168.1.0/24');
         $request = new ServerRequest('GET', 'https://example.com/api/users', [], null, '1.1', ['REMOTE_ADDR' => '192.168.1.50']);
@@ -104,7 +104,7 @@ class IpFilterTest extends TestCase
         $this->assertEquals(403, $response->getStatusCode());
     }
 
-    public function test_it_returns_json_error_response()
+    public function test_returns_json_error_response()
     {
         $middleware = IpFilter::allow('192.168.1.100');
         $request = new ServerRequest('GET', 'https://example.com/api/users', [], null, '1.1', ['REMOTE_ADDR' => '192.168.1.200']);
@@ -119,7 +119,7 @@ class IpFilterTest extends TestCase
         $this->assertEquals(403, $body['status']);
     }
 
-    public function test_it_supports_multiple_cidr_ranges()
+    public function test_supports_multiple_cidr_ranges()
     {
         $middleware = IpFilter::allow('192.168.1.0/24', '10.0.0.0/8');
         $request = new ServerRequest('GET', 'https://example.com/api/users', [], null, '1.1', ['REMOTE_ADDR' => '10.0.0.50']);

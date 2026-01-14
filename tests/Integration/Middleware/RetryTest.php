@@ -39,7 +39,7 @@ class RetryTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_succeeds_on_first_try()
+    public function test_succeeds_on_first_try()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -54,7 +54,7 @@ class RetryTest extends WP_UnitTestCase
         $this->assertCount(1, $this->mockClient->getRequests());
     }
 
-    public function test_it_retries_on_network_error()
+    public function test_retries_on_network_error()
     {
         // 停用預設的 ErrorHandling 讓 Retry 能接住錯誤
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
@@ -76,7 +76,7 @@ class RetryTest extends WP_UnitTestCase
         $this->assertCount(3, $this->mockClient->getRequests());
     }
 
-    public function test_it_retries_on_5xx_error()
+    public function test_retries_on_5xx_error()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
@@ -97,7 +97,7 @@ class RetryTest extends WP_UnitTestCase
         $this->assertCount(3, $this->mockClient->getRequests());
     }
 
-    public function test_it_does_not_retry_on_4xx_error()
+    public function test_does_not_retry_on_4xx_error()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
@@ -115,7 +115,7 @@ class RetryTest extends WP_UnitTestCase
         $this->assertCount(1, $this->mockClient->getRequests());
     }
 
-    public function test_it_gives_up_after_max_retries()
+    public function test_gives_up_after_max_retries()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
@@ -143,7 +143,7 @@ class RetryTest extends WP_UnitTestCase
         $this->assertCount(2, $this->mockClient->getRequests());
     }
 
-    public function test_it_only_retries_get_requests_by_default()
+    public function test_only_retries_get_requests_by_default()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
@@ -171,7 +171,7 @@ class RetryTest extends WP_UnitTestCase
         $this->assertEquals(503, $capturedResponse->getStatusCode());
     }
 
-    public function test_it_can_retry_idempotent_methods()
+    public function test_can_retry_idempotent_methods()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 

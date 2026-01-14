@@ -371,7 +371,7 @@ class RouteTest extends TestCase
         $this->assertEquals('https://www.google.com/search', $result);
     }
 
-    public function test_target_with_trailing_slash_strips_prefix_and_preserves_query()
+    public function test_trailing_slash_strips_prefix_preserves_query()
     {
         $route = new Route('/google/*', 'https://www.google.com/');
         $request = new ServerRequest('GET', '/google/search?q=test&lang=en');
@@ -423,7 +423,7 @@ class RouteTest extends TestCase
 
     // Wildcard pattern should also match base path without trailing slash
 
-    public function test_wildcard_pattern_matches_base_path_without_trailing_slash()
+    public function test_wildcard_matches_base_path_no_trailing_slash()
     {
         $route = new Route('/test/*', 'https://example.com/');
         $request = new ServerRequest('GET', '/test');
@@ -453,7 +453,7 @@ class RouteTest extends TestCase
         $this->assertEquals('https://example.com/foo/bar', $result);
     }
 
-    public function test_wildcard_pattern_without_trailing_slash_target_matches_base_path()
+    public function test_wildcard_no_slash_target_matches_base_path()
     {
         $route = new Route('/api/*', 'https://backend.example.com');
         $request = new ServerRequest('GET', '/api');

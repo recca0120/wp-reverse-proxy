@@ -11,7 +11,7 @@ use Recca0120\ReverseProxy\Middleware\Retry;
 
 class RetryTest extends TestCase
 {
-    public function test_it_returns_immediately_on_success()
+    public function test_returns_immediately_on_success()
     {
         $middleware = new Retry(3);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -27,7 +27,7 @@ class RetryTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_retries_on_503_status()
+    public function test_retries_on_503_status()
     {
         $middleware = new Retry(3);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -46,7 +46,7 @@ class RetryTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_retries_on_network_exception()
+    public function test_retries_on_network_exception()
     {
         $middleware = new Retry(3);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -65,7 +65,7 @@ class RetryTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_does_not_retry_on_4xx_errors()
+    public function test_does_not_retry_on_4xx_errors()
     {
         $middleware = new Retry(3);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -81,7 +81,7 @@ class RetryTest extends TestCase
         $this->assertEquals(404, $response->getStatusCode());
     }
 
-    public function test_it_does_not_retry_post_requests_by_default()
+    public function test_does_not_retry_post_requests_by_default()
     {
         $middleware = new Retry(3);
         $request = new ServerRequest('POST', 'https://example.com/api/users');
@@ -97,7 +97,7 @@ class RetryTest extends TestCase
         $this->assertEquals(503, $response->getStatusCode());
     }
 
-    public function test_it_can_retry_custom_methods()
+    public function test_can_retry_custom_methods()
     {
         $middleware = new Retry(3, ['GET', 'POST', 'PUT']);
         $request = new ServerRequest('POST', 'https://example.com/api/users');
@@ -116,7 +116,7 @@ class RetryTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_returns_last_response_after_max_retries()
+    public function test_returns_last_response_after_max_retries()
     {
         $middleware = new Retry(3);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -132,7 +132,7 @@ class RetryTest extends TestCase
         $this->assertEquals(503, $response->getStatusCode());
     }
 
-    public function test_it_throws_after_max_retries_on_network_error()
+    public function test_throws_after_max_retries_on_network_error()
     {
         $middleware = new Retry(3);
         $request = new ServerRequest('GET', 'https://example.com/api/users');
@@ -144,7 +144,7 @@ class RetryTest extends TestCase
         });
     }
 
-    public function test_it_can_use_custom_retryable_status_codes()
+    public function test_can_use_custom_retryable_status_codes()
     {
         $middleware = new Retry(3, ['GET'], [500, 502]);
         $request = new ServerRequest('GET', 'https://example.com/api/users');

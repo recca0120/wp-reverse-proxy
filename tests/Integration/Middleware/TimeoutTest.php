@@ -39,7 +39,7 @@ class TimeoutTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_passes_through_successful_requests()
+    public function test_passes_through_successful_requests()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -53,7 +53,7 @@ class TimeoutTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"success"}', $output);
     }
 
-    public function test_it_returns_504_on_timeout_exception()
+    public function test_returns_504_on_timeout_exception()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
@@ -80,7 +80,7 @@ class TimeoutTest extends WP_UnitTestCase
         $this->assertStringContainsString('Gateway Timeout', (string) $capturedResponse->getBody());
     }
 
-    public function test_it_adds_timeout_header_to_request()
+    public function test_adds_timeout_header_to_request()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -96,7 +96,7 @@ class TimeoutTest extends WP_UnitTestCase
         $this->assertEquals('15', $lastRequest->getHeaderLine('X-Timeout'));
     }
 
-    public function test_it_uses_default_timeout()
+    public function test_uses_default_timeout()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [

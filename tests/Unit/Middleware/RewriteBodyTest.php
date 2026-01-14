@@ -18,7 +18,7 @@ class RewriteBodyTest extends TestCase
         $this->streamFactory = new Psr17Factory();
     }
 
-    public function test_it_rewrites_urls_in_html_response(): void
+    public function test_rewrites_urls_in_html_response(): void
     {
         $middleware = new RewriteBody(
             ['#https://example\.com#' => 'https://my-site.com'],
@@ -41,7 +41,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_rewrites_urls_in_css_response(): void
+    public function test_rewrites_urls_in_css_response(): void
     {
         $middleware = new RewriteBody(
             ['#https://example\.com#' => 'https://my-site.com'],
@@ -64,7 +64,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_rewrites_urls_in_javascript_response(): void
+    public function test_rewrites_urls_in_javascript_response(): void
     {
         $middleware = new RewriteBody(
             ['#https://api\.example\.com#' => 'https://my-site.com/api'],
@@ -87,7 +87,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_rewrites_urls_in_json_response(): void
+    public function test_rewrites_urls_in_json_response(): void
     {
         $middleware = new RewriteBody(
             ['#https://example\.com#' => 'https://my-site.com'],
@@ -110,7 +110,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_handles_content_type_with_charset(): void
+    public function test_handles_content_type_with_charset(): void
     {
         $middleware = new RewriteBody(
             ['#https://example\.com#' => 'https://my-site.com'],
@@ -133,7 +133,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_does_not_rewrite_binary_content(): void
+    public function test_does_not_rewrite_binary_content(): void
     {
         $middleware = new RewriteBody(
             ['#https://example\.com#' => 'https://my-site.com'],
@@ -153,7 +153,7 @@ class RewriteBodyTest extends TestCase
         $this->assertEquals($originalBody, (string) $result->getBody());
     }
 
-    public function test_it_does_not_rewrite_when_no_content_type(): void
+    public function test_does_not_rewrite_when_no_content_type(): void
     {
         $middleware = new RewriteBody(
             ['#https://example\.com#' => 'https://my-site.com'],
@@ -172,7 +172,7 @@ class RewriteBodyTest extends TestCase
         $this->assertEquals($originalBody, (string) $result->getBody());
     }
 
-    public function test_it_does_not_rewrite_when_no_replacements(): void
+    public function test_does_not_rewrite_when_no_replacements(): void
     {
         $middleware = new RewriteBody([], $this->streamFactory);
 
@@ -189,7 +189,7 @@ class RewriteBodyTest extends TestCase
         $this->assertEquals($originalBody, (string) $result->getBody());
     }
 
-    public function test_it_applies_multiple_replacements(): void
+    public function test_applies_multiple_replacements(): void
     {
         $middleware = new RewriteBody(
             [
@@ -215,7 +215,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_handles_xml_content(): void
+    public function test_handles_xml_content(): void
     {
         $middleware = new RewriteBody(
             ['#https://example\.com#' => 'https://my-site.com'],
@@ -238,7 +238,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_preserves_response_headers(): void
+    public function test_preserves_response_headers(): void
     {
         $middleware = new RewriteBody(
             ['#https://example\.com#' => 'https://my-site.com'],
@@ -259,7 +259,7 @@ class RewriteBodyTest extends TestCase
         $this->assertEquals(200, $result->getStatusCode());
     }
 
-    public function test_it_works_without_stream_factory(): void
+    public function test_rewrites_body_without_stream_factory(): void
     {
         $middleware = new RewriteBody(['#https://example\.com#' => 'https://my-site.com']);
 
@@ -278,7 +278,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_applies_regex_patterns_with_slash_delimiter(): void
+    public function test_applies_regex_patterns_with_slash_delimiter(): void
     {
         $middleware = new RewriteBody(
             ['/https:\/\/([a-z]+)\.example\.com/' => 'https://$1.my-site.com']
@@ -300,7 +300,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_applies_regex_patterns_with_hash_delimiter(): void
+    public function test_applies_regex_patterns_with_hash_delimiter(): void
     {
         $middleware = new RewriteBody(
             ['#https://([a-z]+)\.example\.com#' => 'https://$1.my-site.com']
@@ -322,7 +322,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_applies_regex_with_capture_groups(): void
+    public function test_applies_regex_with_capture_groups(): void
     {
         $middleware = new RewriteBody(
             ['#/api/v([0-9]+)/#' => '/api/v$1-legacy/']
@@ -344,7 +344,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_applies_multiple_regex_patterns(): void
+    public function test_applies_multiple_regex_patterns(): void
     {
         $middleware = new RewriteBody([
             '#https://example\.com#' => 'https://my-site.com',
@@ -367,7 +367,7 @@ class RewriteBodyTest extends TestCase
         );
     }
 
-    public function test_it_skips_rewrite_when_replacements_empty(): void
+    public function test_skips_rewrite_when_replacements_empty(): void
     {
         $middleware = new RewriteBody([]);
 

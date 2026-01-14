@@ -42,7 +42,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_preserves_existing_x_real_ip_header()
+    public function test_preserves_existing_x_real_ip_header()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -59,7 +59,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
         $this->assertEquals('1.2.3.4', $lastRequest->getHeaderLine('X-Real-IP'));
     }
 
-    public function test_it_does_not_add_x_real_ip_header_when_not_present()
+    public function test_does_not_add_x_real_ip_header_when_not_present()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -75,7 +75,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
         $this->assertEquals('', $lastRequest->getHeaderLine('X-Real-IP'));
     }
 
-    public function test_it_adds_x_forwarded_for_header()
+    public function test_adds_x_forwarded_for_header()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -90,7 +90,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
         $this->assertStringContainsString('192.168.1.100', $lastRequest->getHeaderLine('X-Forwarded-For'));
     }
 
-    public function test_it_adds_x_forwarded_proto_header()
+    public function test_adds_x_forwarded_proto_header()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -105,7 +105,7 @@ class ProxyHeadersTest extends WP_UnitTestCase
         $this->assertEquals('https', $lastRequest->getHeaderLine('X-Forwarded-Proto'));
     }
 
-    public function test_it_adds_x_forwarded_port_header()
+    public function test_adds_x_forwarded_port_header()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [

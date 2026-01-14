@@ -48,7 +48,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_allows_requests_when_circuit_is_closed()
+    public function test_allows_requests_when_circuit_is_closed()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -62,7 +62,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"success"}', $output);
     }
 
-    public function test_it_opens_circuit_after_failure_threshold()
+    public function test_opens_circuit_after_failure_threshold()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
@@ -96,7 +96,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
         $this->assertCount(3, $this->mockClient->getRequests());
     }
 
-    public function test_it_resets_failure_count_on_success()
+    public function test_resets_failure_count_on_success()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 
@@ -130,7 +130,7 @@ class CircuitBreakerTest extends WP_UnitTestCase
         $this->assertCount(6, $this->mockClient->getRequests());
     }
 
-    public function test_it_counts_network_errors_as_failures()
+    public function test_counts_network_errors_as_failures()
     {
         add_filter('reverse_proxy_global_middlewares', '__return_empty_array');
 

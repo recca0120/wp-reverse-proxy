@@ -163,7 +163,7 @@ class MiddlewareManagerTest extends TestCase
         $this->assertInstanceOf(SetHost::class, $middleware);
     }
 
-    public function test_create_middleware_from_colon_format_with_multiple_params(): void
+    public function test_create_from_colon_format_with_multiple_params(): void
     {
         $factory = new MiddlewareManager();
 
@@ -294,7 +294,7 @@ class MiddlewareManagerTest extends TestCase
         $this->assertInstanceOf(SetHost::class, $middleware);
     }
 
-    public function test_create_middleware_from_yaml_key_value_format_with_array_options(): void
+    public function test_create_from_yaml_format_with_array_options(): void
     {
         $factory = new MiddlewareManager();
 
@@ -304,7 +304,7 @@ class MiddlewareManagerTest extends TestCase
         $this->assertInstanceOf(ProxyHeaders::class, $middleware);
     }
 
-    public function test_create_middleware_from_yaml_key_value_format_with_numeric_value(): void
+    public function test_create_from_yaml_format_with_numeric_value(): void
     {
         $factory = new MiddlewareManager();
 
@@ -348,7 +348,7 @@ class MiddlewareManagerTest extends TestCase
         $this->assertInstanceOf(Timeout::class, $middlewares[2]);
     }
 
-    public function test_create_many_with_php_mixed_array_format_with_array_options(): void
+    public function test_create_many_php_array_with_array_options(): void
     {
         $factory = new MiddlewareManager();
 

@@ -46,7 +46,7 @@ class RateLimitingTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_allows_requests_within_limit()
+    public function test_allows_requests_within_limit()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.100';
 
@@ -64,7 +64,7 @@ class RateLimitingTest extends WP_UnitTestCase
         $this->assertEquals('{"data":"test"}', $output);
     }
 
-    public function test_it_adds_rate_limit_headers_to_response()
+    public function test_adds_rate_limit_headers_to_response()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.101';
 
@@ -90,7 +90,7 @@ class RateLimitingTest extends WP_UnitTestCase
         $this->assertNotEmpty($capturedResponse->getHeaderLine('X-RateLimit-Reset'));
     }
 
-    public function test_it_blocks_requests_exceeding_limit()
+    public function test_blocks_requests_exceeding_limit()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.102';
 
@@ -123,7 +123,7 @@ class RateLimitingTest extends WP_UnitTestCase
         $this->assertNotEmpty($capturedResponse->getHeaderLine('Retry-After'));
     }
 
-    public function test_it_tracks_rate_limit_per_ip()
+    public function test_tracks_rate_limit_per_ip()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -153,7 +153,7 @@ class RateLimitingTest extends WP_UnitTestCase
         $this->assertEquals(200, $capturedResponse->getStatusCode());
     }
 
-    public function test_it_uses_custom_key_generator()
+    public function test_uses_custom_key_generator()
     {
         $_SERVER['REMOTE_ADDR'] = '192.168.1.103';
         $_SERVER['HTTP_AUTHORIZATION'] = 'Bearer user123';

@@ -10,7 +10,7 @@ use Recca0120\ReverseProxy\Routing\Route;
 
 class RewritePathTest extends TestCase
 {
-    public function test_it_rewrites_path_with_single_capture()
+    public function test_rewrites_path_with_single_capture()
     {
         $route = (new Route('/api/v1/*', 'https://backend.example.com'))
             ->middleware(new RewritePath('/v1/$1'));
@@ -28,7 +28,7 @@ class RewritePathTest extends TestCase
         });
     }
 
-    public function test_it_rewrites_path_removing_prefix()
+    public function test_rewrites_path_removing_prefix()
     {
         $route = (new Route('/api/*', 'https://backend.example.com'))
             ->middleware(new RewritePath('/$1'));
@@ -45,7 +45,7 @@ class RewritePathTest extends TestCase
         });
     }
 
-    public function test_it_rewrites_path_adding_prefix()
+    public function test_rewrites_path_adding_prefix()
     {
         $route = (new Route('/users/*', 'https://backend.example.com'))
             ->middleware(new RewritePath('/api/v2/users/$1'));
@@ -62,7 +62,7 @@ class RewritePathTest extends TestCase
         });
     }
 
-    public function test_it_preserves_query_string()
+    public function test_preserves_query_string()
     {
         $route = (new Route('/api/v1/*', 'https://backend.example.com'))
             ->middleware(new RewritePath('/v1/$1'));
@@ -80,7 +80,7 @@ class RewritePathTest extends TestCase
         });
     }
 
-    public function test_it_handles_no_captures()
+    public function test_handles_no_captures()
     {
         $route = (new Route('/old-endpoint', 'https://backend.example.com'))
             ->middleware(new RewritePath('/new-endpoint'));
@@ -97,7 +97,7 @@ class RewritePathTest extends TestCase
         });
     }
 
-    public function test_it_handles_multiple_captures()
+    public function test_handles_multiple_captures()
     {
         $route = (new Route('/api/*/resources/*', 'https://backend.example.com'))
             ->middleware(new RewritePath('/v2/$1/items/$2'));
@@ -114,7 +114,7 @@ class RewritePathTest extends TestCase
         });
     }
 
-    public function test_it_preserves_host_header_when_rewriting_path()
+    public function test_preserves_host_header_when_rewriting_path()
     {
         $route = (new Route('/api/*', 'https://172.17.0.1'))
             ->middleware(new RewritePath('/v2/$1'));

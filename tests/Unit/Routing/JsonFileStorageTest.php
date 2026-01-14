@@ -156,7 +156,7 @@ class JsonFileStorageTest extends TestCase
         $this->assertStringContainsString('    ', $content);
     }
 
-    public function test_get_all_returns_empty_array_when_file_contains_invalid_json()
+    public function test_get_all_returns_empty_for_invalid_json()
     {
         file_put_contents($this->testFile, 'invalid json content');
 

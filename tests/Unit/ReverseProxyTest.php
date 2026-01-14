@@ -29,7 +29,7 @@ class ReverseProxyTest extends TestCase
         $this->psr17Factory = new Psr17Factory();  // Still needed for creating stream bodies in tests
     }
 
-    public function test_it_returns_null_when_no_routes_match()
+    public function test_returns_null_when_no_routes_match()
     {
         $request = new ServerRequest('GET', '/about');
         $routes = [
@@ -41,7 +41,7 @@ class ReverseProxyTest extends TestCase
         $this->assertNull($response);
     }
 
-    public function test_it_proxies_matching_request()
+    public function test_proxies_matching_request()
     {
         $this->mockClient->addResponse(
             new Response(200, ['Content-Type' => 'application/json'], '{"message":"hello"}')
@@ -62,7 +62,7 @@ class ReverseProxyTest extends TestCase
         $this->assertEquals('https://backend.example.com/api/users', (string) $lastRequest->getUri());
     }
 
-    public function test_it_forwards_post_request_with_body()
+    public function test_forwards_post_request_with_body()
     {
         $this->mockClient->addResponse(new Response(201, [], '{"id":1}'));
 
@@ -84,7 +84,7 @@ class ReverseProxyTest extends TestCase
         $this->assertEquals($body, (string) $lastRequest->getBody());
     }
 
-    public function test_it_forwards_request_headers()
+    public function test_forwards_request_headers()
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
@@ -103,7 +103,7 @@ class ReverseProxyTest extends TestCase
         $this->assertEquals('custom-value', $lastRequest->getHeaderLine('X-Custom-Header'));
     }
 
-    public function test_it_preserves_query_string()
+    public function test_preserves_query_string()
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
@@ -121,7 +121,7 @@ class ReverseProxyTest extends TestCase
         );
     }
 
-    public function test_it_sets_host_header_to_target_by_default()
+    public function test_sets_host_header_to_target_by_default()
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 
@@ -137,7 +137,7 @@ class ReverseProxyTest extends TestCase
         $this->assertEquals('backend.example.com', $lastRequest->getHeaderLine('Host'));
     }
 
-    public function test_it_matches_first_route()
+    public function test_matches_first_route()
     {
         $this->mockClient->addResponse(new Response(200, [], '{}'));
 

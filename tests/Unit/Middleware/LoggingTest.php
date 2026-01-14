@@ -11,7 +11,7 @@ use Recca0120\ReverseProxy\Middleware\Logging;
 
 class LoggingTest extends TestCase
 {
-    public function test_it_logs_request_before_calling_next()
+    public function test_logs_request_before_calling_next()
     {
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->exactly(2))
@@ -29,7 +29,7 @@ class LoggingTest extends TestCase
         });
     }
 
-    public function test_it_logs_request_method_and_target()
+    public function test_logs_request_method_and_target()
     {
         $loggedContext = [];
         $logger = $this->createMock(LoggerInterface::class);
@@ -52,7 +52,7 @@ class LoggingTest extends TestCase
         $this->assertStringContainsString('example.com/api/users', $loggedContext['target']);
     }
 
-    public function test_it_logs_response_status_code()
+    public function test_logs_response_status_code()
     {
         $loggedContext = [];
         $logger = $this->createMock(LoggerInterface::class);
@@ -74,7 +74,7 @@ class LoggingTest extends TestCase
         $this->assertEquals(201, $loggedContext['status']);
     }
 
-    public function test_it_returns_response_from_next()
+    public function test_returns_response_from_next()
     {
         $logger = $this->createMock(LoggerInterface::class);
         $middleware = new Logging($logger);
@@ -88,7 +88,7 @@ class LoggingTest extends TestCase
         $this->assertSame($expectedResponse, $response);
     }
 
-    public function test_it_logs_error_when_exception_occurs()
+    public function test_logs_error_when_exception_occurs()
     {
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
@@ -111,7 +111,7 @@ class LoggingTest extends TestCase
         });
     }
 
-    public function test_it_rethrows_exception_after_logging()
+    public function test_rethrows_exception_after_logging()
     {
         $logger = $this->createMock(LoggerInterface::class);
         $middleware = new Logging($logger);

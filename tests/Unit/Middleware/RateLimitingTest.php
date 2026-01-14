@@ -19,7 +19,7 @@ class RateLimitingTest extends TestCase
         $this->cache = new ArrayCache();
     }
 
-    public function test_it_allows_request_within_limit()
+    public function test_allows_request_within_limit()
     {
         $middleware = new RateLimiting(10, 60);
         $middleware->setCache($this->cache);
@@ -36,7 +36,7 @@ class RateLimitingTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_adds_rate_limit_headers()
+    public function test_adds_rate_limit_headers()
     {
         $middleware = new RateLimiting(10, 60);
         $middleware->setCache($this->cache);
@@ -51,7 +51,7 @@ class RateLimitingTest extends TestCase
         $this->assertTrue($response->hasHeader('X-RateLimit-Reset'));
     }
 
-    public function test_it_returns_429_when_limit_exceeded()
+    public function test_returns_429_when_limit_exceeded()
     {
         $cacheKey = 'rp_rate_' . md5('192.168.1.100');
         $this->cache->set($cacheKey, [
@@ -75,7 +75,7 @@ class RateLimitingTest extends TestCase
         $this->assertTrue($response->hasHeader('Retry-After'));
     }
 
-    public function test_it_resets_counter_after_window_expires()
+    public function test_resets_counter_after_window_expires()
     {
         $cacheKey = 'rp_rate_' . md5('192.168.1.100');
         $oldWindowStart = time() - 120; // 2 minutes ago
@@ -99,7 +99,7 @@ class RateLimitingTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function test_it_uses_custom_key_generator()
+    public function test_uses_custom_key_generator()
     {
         $middleware = new RateLimiting(10, 60, function ($request) {
             return 'custom-key';
@@ -115,7 +115,7 @@ class RateLimitingTest extends TestCase
         $this->assertTrue($this->cache->has($expectedKey));
     }
 
-    public function test_it_returns_json_error_body_on_429()
+    public function test_returns_json_error_body_on_429()
     {
         $cacheKey = 'rp_rate_' . md5('192.168.1.100');
         $this->cache->set($cacheKey, [

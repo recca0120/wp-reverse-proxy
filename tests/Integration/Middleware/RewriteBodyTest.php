@@ -42,7 +42,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_rewrites_urls_in_html_response()
+    public function test_rewrites_urls_in_html_response()
     {
         $this->givenRoutes([
             new Route('/page/*', 'https://example.com', [
@@ -68,7 +68,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         );
     }
 
-    public function test_it_rewrites_urls_in_css_response()
+    public function test_rewrites_urls_in_css_response()
     {
         $this->givenRoutes([
             new Route('/assets/*', 'https://cdn.example.com', [
@@ -94,7 +94,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         );
     }
 
-    public function test_it_rewrites_urls_in_json_response()
+    public function test_rewrites_urls_in_json_response()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://api.example.com', [
@@ -120,7 +120,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         );
     }
 
-    public function test_it_does_not_rewrite_binary_content()
+    public function test_does_not_rewrite_binary_content()
     {
         $this->givenRoutes([
             new Route('/images/*', 'https://example.com', [
@@ -143,7 +143,7 @@ class RewriteBodyTest extends WP_UnitTestCase
         $this->assertEquals($binaryContent, $output);
     }
 
-    public function test_it_applies_multiple_replacements()
+    public function test_applies_multiple_replacements()
     {
         $this->givenRoutes([
             new Route('/page/*', 'https://example.com', [

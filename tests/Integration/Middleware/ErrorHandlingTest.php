@@ -38,7 +38,7 @@ class ErrorHandlingTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_passes_through_successful_requests()
+    public function test_passes_through_successful_requests()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com'),
@@ -50,7 +50,7 @@ class ErrorHandlingTest extends WP_UnitTestCase
         $this->assertEquals('{"success":true}', $output);
     }
 
-    public function test_it_returns_502_on_network_error()
+    public function test_returns_502_on_network_error()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com'),

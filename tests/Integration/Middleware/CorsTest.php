@@ -39,7 +39,7 @@ class CorsTest extends WP_UnitTestCase
         parent::tearDown();
     }
 
-    public function test_it_adds_cors_headers_to_response()
+    public function test_adds_cors_headers_to_response()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -63,7 +63,7 @@ class CorsTest extends WP_UnitTestCase
         $this->assertEquals('https://example.com', $capturedResponse->getHeaderLine('Access-Control-Allow-Origin'));
     }
 
-    public function test_it_handles_preflight_options_request()
+    public function test_handles_preflight_options_request()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -96,7 +96,7 @@ class CorsTest extends WP_UnitTestCase
         $this->assertFalse($lastRequest);
     }
 
-    public function test_it_rejects_non_allowed_origin()
+    public function test_rejects_non_allowed_origin()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -120,7 +120,7 @@ class CorsTest extends WP_UnitTestCase
         $this->assertEmpty($capturedResponse->getHeaderLine('Access-Control-Allow-Origin'));
     }
 
-    public function test_it_allows_wildcard_origin()
+    public function test_allows_wildcard_origin()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
@@ -144,7 +144,7 @@ class CorsTest extends WP_UnitTestCase
         $this->assertEquals('*', $capturedResponse->getHeaderLine('Access-Control-Allow-Origin'));
     }
 
-    public function test_it_includes_credentials_header_when_enabled()
+    public function test_includes_credentials_header_when_enabled()
     {
         $this->givenRoutes([
             new Route('/api/*', 'https://backend.example.com', [
