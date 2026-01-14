@@ -172,13 +172,15 @@ class RouteCollectionTest extends TestCase
 
     public function test_load_uses_cache_when_available(): void
     {
+        $identifier = 'test_identifier';
         $fingerprint = 'test_fingerprint_12345';
-        $cacheKey = 'route_loader_' . md5($fingerprint);
+        $cacheKey = 'route_loader_' . $identifier;
         $cachedConfigs = [
             ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
         ];
 
         $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getIdentifier')->andReturn($identifier);
         $loader->shouldReceive('getFingerprint')->andReturn($fingerprint);
         $loader->shouldNotReceive('load');
 
@@ -194,10 +196,12 @@ class RouteCollectionTest extends TestCase
 
     public function test_load_stores_cache_when_not_cached(): void
     {
+        $identifier = 'test_identifier';
         $fingerprint = 'test_fingerprint_12345';
-        $cacheKey = 'route_loader_' . md5($fingerprint);
+        $cacheKey = 'route_loader_' . $identifier;
 
         $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getIdentifier')->andReturn($identifier);
         $loader->shouldReceive('getFingerprint')->andReturn($fingerprint);
         $loader->shouldReceive('load')->once()->andReturn([
             ['path' => '/api/*', 'target' => 'https://api.example.com'],
@@ -218,11 +222,12 @@ class RouteCollectionTest extends TestCase
 
     public function test_clear_cache(): void
     {
+        $identifier = 'test_identifier';
         $fingerprint = 'test_fingerprint_12345';
-        $cacheKey = 'route_loader_' . md5($fingerprint);
+        $cacheKey = 'route_loader_' . $identifier;
 
         $loader = Mockery::mock(RouteLoaderInterface::class);
-        $loader->shouldReceive('getFingerprint')->andReturn($fingerprint);
+        $loader->shouldReceive('getIdentifier')->andReturn($identifier);
 
         $cache = new ArrayCache();
         $cache->set($cacheKey, ['fingerprint' => $fingerprint, 'data' => []]);
@@ -278,11 +283,13 @@ class RouteCollectionTest extends TestCase
 
     public function test_load_reloads_when_cache_is_invalid(): void
     {
+        $identifier = 'test_identifier';
         $oldFingerprint = 'old_fingerprint_12345';
         $newFingerprint = 'new_fingerprint_99999';
-        $cacheKey = 'route_loader_' . md5($newFingerprint);
+        $cacheKey = 'route_loader_' . $identifier;
 
         $loader = Mockery::mock(RouteLoaderInterface::class);
+        $loader->shouldReceive('getIdentifier')->andReturn($identifier);
         $loader->shouldReceive('getFingerprint')->andReturn($newFingerprint);
         $loader->shouldReceive('load')->once()->andReturn([
             ['path' => '/fresh/*', 'target' => 'https://fresh.example.com'],
@@ -320,20 +327,20 @@ class RouteCollectionTest extends TestCase
 
     public function test_clear_cache_with_multiple_loaders(): void
     {
-        $fingerprint1 = 'fingerprint_loader1';
-        $fingerprint2 = 'fingerprint_loader2';
-        $cacheKey1 = 'route_loader_' . md5($fingerprint1);
-        $cacheKey2 = 'route_loader_' . md5($fingerprint2);
+        $identifier1 = 'identifier_loader1';
+        $identifier2 = 'identifier_loader2';
+        $cacheKey1 = 'route_loader_' . $identifier1;
+        $cacheKey2 = 'route_loader_' . $identifier2;
 
         $loader1 = Mockery::mock(RouteLoaderInterface::class);
-        $loader1->shouldReceive('getFingerprint')->andReturn($fingerprint1);
+        $loader1->shouldReceive('getIdentifier')->andReturn($identifier1);
 
         $loader2 = Mockery::mock(RouteLoaderInterface::class);
-        $loader2->shouldReceive('getFingerprint')->andReturn($fingerprint2);
+        $loader2->shouldReceive('getIdentifier')->andReturn($identifier2);
 
         $cache = new ArrayCache();
-        $cache->set($cacheKey1, ['fingerprint' => $fingerprint1, 'data' => []]);
-        $cache->set($cacheKey2, ['fingerprint' => $fingerprint2, 'data' => []]);
+        $cache->set($cacheKey1, ['fingerprint' => 'fp1', 'data' => []]);
+        $cache->set($cacheKey2, ['fingerprint' => 'fp2', 'data' => []]);
 
         $collection = new RouteCollection([$loader1, $loader2], $cache);
         $collection->clearCache();

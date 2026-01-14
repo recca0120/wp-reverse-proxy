@@ -272,8 +272,9 @@ class FileLoaderTest extends TestCase
         ]));
 
         $loader = new FileLoader([$filePath]);
+        $identifier = $loader->getIdentifier();
         $fingerprint = $loader->getFingerprint();
-        $cacheKey = 'route_loader_' . md5($fingerprint);
+        $cacheKey = 'route_loader_' . $identifier;
 
         $cachedConfigs = [
             ['path' => '/cached/*', 'target' => 'https://cached.example.com'],
@@ -299,8 +300,8 @@ class FileLoaderTest extends TestCase
         ]));
 
         $loader = new FileLoader([$filePath]);
-        $fingerprint = $loader->getFingerprint();
-        $cacheKey = 'route_loader_' . md5($fingerprint);
+        $identifier = $loader->getIdentifier();
+        $cacheKey = 'route_loader_' . $identifier;
 
         $cache = new ArrayCache();
 
@@ -389,6 +390,38 @@ class FileLoaderTest extends TestCase
         $this->assertEmpty($routes);
     }
 
+    public function test_get_identifier_returns_stable_value(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.json';
+        file_put_contents($filePath, json_encode(['routes' => []]));
+
+        $loader = new FileLoader([$filePath]);
+        $originalIdentifier = $loader->getIdentifier();
+        $originalFingerprint = $loader->getFingerprint();
+
+        // Modify file
+        sleep(1);
+        touch($filePath);
+        clearstatcache();
+
+        // Identifier should remain the same (stable)
+        $this->assertEquals($originalIdentifier, $loader->getIdentifier());
+
+        // But fingerprint should change (due to mtime change)
+        $this->assertNotEquals($originalFingerprint, $loader->getFingerprint());
+    }
+
+    public function test_get_identifier_is_consistent_for_same_paths(): void
+    {
+        $filePath = $this->fixturesPath . '/routes.json';
+        file_put_contents($filePath, json_encode(['routes' => []]));
+
+        $loader1 = new FileLoader([$filePath]);
+        $loader2 = new FileLoader([$filePath]);
+
+        $this->assertEquals($loader1->getIdentifier(), $loader2->getIdentifier());
+    }
+
     public function test_get_fingerprint_returns_null_for_empty_paths(): void
     {
         $loader = new FileLoader([]);
@@ -439,8 +472,9 @@ class FileLoaderTest extends TestCase
         ]));
 
         $loader = new FileLoader([$filePath]);
+        $identifier = $loader->getIdentifier();
         $fingerprint = $loader->getFingerprint();
-        $cacheKey = 'route_loader_' . md5($fingerprint);
+        $cacheKey = 'route_loader_' . $identifier;
 
         // Simulate stale cache with old fingerprint
         $staleFingerprint = 'stale_fingerprint_12345';

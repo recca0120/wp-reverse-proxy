@@ -28,13 +28,13 @@ class CachedRouteLoader implements RouteLoaderInterface
      */
     public function load(): array
     {
-        $cacheKey = $this->getCacheKey();
+        $fingerprint = $this->loader->getFingerprint();
 
-        if ($cacheKey === null) {
+        if ($fingerprint === null) {
             return $this->loader->load();
         }
 
-        $fingerprint = $this->loader->getFingerprint();
+        $cacheKey = $this->getCacheKey();
         $cached = $this->cache->get($cacheKey);
 
         if ($cached !== null && $cached['fingerprint'] === $fingerprint) {
@@ -51,6 +51,14 @@ class CachedRouteLoader implements RouteLoaderInterface
     }
 
     /**
+     * Get the identifier from the inner loader.
+     */
+    public function getIdentifier(): string
+    {
+        return $this->loader->getIdentifier();
+    }
+
+    /**
      * Get the fingerprint from the inner loader.
      */
     public function getFingerprint(): ?string
@@ -63,22 +71,14 @@ class CachedRouteLoader implements RouteLoaderInterface
      */
     public function clearCache(): void
     {
-        $cacheKey = $this->getCacheKey();
-
-        if ($cacheKey !== null) {
-            $this->cache->delete($cacheKey);
-        }
+        $this->cache->delete($this->getCacheKey());
     }
 
     /**
      * Get the cache key for this loader.
      */
-    private function getCacheKey(): ?string
+    private function getCacheKey(): string
     {
-        $fingerprint = $this->loader->getFingerprint();
-
-        return $fingerprint !== null
-            ? self::CACHE_KEY_PREFIX . md5($fingerprint)
-            : null;
+        return self::CACHE_KEY_PREFIX . $this->loader->getIdentifier();
     }
 }

@@ -32,6 +32,17 @@ class FileLoader implements RouteLoaderInterface
     }
 
     /**
+     * Get a stable identifier based on configured paths.
+     */
+    public function getIdentifier(): string
+    {
+        $paths = $this->paths;
+        sort($paths);
+
+        return md5(implode('|', $paths));
+    }
+
+    /**
      * Load route configurations from all configured paths.
      *
      * @return array<array<string, mixed>>

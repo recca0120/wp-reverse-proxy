@@ -17,6 +17,14 @@ class WordPressLoader implements RouteLoaderInterface
     }
 
     /**
+     * Get a stable identifier based on storage class.
+     */
+    public function getIdentifier(): string
+    {
+        return md5(get_class($this->storage));
+    }
+
+    /**
      * Load route configurations from storage.
      *
      * @return array<array<string, mixed>>
