@@ -233,12 +233,18 @@ class RouteCollectionTest extends TestCase
         $this->assertFalse($cache->has($cacheKey));
     }
 
-    public function test_clear_cache_without_cache_does_nothing(): void
+    public function test_clear_cache_resets_routes_without_loaders(): void
     {
+        $route = new Route('/api/*', 'https://api.example.com');
         $collection = new RouteCollection();
-        $collection->clearCache(); // Should not throw
+        $collection->add($route);
 
-        $this->assertTrue(true);
+        $this->assertCount(1, $collection);
+
+        $collection->clearCache();
+
+        // Routes should be reset after clearCache
+        $this->assertCount(0, $collection);
     }
 
     public function test_load_returns_self_for_chaining(): void
