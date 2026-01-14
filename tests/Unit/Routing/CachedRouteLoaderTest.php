@@ -4,7 +4,6 @@ namespace Recca0120\ReverseProxy\Tests\Unit\Routing;
 
 use Mockery;
 use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use Recca0120\ReverseProxy\Contracts\RouteLoaderInterface;
 use Recca0120\ReverseProxy\Routing\CachedRouteLoader;
 use Recca0120\ReverseProxy\Tests\Stubs\ArrayCache;
@@ -19,7 +18,7 @@ class CachedRouteLoaderTest extends TestCase
     public function test_it_implements_route_loader_interface(): void
     {
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $cache = Mockery::mock(CacheInterface::class);
+        $cache = new ArrayCache();
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
 
@@ -31,16 +30,16 @@ class CachedRouteLoaderTest extends TestCase
         $expectedData = [['path' => '/api/*', 'target' => 'https://api.example.com']];
 
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
-        $innerLoader->shouldReceive('getFingerprint')->once()->andReturn(null);
+        $innerLoader->shouldReceive('getFingerprint')->andReturn(null);
         $innerLoader->shouldReceive('load')->once()->andReturn($expectedData);
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldNotReceive('get');
-        $cache->shouldNotReceive('set');
+        $cache = new ArrayCache();
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
+        $result = $loader->load();
 
-        $this->assertEquals($expectedData, $loader->load());
+        $this->assertEquals($expectedData, $result);
+        $this->assertEmpty($cache->all());
     }
 
     public function test_it_returns_cached_data_when_fingerprint_matches(): void
@@ -53,12 +52,8 @@ class CachedRouteLoaderTest extends TestCase
         $innerLoader->shouldReceive('getFingerprint')->andReturn($fingerprint);
         $innerLoader->shouldNotReceive('load');
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')
-            ->with($cacheKey)
-            ->once()
-            ->andReturn(['fingerprint' => $fingerprint, 'data' => $cachedData]);
-        $cache->shouldNotReceive('set');
+        $cache = new ArrayCache();
+        $cache->set($cacheKey, ['fingerprint' => $fingerprint, 'data' => $cachedData]);
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
 
@@ -75,15 +70,14 @@ class CachedRouteLoaderTest extends TestCase
         $innerLoader->shouldReceive('getFingerprint')->andReturn($fingerprint);
         $innerLoader->shouldReceive('load')->once()->andReturn($expectedData);
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')->with($cacheKey)->once()->andReturn(null);
-        $cache->shouldReceive('set')
-            ->with($cacheKey, ['fingerprint' => $fingerprint, 'data' => $expectedData])
-            ->once();
+        $cache = new ArrayCache();
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
+        $result = $loader->load();
 
-        $this->assertEquals($expectedData, $loader->load());
+        $this->assertEquals($expectedData, $result);
+        $this->assertTrue($cache->has($cacheKey));
+        $this->assertEquals($fingerprint, $cache->get($cacheKey)['fingerprint']);
     }
 
     public function test_it_reloads_from_inner_loader_when_fingerprint_changed(): void
@@ -98,18 +92,14 @@ class CachedRouteLoaderTest extends TestCase
         $innerLoader->shouldReceive('getFingerprint')->andReturn($newFingerprint);
         $innerLoader->shouldReceive('load')->once()->andReturn($freshData);
 
-        $cache = Mockery::mock(CacheInterface::class);
-        $cache->shouldReceive('get')
-            ->with($cacheKey)
-            ->once()
-            ->andReturn(['fingerprint' => $oldFingerprint, 'data' => $staleData]);
-        $cache->shouldReceive('set')
-            ->with($cacheKey, ['fingerprint' => $newFingerprint, 'data' => $freshData])
-            ->once();
+        $cache = new ArrayCache();
+        $cache->set($cacheKey, ['fingerprint' => $oldFingerprint, 'data' => $staleData]);
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
+        $result = $loader->load();
 
-        $this->assertEquals($freshData, $loader->load());
+        $this->assertEquals($freshData, $result);
+        $this->assertEquals($newFingerprint, $cache->get($cacheKey)['fingerprint']);
     }
 
     public function test_it_delegates_get_fingerprint_to_inner_loader(): void
@@ -119,7 +109,7 @@ class CachedRouteLoaderTest extends TestCase
         $innerLoader = Mockery::mock(RouteLoaderInterface::class);
         $innerLoader->shouldReceive('getFingerprint')->once()->andReturn($fingerprint);
 
-        $cache = Mockery::mock(CacheInterface::class);
+        $cache = new ArrayCache();
 
         $loader = new CachedRouteLoader($innerLoader, $cache);
 
@@ -137,7 +127,6 @@ class CachedRouteLoaderTest extends TestCase
         $loader = new CachedRouteLoader($innerLoader, $cache);
         $loader->clearCache();
 
-        // Cache should remain unchanged since fingerprint is null
         $this->assertTrue($cache->has('some_key'));
     }
 
