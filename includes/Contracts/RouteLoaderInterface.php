@@ -12,22 +12,11 @@ interface RouteLoaderInterface
     public function load(): array;
 
     /**
-     * Get the cache key for this loader.
-     * Return null to disable caching for this loader.
-     */
-    public function getCacheKey(): ?string;
-
-    /**
-     * Get metadata for cache validation (e.g., mtime, version).
+     * Get a fingerprint for cache identification and validation.
      *
-     * @return mixed
+     * - Return null to disable caching for this loader
+     * - Return a unique string that changes when the source data changes
+     *   (e.g., file paths + mtimes, version hash, etc.)
      */
-    public function getCacheMetadata();
-
-    /**
-     * Check if cached data is still valid.
-     *
-     * @param mixed $metadata The metadata stored with cached data
-     */
-    public function isCacheValid($metadata): bool;
+    public function getFingerprint(): ?string;
 }
