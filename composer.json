@@ -27,7 +27,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Recca0120\\ReverseProxy\\": "includes/"
+            "Recca0120\\ReverseProxy\\": "src/"
         }
     },
     "autoload-dev": {

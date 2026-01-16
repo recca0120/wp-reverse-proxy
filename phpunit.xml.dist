@@ -27,7 +27,7 @@
     </php>
     <coverage processUncoveredFiles="true">
         <include>
-            <directory suffix=".php">includes</directory>
+            <directory suffix=".php">src</directory>
         </include>
         <report>
             <html outputDirectory="coverage"/>
